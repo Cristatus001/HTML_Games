@@ -1,0 +1,542 @@
+/* ============================================================
+   SET GARDEN — Difference of Sets
+   Nature / Garden theme
+   All art is CSS/vector by default; optional PNGs override it.
+   ============================================================ */
+
+/* ---------- Fonts (local, offline) ---------- */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/nunito-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/nunito-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/nunito-800.woff2') format('woff2');
+}
+
+/* ---------- Theme tokens ---------- */
+:root {
+  --sky-top: #b8ecff;
+  --sky-mid: #d8f6ee;
+  --sky-bot: #eafbe6;
+  --grass: #6cc24a;
+  --grass-dark: #46952f;
+  --soil: #a56a37;
+  --soil-dark: #7a4a24;
+  --wood: #b8823f;
+  --wood-dark: #7d551f;
+  --wood-light: #d7a35a;
+  --basket: #d19a5b;
+  --basket-dark: #a9743c;
+  --a: #38a85a;         /* Set A — green apple */
+  --a-dark: #2b8145;
+  --a-light: #66d182;
+  --b: #e65d92;         /* Set B — berry */
+  --b-dark: #c33e73;
+  --b-light: #ff90ba;
+  --cream: #fff8ea;
+  --ink: #3c2c12;
+  --ink-soft: #6b5732;
+  --gold: #ffcb45;
+  --shadow: rgba(60, 44, 18, 0.28);
+}
+
+/* ---------- Reset / global ---------- */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;                 /* no page bounce/scroll */
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  touch-action: manipulation;       /* kills double-tap zoom */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--sky-bot);
+}
+img { -webkit-user-drag: none; user-drag: none; }
+
+/* ---------- App scroll container ---------- */
+#app {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;              /* allow vertical scroll only */
+  z-index: 2;
+}
+
+/* ============================================================
+   ANIMATED BACKGROUND (parallax, pointer-safe, no hitboxes)
+   ============================================================ */
+#bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 45%, var(--sky-bot) 72%);
+}
+.bg-sun {
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff6c8 0%, #ffe27a 45%, rgba(255,226,122,0) 72%);
+  animation: sun-pulse 6s ease-in-out infinite;
+}
+@keyframes sun-pulse { 0%,100%{transform:scale(1);opacity:.9} 50%{transform:scale(1.08);opacity:1} }
+
+.bg-hills {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 46%;
+}
+.hill {
+  position: absolute;
+  bottom: 0; left: -10%;
+  width: 120%;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.hill.h1 { height: 30%; background: #a7dd8f; bottom: 8%; opacity:.7; }
+.hill.h2 { height: 26%; background: #8ccf6f; bottom: 4%; }
+.hill.h3 { height: 22%; background: var(--grass); bottom: 0; }
+
+/* Ground grass strip */
+.bg-ground {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 90px;
+  background: linear-gradient(180deg, var(--grass) 0%, var(--grass-dark) 100%);
+}
+.bg-ground::before {
+  content: "";
+  position: absolute; top: -14px; left: 0; right: 0; height: 20px;
+  background:
+    radial-gradient(14px 20px at 12px 20px, var(--grass) 60%, transparent 62%) repeat-x;
+  background-size: 26px 20px;
+}
+
+/* Clouds — 3 layers, different speeds = parallax */
+.cloud {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 100px;
+  opacity: .9;
+  filter: drop-shadow(0 6px 10px rgba(120,150,170,.18));
+}
+.cloud::before, .cloud::after {
+  content: ""; position: absolute; background: #fff; border-radius: 50%;
+}
+.cloud.c1 { width: 120px; height: 38px; top: 12%; left: -160px; animation: drift 46s linear infinite; }
+.cloud.c2 { width: 90px;  height: 30px; top: 24%; left: -160px; animation: drift 64s linear infinite; opacity:.8; transform: scale(.85);}
+.cloud.c3 { width: 150px; height: 46px; top: 6%;  left: -220px; animation: drift 82s linear infinite; opacity:.7;}
+.cloud::before { width: 55%; height: 160%; top: -50%; left: 12%; }
+.cloud::after  { width: 45%; height: 150%; top: -45%; right: 14%; }
+@keyframes drift { from { transform: translateX(0);} to { transform: translateX(120vw);} }
+
+/* Falling leaves / petals */
+.leaf {
+  position: absolute;
+  top: -40px;
+  width: 18px; height: 18px;
+  background: var(--a-light);
+  border-radius: 0 100% 0 100%;
+  opacity: .85;
+  will-change: transform;
+}
+.leaf.p { background: var(--b-light); border-radius: 50% 50% 50% 0; }
+.leaf.y { background: var(--gold); }
+@keyframes fall {
+  0%   { transform: translate(0,0) rotate(0deg); opacity: 0; }
+  10%  { opacity: .9; }
+  100% { transform: translate(var(--dx,40px), 105vh) rotate(540deg); opacity: .2; }
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+.screen { display: none; }
+.screen.active { display: block; }
+
+.wrap {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 18px 16px 60px;
+  min-height: 100%;
+}
+
+/* ---------- Panels (wooden garden sign) ---------- */
+.panel {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.25)),
+    var(--cream);
+  border: 3px solid #fff;
+  border-radius: 22px;
+  box-shadow: 0 12px 30px var(--shadow), inset 0 2px 0 rgba(255,255,255,.6);
+  padding: 22px;
+}
+
+/* ============================================================
+   BOOT SCREEN
+   ============================================================ */
+#boot-screen .boot-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 22px;
+  text-align: center;
+}
+.boot-badge {
+  width: 130px; height: 130px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff, var(--a-light) 55%, var(--a-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 64px;
+  box-shadow: 0 14px 34px var(--shadow);
+  animation: sprout 1.6s ease-in-out infinite alternate;
+}
+@keyframes sprout { from{transform:translateY(0) scale(1)} to{transform:translateY(-10px) scale(1.04)} }
+.boot-title { font-size: 34px; font-weight: 800; color: var(--a-dark); text-shadow: 0 2px 0 #fff; }
+.boot-bar {
+  width: 220px; height: 12px; border-radius: 10px;
+  background: rgba(255,255,255,.6); overflow: hidden; border: 2px solid #fff;
+}
+.boot-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--a-light), var(--a-dark)); animation: load 1.5s ease forwards; }
+@keyframes load { to { width: 100%; } }
+.boot-hint { color: var(--ink-soft); font-weight: 700; }
+
+/* ============================================================
+   MENU SCREEN
+   ============================================================ */
+.menu-hero { text-align: center; padding-top: 6vh; }
+.game-logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 108px; height: 108px; border-radius: 50%; font-size: 56px;
+  background: radial-gradient(circle at 38% 32%, #fff, var(--a-light) 55%, var(--a-dark));
+  box-shadow: 0 12px 28px var(--shadow);
+  margin-bottom: 10px;
+}
+.game-logo.has-img { background-size: cover; background-position: center; font-size: 0; }
+.title-main {
+  font-size: clamp(34px, 8vw, 58px);
+  font-weight: 800; line-height: .95;
+  color: var(--a-dark); text-shadow: 0 3px 0 #fff, 0 6px 14px var(--shadow);
+  margin: 6px 0 2px;
+}
+.title-sub {
+  font-size: clamp(15px, 3.6vw, 20px);
+  font-weight: 700; color: var(--b-dark);
+  letter-spacing: .5px; margin-bottom: 26px;
+}
+.menu-btns { display: flex; flex-direction: column; gap: 14px; max-width: 340px; margin: 0 auto; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: inherit; font-weight: 800; font-size: 20px;
+  color: #fff; border: none; cursor: pointer;
+  padding: 16px 26px; border-radius: 16px;
+  background: linear-gradient(180deg, var(--a) 0%, var(--a-dark) 100%);
+  box-shadow: 0 6px 0 var(--a-dark), 0 10px 18px var(--shadow);
+  transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  touch-action: manipulation;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--a-dark), 0 5px 10px var(--shadow); }
+.btn:hover { filter: brightness(1.05); }
+.btn.pink  { background: linear-gradient(180deg, var(--b), var(--b-dark)); box-shadow: 0 6px 0 var(--b-dark), 0 10px 18px var(--shadow); }
+.btn.pink:active { box-shadow: 0 2px 0 var(--b-dark), 0 5px 10px var(--shadow); }
+.btn.wood  { background: linear-gradient(180deg, var(--wood-light), var(--wood-dark)); box-shadow: 0 6px 0 var(--wood-dark), 0 10px 18px var(--shadow); }
+.btn.wood:active { box-shadow: 0 2px 0 var(--wood-dark), 0 5px 10px var(--shadow); }
+.btn.ghost { background: rgba(255,255,255,.85); color: var(--ink); box-shadow: 0 5px 0 #d9c8a4, 0 8px 14px var(--shadow); }
+.btn.ghost:active { box-shadow: 0 2px 0 #d9c8a4; }
+.btn.small { font-size: 15px; padding: 10px 16px; border-radius: 12px; box-shadow: 0 4px 0 var(--a-dark), 0 6px 10px var(--shadow); }
+.btn:disabled { filter: grayscale(.6) opacity(.6); cursor: not-allowed; }
+
+/* ============================================================
+   LEVEL SELECT
+   ============================================================ */
+.screen-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.screen-head h2 { font-size: clamp(24px,6vw,34px); font-weight: 800; color: var(--a-dark); margin: 0; text-shadow: 0 2px 0 #fff; }
+.icon-btn {
+  width: 46px; height: 46px; border-radius: 14px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.85); font-size: 22px; color: var(--ink);
+  box-shadow: 0 4px 0 #d9c8a4, 0 6px 10px var(--shadow);
+  display: flex; align-items: center; justify-content: center; flex: none;
+  touch-action: manipulation;
+}
+.icon-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9c8a4; }
+
+.level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.level-card {
+  position: relative;
+  background: var(--cream);
+  border: 3px solid #fff;
+  border-radius: 20px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 8px 0 rgba(0,0,0,.06), 0 12px 22px var(--shadow);
+  transition: transform .1s ease;
+  overflow: hidden;
+}
+.level-card:active { transform: translateY(3px); }
+.level-card .lc-emoji { font-size: 46px; display: block; margin-bottom: 8px; }
+.level-card .lc-title { font-weight: 800; font-size: 19px; color: var(--ink); }
+.level-card .lc-sub { font-weight: 700; font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+.level-card .lc-badge {
+  position: absolute; top: 10px; right: 10px; font-size: 20px;
+}
+.level-card.locked { cursor: not-allowed; filter: grayscale(.5); opacity: .7; }
+.level-card.locked::after {
+  content: "🔒"; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; background: rgba(255,255,255,.35);
+}
+.level-card .tier {
+  display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 800;
+  padding: 3px 10px; border-radius: 20px; color: #fff;
+}
+.level-card.a-card .tier { background: var(--a-dark); }
+.level-card.b-card .tier { background: var(--b-dark); }
+
+.stats-row {
+  display: flex; gap: 12px; justify-content: center; margin: 18px 0 4px; flex-wrap: wrap;
+}
+.stat-chip {
+  background: rgba(255,255,255,.8); border: 2px solid #fff; border-radius: 14px;
+  padding: 8px 14px; font-weight: 800; color: var(--ink); font-size: 14px;
+  box-shadow: 0 4px 10px var(--shadow);
+}
+.stat-chip b { color: var(--a-dark); }
+
+/* ============================================================
+   HUD
+   ============================================================ */
+.hud {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(180deg, var(--wood-light), var(--wood));
+  border: 3px solid #fff;
+  border-radius: 18px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 20px var(--shadow), inset 0 2px 0 rgba(255,255,255,.4);
+  margin-bottom: 16px;
+  color: #fff;
+}
+.hud .hud-title { font-weight: 800; font-size: 16px; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.hud .spacer { flex: 1; }
+.hud-stat {
+  background: rgba(255,255,255,.22); border-radius: 12px; padding: 6px 12px;
+  font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.hud .icon-btn { width: 40px; height: 40px; font-size: 19px; }
+
+/* ============================================================
+   GAMEPLAY
+   ============================================================ */
+.game-instruction {
+  text-align: center; font-size: 16px; font-weight: 700; color: var(--ink-soft);
+  margin: 4px 0 18px; line-height: 1.4;
+}
+.game-instruction strong { color: var(--a-dark); }
+
+.plots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.plot-wrap { display: flex; flex-direction: column; gap: 8px; }
+.plot-label {
+  text-align: center; font-weight: 800; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.plot-label.a { color: var(--a-dark); }
+.plot-label.b { color: var(--b-dark); }
+
+/* Garden plot = soil bed */
+.plot {
+  position: relative;
+  min-height: 130px;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex; flex-wrap: wrap; gap: 12px;
+  align-content: center; justify-content: center;
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,.05) 0 14px, rgba(255,255,255,.03) 14px 28px),
+    linear-gradient(180deg, var(--soil) 0%, var(--soil-dark) 100%);
+  border: 3px solid var(--wood-dark);
+  box-shadow: inset 0 6px 12px rgba(0,0,0,.28);
+}
+.plot.a { border-color: var(--a-dark); }
+.plot.b { border-color: var(--b-dark); }
+.plot.has-img { background-size: cover; background-position: center; }
+
+/* Harvest basket = drop zone */
+.harvest-wrap { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+.harvest-label { text-align: center; font-weight: 800; font-size: 20px; color: var(--wood-dark); }
+.harvest-label .eq { color: var(--ink); }
+.basket {
+  position: relative;
+  min-height: 130px;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex; flex-wrap: wrap; gap: 12px;
+  align-content: center; justify-content: center;
+  background:
+    repeating-linear-gradient(45deg,  rgba(255,255,255,.10) 0 10px, rgba(0,0,0,.05) 10px 20px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.06) 0 10px, transparent 10px 20px),
+    linear-gradient(180deg, var(--basket) 0%, var(--basket-dark) 100%);
+  border: 4px dashed var(--wood-dark);
+  box-shadow: inset 0 6px 14px rgba(0,0,0,.25);
+  transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+}
+.basket.has-img { background-size: cover; background-position: center; }
+.basket.drag-over { border-color: var(--gold); filter: brightness(1.08); transform: scale(1.01); }
+.basket.shake { animation: shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+.basket.flash-good { animation: flashGood .5s ease; }
+@keyframes flashGood { 0%{box-shadow: inset 0 6px 14px rgba(0,0,0,.25);} 40%{box-shadow: inset 0 0 0 6px var(--a-light), 0 0 30px var(--a-light);} 100%{box-shadow: inset 0 6px 14px rgba(0,0,0,.25);} }
+.basket-empty-hint {
+  color: rgba(255,255,255,.85); font-weight: 800; font-size: 15px; pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+
+/* ---------- Fruit tokens ---------- */
+.token {
+  position: relative;
+  width: 58px; height: 58px;
+  border-radius: 50% 50% 52% 52%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 22px; color: #fff;
+  text-shadow: 0 2px 3px rgba(0,0,0,.35);
+  cursor: grab;
+  touch-action: none;                 /* pointer drag, no scroll steal */
+  user-select: none;
+  box-shadow: 0 6px 10px rgba(0,0,0,.3), inset 0 -6px 10px rgba(0,0,0,.18), inset 0 6px 8px rgba(255,255,255,.35);
+  transition: transform .12s ease, filter .12s ease;
+  background: radial-gradient(circle at 34% 28%, var(--a-light) 0%, var(--a) 46%, var(--a-dark) 100%);
+}
+.token::after {  /* stalk + leaf */
+  content: "";
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%) rotate(-18deg);
+  width: 16px; height: 12px; border-radius: 0 100% 0 100%;
+  background: #4c9a2a; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.token::before { /* shine */
+  content: ""; position: absolute; top: 10px; left: 12px;
+  width: 14px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,.55); filter: blur(1px);
+}
+/* Set B fruit uses the identical design + colour as Set A —
+   a fruit is just "one element", the plot it sits in tells you the set. */
+.token.b::after { background: #4c9a2a; }
+.token.has-img { background: none !important; box-shadow: 0 6px 10px rgba(0,0,0,.3); background-size: contain !important; background-repeat: no-repeat; background-position: center; }
+.token.has-img::before, .token.has-img::after { display: none; }
+.token:hover { transform: scale(1.08); }
+.token:active { cursor: grabbing; }
+.token.pop { animation: pop .32s cubic-bezier(.2,1.6,.4,1); }
+@keyframes pop { 0%{transform:scale(.2);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.token.in-basket { cursor: pointer; }
+.token.in-basket::after { opacity: .9; }
+.token.removing { animation: shrink .25s ease forwards; }
+@keyframes shrink { to { transform: scale(0); opacity: 0; } }
+
+/* Floating drag ghost */
+.drag-ghost {
+  position: fixed; z-index: 999; pointer-events: none;
+  transform: translate(-50%, -50%) scale(1.12);
+  filter: drop-shadow(0 10px 12px rgba(0,0,0,.35));
+  opacity: .95;
+}
+
+/* Action buttons row */
+.actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+
+@media (min-width: 640px) { .token { width: 62px; height: 62px; font-size: 24px; } }
+@media (max-width: 380px) { .token { width: 50px; height: 50px; font-size: 19px; } }
+
+/* ============================================================
+   VENN (overlapping garden ponds)
+   ============================================================ */
+#venn-area { text-align: center; }
+.venn-title { font-size: clamp(20px,5vw,28px); font-weight: 800; color: var(--a-dark); margin: 8px 0 6px; text-shadow: 0 2px 0 #fff; }
+.venn-stage {
+  position: relative; width: 100%; max-width: 460px; margin: 0 auto;
+  aspect-ratio: 16 / 10;
+}
+.venn-svg { width: 100%; height: 100%; display: block; }
+.venn-labels-layer { position: absolute; inset: 0; pointer-events: none; }
+.venn-el {
+  font-weight: 800; font-size: clamp(13px, 3.4vw, 18px);
+  color: #22331a; margin: 2px 1px; display: inline-block;
+}
+/* standard set notation: 1, 3, 5 */
+.venn-el:not(:last-child)::after { content: ","; }
+.venn-group { position: absolute; text-align: center; transform: translate(-50%,-50%); width: 26%; }
+.venn-group.ga { top: 50%; left: 27%; }
+.venn-group.gi { top: 50%; left: 50%; width: 16%; }
+.venn-group.gb { top: 50%; left: 73%; }
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-back {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(30,25,10,.5);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(2px);
+}
+.modal-back.show { display: flex; animation: fade .2s ease; }
+@keyframes fade { from{opacity:0} to{opacity:1} }
+.modal {
+  background: var(--cream); border: 4px solid #fff; border-radius: 24px;
+  padding: 28px 24px; max-width: 420px; width: 100%; text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  animation: popin .28s cubic-bezier(.2,1.5,.4,1);
+}
+@keyframes popin { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+.modal .m-emoji { font-size: 56px; display: block; margin-bottom: 6px; }
+.modal h3 { font-size: 28px; font-weight: 800; margin: 0 0 10px; }
+.modal p { font-size: 16px; font-weight: 700; color: var(--ink-soft); line-height: 1.5; margin: 0 0 18px; }
+.modal.good h3 { color: var(--a-dark); }
+.modal.bad  h3 { color: var(--b-dark); }
+.modal-scroll { max-height: 62vh; overflow-y: auto; text-align: left; }
+.modal-scroll h4 { color: var(--a-dark); margin: 14px 0 4px; font-size: 17px; }
+.modal-scroll p { text-align: left; margin-bottom: 8px; }
+.modal-scroll .eqbox {
+  background: rgba(56,168,90,.12); border: 2px dashed var(--a); border-radius: 12px;
+  padding: 10px; text-align: center; font-weight: 800; color: var(--a-dark); margin: 8px 0;
+}
+
+/* ============================================================
+   Particles layer
+   ============================================================ */
+#fx {
+  position: fixed; inset: 0; z-index: 400; pointer-events: none; overflow: hidden;
+}
+.particle {
+  position: fixed; width: 14px; height: 14px; border-radius: 0 100% 0 100%;
+  will-change: transform, opacity;
+}
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cloud, .leaf, .bg-sun, .boot-badge, .boot-title { animation: none !important; }
+}

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:/Users/Admin/Downloads/\" | head -50; echo \"---CWD---\"; ls -la \"C:/Users/Admin/Desktop/HTML Games/Biology Games/Bio logic - frog anatomy game - HOTS/\")"
+    ]
+  }
+}

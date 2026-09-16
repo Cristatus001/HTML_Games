@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#150d24">
+<meta name="format-detection" content="telephone=no">
+<title>Mitosis Master</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================ LIVE STAGE ============================ -->
+  <canvas id="stage" aria-label="Mitosis specimen stage"></canvas>
+  <div id="vignette" aria-hidden="true"></div>
+  <div id="scanlines" aria-hidden="true"></div>
+
+  <!-- ============================== GAME HUD =========================== -->
+  <header id="hud" hidden>
+    <div class="bezel">
+      <div class="bezel-screws" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+      <div class="hud-id">
+        <span class="phase-badge" id="hudBadge">
+          <img id="hudBadgeImg" src="assets/images/ui/emoji/phase_1.png" alt="" draggable="false">
+        </span>
+        <span class="hud-text">
+          <span class="hud-kicker">STAGE <b id="hudPhaseNum">1</b> / 5</span>
+          <h1 id="hudPhaseName">PROPHASE</h1>
+        </span>
+      </div>
+
+      <div class="hud-gauge">
+        <div class="capillary" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter">
+          <div class="capillary-fill" id="meterFill"></div>
+          <div class="capillary-gloss" aria-hidden="true"></div>
+          <span class="capillary-label" id="meterLabel">0%</span>
+        </div>
+        <ol class="pips" id="pips" aria-label="Stage progress"></ol>
+      </div>
+
+      <div class="hud-tools">
+        <button class="icon-btn" id="btnSfx" type="button" title="Sound effects" aria-label="Toggle sound effects">
+          <img src="assets/images/ui/emoji/sound_on.png" alt="" draggable="false">
+        </button>
+        <button class="icon-btn" id="btnMusic" type="button" title="Music" aria-label="Toggle music">
+          <img src="assets/images/ui/emoji/music_on.png" alt="" draggable="false">
+        </button>
+        <button class="icon-btn" id="btnPause" type="button" title="Settings" aria-label="Open settings">
+          <img src="assets/images/ui/emoji/settings.png" alt="" draggable="false">
+        </button>
+      </div>
+    </div>
+
+    <div class="objective" id="objectiveWrap">
+      <img class="objective-ico" src="assets/images/ui/emoji/hint.png" alt="" draggable="false">
+      <p id="hudObjective">Tap the chromatin to condense it, then drag both centrosomes to the poles.</p>
+    </div>
+  </header>
+
+  <!-- ========================= IN-GAME CONTROLS ======================== -->
+  <div id="controls" hidden>
+    <div class="specimen-bar" id="specimenBar"></div>
+
+    <div class="control-slot">
+      <button class="btn btn-go pulse" id="btnNext" type="button" hidden>
+        <span class="btn-face">
+          <span>NEXT STAGE</span>
+          <img src="assets/images/ui/emoji/arrow_right_btn.png" alt="" draggable="false">
+        </span>
+      </button>
+
+      <div class="choice-row" id="cytoChoices" hidden>
+        <button class="btn btn-choice" id="btnAnimal" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/animal_cell_btn.png" alt="" draggable="false">
+            <span>ANIMAL CELL<em>cleavage furrow</em></span>
+          </span>
+        </button>
+        <button class="btn btn-choice btn-choice-plant" id="btnPlant" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/plant_cell_btn.png" alt="" draggable="false">
+            <span>PLANT CELL<em>cell plate</em></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="banner" aria-live="polite"></div>
+
+  <!-- ============================== BOOT =============================== -->
+  <section class="screen is-on" id="scrBoot">
+    <div class="boot-iris" aria-hidden="true"><i></i><i></i></div>
+    <div class="boot-core">
+      <img class="boot-mark" src="assets/images/ui/emoji/dna.png" alt="" draggable="false">
+      <p class="boot-label">CALIBRATING OPTICS</p>
+      <div class="boot-track"><div class="boot-fill" id="bootFill"></div></div>
+      <p class="boot-note" id="bootNote">Loading specimen plate&hellip;</p>
+    </div>
+  </section>
+
+  <!-- ============================== MENU =============================== -->
+  <section class="screen" id="scrMenu" hidden>
+    <div class="menu-wrap">
+      <div class="titleplate">
+        <img class="titleplate-mark" src="assets/images/ui/emoji/dna.png" alt="" draggable="false">
+        <h1 class="title">MITOSIS<span>MASTER</span></h1>
+        <p class="tagline">Drive one cell through all five stages of division</p>
+      </div>
+
+      <nav class="menu-stack">
+        <button class="btn btn-go btn-wide" id="btnPlay" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/play_btn.png" alt="" draggable="false">
+            <span id="btnPlayLabel">BEGIN DIVISION</span>
+          </span>
+        </button>
+        <button class="btn btn-cyan btn-wide" id="btnSelect" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/microscope_btn.png" alt="" draggable="false">
+            <span>STAGE SELECT</span>
+          </span>
+        </button>
+        <button class="btn btn-amber btn-wide" id="btnHowTo" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/hint_btn.png" alt="" draggable="false">
+            <span>HOW TO PLAY</span>
+          </span>
+        </button>
+        <button class="btn btn-steel btn-wide" id="btnSettings" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/settings_btn.png" alt="" draggable="false">
+            <span>SETTINGS</span>
+          </span>
+        </button>
+      </nav>
+
+      <p class="menu-foot" id="menuFoot">Best run &mdash; not recorded yet</p>
+    </div>
+  </section>
+
+  <!-- ========================== STAGE SELECT =========================== -->
+  <section class="screen" id="scrSelect" hidden>
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2>STAGE SELECT</h2>
+        <button class="icon-btn icon-btn-lg" id="btnSelectClose" type="button" aria-label="Back to menu">
+          <img src="assets/images/ui/emoji/close.png" alt="" draggable="false">
+        </button>
+      </div>
+      <div class="stage-grid" id="stageGrid"></div>
+      <div class="sheet-foot">
+        <button class="btn btn-steel" id="btnWipe" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/restart_btn.png" alt="" draggable="false">
+            <span>RESET PROGRESS</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= RESULT ============================== -->
+  <section class="screen" id="scrResult" hidden>
+    <div class="sheet sheet-result">
+      <div class="result-crest">
+        <img id="resultCrest" src="assets/images/ui/emoji/trophy.png" alt="" draggable="false">
+      </div>
+      <h2 class="result-title" id="resultTitle">MITOSIS COMPLETE</h2>
+      <p class="result-sub" id="resultSub">One cell became two identical daughter cells.</p>
+
+      <div class="star-row" id="resultStars"></div>
+
+      <dl class="stat-grid" id="resultStats"></dl>
+
+      <div class="result-actions">
+        <button class="btn btn-go" id="btnAgain" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/restart_btn.png" alt="" draggable="false">
+            <span>RUN AGAIN</span>
+          </span>
+        </button>
+        <button class="btn btn-amber" id="btnLearn" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/learn_btn.png" alt="" draggable="false">
+            <span>LEARN MORE</span>
+          </span>
+        </button>
+        <button class="btn btn-cyan" id="btnResultSelect" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/microscope_btn.png" alt="" draggable="false">
+            <span>STAGE SELECT</span>
+          </span>
+        </button>
+        <button class="btn btn-steel" id="btnResultMenu" type="button">
+          <span class="btn-face">
+            <img src="assets/images/ui/emoji/home_btn.png" alt="" draggable="false">
+            <span>MAIN MENU</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== MODAL: HOW TO PLAY ========================= -->
+  <div class="modal" id="modHowTo" hidden>
+    <div class="glass" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
+      <div class="glass-head">
+        <img src="assets/images/ui/emoji/hint.png" alt="" draggable="false">
+        <h2 id="howToTitle">HOW TO PLAY</h2>
+        <button class="icon-btn" data-close="modHowTo" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="" draggable="false">
+        </button>
+      </div>
+      <div class="glass-body">
+        <p class="lead">Your goal: guide a single cell through all five stages of mitosis without losing a chromosome.</p>
+
+        <h3>Controls</h3>
+        <ul class="ctrl-list">
+          <li>
+            <img src="assets/images/ui/emoji/chromosome.png" alt="" draggable="false">
+            <div><b>Tap / click</b><span>Condense chromatin, split centromeres, unwind chromatids, and pinch or build the divide.</span></div>
+          </li>
+          <li>
+            <img src="assets/images/ui/emoji/centrosome.png" alt="" draggable="false">
+            <div><b>Press &amp; drag</b><span>Move centrosomes to the poles, chromosomes onto the equator, and nucleoli into the new nuclei.</span></div>
+          </li>
+          <li>
+            <img src="assets/images/ui/emoji/restart.png" alt="" draggable="false">
+            <div><b>Trace</b><span>Hold and sweep along a dotted ring to rebuild a nuclear envelope. Stay on the ring.</span></div>
+          </li>
+          <li>
+            <img src="assets/images/ui/emoji/arrow_right.png" alt="" draggable="false">
+            <div><b>Advance</b><span><i>NEXT STAGE</i> lights up as soon as the stage objective is met.</span></div>
+          </li>
+        </ul>
+
+        <h3>Scoring</h3>
+        <ul class="plain-list">
+          <li>Each stage is rated up to three specimen stars.</li>
+          <li>Work quickly and avoid wasted taps to keep all three.</li>
+          <li>Clearing a stage unlocks the next one in <i>Stage Select</i>. Progress is saved on this device.</li>
+        </ul>
+
+        <h3>Input</h3>
+        <p class="fineprint">Mouse, touch and stylus all behave identically. On a keyboard: <b>Enter</b> or <b>Space</b> confirms, <b>Esc</b> opens settings.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== MODAL: LEARN MORE ========================== -->
+  <div class="modal" id="modLearn" hidden>
+    <div class="dossier" role="dialog" aria-modal="true" aria-labelledby="learnTitle">
+      <div class="dossier-head">
+        <img src="assets/images/ui/emoji/learn.png" alt="" draggable="false">
+        <h2 id="learnTitle">THE SCIENCE OF MITOSIS</h2>
+        <button class="icon-btn icon-btn-dark" data-close="modLearn" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="" draggable="false">
+        </button>
+      </div>
+      <div class="dossier-body">
+        <p class="stamp">REFERENCE SHEET &middot; CELL BIOLOGY</p>
+
+        <h3>What mitosis is</h3>
+        <p>Mitosis is the division of one cell nucleus into two genetically identical nuclei. Its job is faithful copying: each daughter cell must end up with the same number and kind of chromosomes as the parent. In humans that means 46 chromosomes in, 46 chromosomes out.</p>
+        <p>Mitosis is only the nuclear part. Splitting the surrounding cytoplasm is a separate process called <b>cytokinesis</b>, which is why this game treats it as its own stage.</p>
+
+        <h3>The five stages in this game</h3>
+        <ol class="phase-notes">
+          <li><b>Prophase</b> &mdash; Loose chromatin coils into compact, visible chromosomes. The nuclear envelope breaks down and the two centrosomes travel to opposite poles, growing the spindle between them.</li>
+          <li><b>Metaphase</b> &mdash; Spindle fibres pull every chromosome into a single line across the cell's equator, the <b>metaphase plate</b>. The cell will not proceed until each one is correctly attached &mdash; a genuine biological checkpoint.</li>
+          <li><b>Anaphase</b> &mdash; Each centromere lets go and the two sister chromatids are hauled to opposite poles. From this moment each pole holds a complete chromosome set.</li>
+          <li><b>Telophase</b> &mdash; The chromatids relax back into chromatin, a fresh nuclear envelope assembles around each cluster, and the nucleolus reappears inside each new nucleus.</li>
+          <li><b>Cytokinesis</b> &mdash; The cytoplasm is finally split, giving two separate daughter cells.</li>
+        </ol>
+
+        <h3>Animal versus plant division</h3>
+        <p>Animal cells have only a flexible membrane, so a ring of protein filaments tightens like a drawstring and pinches the cell in two. That inward groove is the <b>cleavage furrow</b>.</p>
+        <p>Plant cells are boxed in by a rigid cell wall and cannot be pinched. Instead, vesicles line up along the equator and fuse into a <b>cell plate</b> that grows outward until it meets the existing wall, building a brand-new wall between the daughters.</p>
+
+        <h3>Where it happens</h3>
+        <p>Constantly, and everywhere that tissue grows or is replaced: the basal layer of your skin, bone marrow making blood cells, the lining of your gut, and the meristem at the tip of a plant root. When the controls on mitosis fail and division runs unchecked, the result is a tumour &mdash; which is why the metaphase checkpoint matters so much.</p>
+
+        <h3>Glossary</h3>
+        <dl class="glossary">
+          <dt>Chromatin</dt><dd>DNA wound around proteins in its relaxed, thread-like working state.</dd>
+          <dt>Chromosome</dt><dd>Chromatin condensed into a compact, transportable package.</dd>
+          <dt>Sister chromatids</dt><dd>The two identical halves of a duplicated chromosome, joined at the centromere.</dd>
+          <dt>Centromere</dt><dd>The pinched waist where chromatids are held together and where spindle fibres attach.</dd>
+          <dt>Centrosome</dt><dd>The organising centre that builds the spindle; one ends up at each pole.</dd>
+          <dt>Spindle</dt><dd>The framework of microtubules that moves chromosomes around the cell.</dd>
+          <dt>Metaphase plate</dt><dd>The imaginary plane across the equator where chromosomes line up.</dd>
+          <dt>Nuclear envelope</dt><dd>The double membrane enclosing a nucleus; it dissolves and later reforms.</dd>
+          <dt>Nucleolus</dt><dd>The dense region inside a nucleus where ribosomes are assembled.</dd>
+          <dt>Cleavage furrow</dt><dd>The inward groove that splits a dividing animal cell.</dd>
+          <dt>Cell plate</dt><dd>The new wall built across the middle of a dividing plant cell.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== MODAL: SETTINGS ========================== -->
+  <div class="modal" id="modSettings" hidden>
+    <div class="glass glass-narrow" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+      <div class="glass-head">
+        <img src="assets/images/ui/emoji/settings.png" alt="" draggable="false">
+        <h2 id="setTitle">SETTINGS</h2>
+        <button class="icon-btn" data-close="modSettings" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="" draggable="false">
+        </button>
+      </div>
+      <div class="glass-body">
+        <div class="switch-row" id="rowMusic">
+          <img class="switch-ico" id="setMusicIco" src="assets/images/ui/emoji/music_on.png" alt="" draggable="false">
+          <div class="switch-copy"><b>Music</b><span id="setMusicNote">Ambient lab pad</span></div>
+          <button class="toggle is-on" id="setMusic" type="button" role="switch" aria-checked="true" aria-label="Music">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <div class="switch-row" id="rowSfx">
+          <img class="switch-ico" id="setSfxIco" src="assets/images/ui/emoji/sound_on.png" alt="" draggable="false">
+          <div class="switch-copy"><b>Sound effects</b><span>Taps, splits and snaps</span></div>
+          <button class="toggle is-on" id="setSfx" type="button" role="switch" aria-checked="true" aria-label="Sound effects">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <div class="switch-row" id="rowMotion">
+          <img class="switch-ico" src="assets/images/ui/emoji/dna.png" alt="" draggable="false">
+          <div class="switch-copy"><b>Ambient motion</b><span>Drifting cells and particles</span></div>
+          <button class="toggle is-on" id="setMotion" type="button" role="switch" aria-checked="true" aria-label="Ambient motion">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+
+        <div class="settings-actions" id="settingsActions">
+          <button class="btn btn-cyan" id="btnResume" type="button">
+            <span class="btn-face"><img src="assets/images/ui/emoji/play_btn.png" alt="" draggable="false"><span>RESUME</span></span>
+          </button>
+          <button class="btn btn-steel" id="btnQuit" type="button">
+            <span class="btn-face"><img src="assets/images/ui/emoji/home_btn.png" alt="" draggable="false"><span>MAIN MENU</span></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/assets.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/background.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

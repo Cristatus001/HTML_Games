@@ -1,0 +1,225 @@
+/* ==========================================================================
+   flight.css - the redesigned gameplay layer: HUD, mission map, brief,
+   debrief, badges. Same brass / wood / parchment material language as
+   theme.css, which this loads on top of.
+   ========================================================================== */
+
+/* ---------------- flight HUD ---------------- */
+
+#hud { gap: 8px; }
+
+.f-top { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; pointer-events: auto; }
+
+.f-plate { display: flex; flex-direction: column; padding: 8px 15px; border-radius: 12px; flex: none; }
+.f-plate .f-no { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.78rem; color: #2c1b07; }
+.f-plate .f-name { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(56, 36, 10, 0.85); }
+
+.f-gauges { display: flex; gap: 7px; flex: 1 1 320px; min-width: 0; }
+.f-gauge { flex: 1; min-width: 0; border-radius: 11px; padding: 7px 10px 8px; text-align: center; }
+.f-gauge .label { display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 3px; }
+.f-gauge .label img { width: 13px; height: 13px; }
+.f-gauge .v { display: block; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: clamp(0.95rem, 4vw, 1.18rem); }
+
+.v-dist { color: #ffffff; text-shadow: 0 0 11px rgba(255, 255, 255, 0.8); }
+.v-disp { color: #ffb0aa; text-shadow: 0 0 11px rgba(248, 113, 113, 0.9); }
+.v-eff { color: #8ff0b3; text-shadow: 0 0 11px rgba(99, 222, 134, 0.85); }
+
+.effbar, .fuelbar, .xpbar {
+  height: 6px; border-radius: 4px; margin-top: 5px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3));
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.effbar .fill {
+  height: 100%; width: 0%; border-radius: 3px; transition: width 0.15s linear;
+  background: linear-gradient(90deg, #2f9c56, #63de86);
+  box-shadow: 0 0 9px rgba(99, 222, 134, 0.85);
+}
+.fuelbar { flex: 1; min-width: 60px; margin-top: 0; }
+.fuelbar .fill {
+  height: 100%; width: 100%; border-radius: 3px; transition: width 0.2s linear;
+  background: linear-gradient(90deg, #b57f2c, #ffd27a);
+  box-shadow: 0 0 9px rgba(255, 210, 122, 0.8);
+}
+
+.f-tools { display: flex; gap: 7px; flex: none; }
+
+.f-bottom { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; pointer-events: auto; }
+.f-strip { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 10px; font-size: 0.66rem; }
+.f-strip .label { display: flex; align-items: center; gap: 5px; }
+.f-strip .label img { width: 13px; height: 13px; }
+.f-strip .pips { display: inline-flex; gap: 3px; }
+.f-strip .pips img { width: 15px; height: 15px; }
+
+.btn-small { padding: 8px 14px; font-size: 0.72rem; }
+.btn-small img { width: 16px; height: 16px; }
+
+/* NPC bark */
+.bark {
+  position: absolute; left: calc(12px + var(--safe-l)); bottom: calc(80px + var(--safe-b));
+  max-width: min(340px, 74vw); padding: 10px 14px; border-radius: 12px;
+  opacity: 0; transform: translateY(10px); pointer-events: none;
+  transition: opacity 0.22s, transform 0.22s;
+}
+.bark.show { opacity: 1; transform: translateY(0); }
+.bark .who {
+  display: block; font-size: 0.55rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--brass-lt); margin-bottom: 3px;
+}
+.bark .line { font-size: 0.76rem; line-height: 1.4; }
+
+/* ---------------- pilot strip (hangar) ---------------- */
+
+.pilot-strip { position: relative; z-index: 1; width: min(460px, 92vw); border-radius: 15px; padding: 13px 16px; }
+.pilot-row { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.pilot-row img { width: 20px; height: 20px; }
+.pilot-row .rankno {
+  font-family: 'Roboto Mono', monospace; font-size: 1.1rem; color: var(--brass-lt);
+  text-shadow: 0 0 12px rgba(217, 164, 65, 0.8);
+}
+.pilot-row .xpbar { flex: 1; margin-top: 0; height: 8px; }
+.pilot-row .xpbar .fill {
+  height: 100%; width: 0%; border-radius: 4px; transition: width 0.4s;
+  background: linear-gradient(90deg, #5d3aa8, #a878ff);
+  box-shadow: 0 0 10px rgba(168, 120, 255, 0.8);
+}
+.pilot-cells { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.pcell { border-radius: 9px; padding: 8px 4px 7px; text-align: center; }
+.pcell .label { display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 0.5rem; }
+.pcell .label img { width: 11px; height: 11px; }
+.pcell .v {
+  display: block; margin-top: 4px; font-family: 'Roboto Mono', monospace; font-weight: 700;
+  font-size: 0.9rem; color: var(--brass-lt); text-shadow: 0 0 10px rgba(217, 164, 65, 0.7);
+}
+
+/* ---------------- mission map ---------------- */
+
+/* The .screen.dim::before dimming layer is a positioned box, so any screen
+   child without its own stacking context ends up UNDERNEATH it - blurred and
+   unclickable. Lift every screen child above it, and stop the overlay eating
+   pointer events at all. */
+.screen::before, .screen.dim::before { pointer-events: none; z-index: 0; }
+.screen > * { position: relative; z-index: 1; }
+
+#map { justify-content: center; }
+.map-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; width: min(620px, 94vw); margin-bottom: 14px; }
+.map-head h2 { margin: 0; flex: 1; font-size: clamp(1rem, 4.4vw, 1.4rem); letter-spacing: 2.6px; text-transform: uppercase; }
+
+.map-grid {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 10px; width: min(620px, 94vw);
+}
+
+.mcard { border-radius: 13px; padding: 11px 9px 10px; text-align: center; cursor: pointer; touch-action: manipulation; transition: transform 0.1s, filter 0.16s; }
+.mcard:hover { transform: translateY(-3px); filter: brightness(1.12); }
+.mcard:active { transform: translateY(1px); }
+.mcard .mnum {
+  display: block; font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 1.2rem;
+  color: var(--brass-lt); text-shadow: 0 0 11px rgba(217, 164, 65, 0.7);
+}
+.mcard .mname { display: block; font-size: 0.55rem; letter-spacing: 1.2px; text-transform: uppercase; margin: 3px 0 1px; }
+.mcard .mmech { display: block; font-size: 0.48rem; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-dim); min-height: 1.2em; }
+.mcard .mpips { display: flex; justify-content: center; gap: 3px; margin-top: 6px; }
+.mcard .mpips img { width: 14px; height: 14px; }
+.mcard .lockimg { width: 18px; height: 18px; opacity: 0.5; }
+.mcard.locked { cursor: default; opacity: 0.45; }
+.mcard.locked:hover { transform: none; filter: none; }
+.mcard.locked .mnum { color: #8caabe; text-shadow: none; }
+
+/* ---------------- mission brief ---------------- */
+
+.brief-card {
+  position: relative; z-index: 1; width: min(560px, 94vw);
+  max-height: calc(var(--app-h) - 40px); overflow-y: auto;
+  border-radius: 16px; padding: 18px 20px 20px;
+}
+.brief-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.brief-head .b-no { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.72rem; color: var(--brass-lt); }
+.brief-head .b-mech {
+  margin-left: auto; padding: 4px 10px; border-radius: 20px;
+  font-size: 0.55rem; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink);
+}
+.brief-card h2 { margin: 0 0 12px; font-size: clamp(1.1rem, 5vw, 1.6rem); letter-spacing: 1.6px; text-transform: uppercase; }
+
+.nova { display: flex; gap: 11px; align-items: flex-start; padding: 11px 13px; border-radius: 11px; margin-bottom: 13px; }
+.nova img { width: 30px; height: 30px; flex: none; }
+.nova .who { display: block; font-size: 0.54rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brass-lt); margin-bottom: 3px; }
+.nova .line { font-size: 0.82rem; line-height: 1.45; font-style: italic; }
+
+.b-brief { font-size: 0.86rem; line-height: 1.6; margin: 0 0 13px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 20px; font-size: 0.68rem; }
+.chip img { width: 14px; height: 14px; }
+
+.starconds { display: flex; flex-direction: column; gap: 6px; }
+.srow { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; }
+.srow img { width: 15px; height: 15px; }
+
+.brief-actions { margin-top: 17px; display: flex; flex-direction: column; gap: 9px; }
+
+/* ---------------- debrief ---------------- */
+
+.score-hero { border-radius: 12px; padding: 11px 16px; margin: 13px 0; text-align: center; }
+.score-hero .label { display: block; margin-bottom: 4px; }
+.score-hero b {
+  font-family: 'Roboto Mono', monospace; font-size: clamp(1.5rem, 7vw, 2.1rem);
+  color: var(--brass-lt); text-shadow: 0 0 18px rgba(217, 164, 65, 0.85);
+}
+
+.ledger { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.lrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 11px; border-radius: 8px;
+  background: rgba(120, 88, 44, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(138, 108, 56, 0.24);
+  font-size: 0.76rem;
+}
+.lrow span { display: flex; align-items: center; gap: 7px; }
+.lrow span img { width: 15px; height: 15px; }
+.lrow b { font-family: 'Roboto Mono', monospace; }
+
+.rewards { display: flex; gap: 9px; margin-bottom: 15px; }
+.rw { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 10px; }
+.rw img { width: 20px; height: 20px; }
+.rw b {
+  font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 1rem;
+  color: var(--brass-lt); text-shadow: 0 0 10px rgba(217, 164, 65, 0.7);
+}
+
+/* ---------------- why card ---------------- */
+
+.why-nums { display: flex; gap: 11px; margin: 4px 0 14px; }
+.why-num {
+  flex: 1; text-align: center; padding: 12px 8px; border-radius: 11px;
+  background: linear-gradient(180deg, rgba(255, 252, 236, 0.5), rgba(255, 252, 236, 0)), rgba(120, 88, 44, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(138, 108, 56, 0.3);
+}
+.why-num .label { display: block; margin-bottom: 5px; color: rgba(70, 46, 16, 0.8); }
+.why-num b { font-family: 'Roboto Mono', monospace; font-size: clamp(1.2rem, 6vw, 1.7rem); }
+
+/* ---------------- badges ---------------- */
+
+.badge-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.bcard { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 11px; opacity: 0.5; }
+.bcard.got { opacity: 1; box-shadow: inset 0 0 0 1px rgba(99, 222, 134, 0.45), inset 0 2px 8px rgba(0, 0, 0, 0.6); }
+.bcard img { width: 30px; height: 30px; flex: none; }
+.bcard strong { display: block; font-size: 0.84rem; color: var(--brass-lt); }
+.bcard span { display: block; font-size: 0.68rem; color: var(--ink-dim); line-height: 1.35; margin-top: 2px; }
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 700px) {
+  .f-gauges { flex: 1 1 100%; order: 3; }
+  .f-plate { flex: 1 1 auto; }
+  .pilot-cells { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 620px) {
+  .f-gauge .label { font-size: 0.46rem; letter-spacing: 1.2px; }
+  .f-strip { font-size: 0.58rem; padding: 6px 9px; }
+  .bark { bottom: calc(74px + var(--safe-b)); }
+}
+@media (max-height: 620px) {
+  .bark { display: none; }
+  .f-bottom { gap: 5px; }
+}

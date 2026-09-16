@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#070c14" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Digital Ruler Drop Test</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ================== ambient background ================== -->
+<div id="stage-bg" aria-hidden="true">
+  <div class="bg-grid"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-glow bg-glow-a"></div>
+  <div class="bg-glow bg-glow-b"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<!-- shared vector art: one pinch-grip hand, instantiated with <use> === -->
+<svg id="art-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gSkin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8d3b0"/>
+      <stop offset=".45" stop-color="#dda379"/>
+      <stop offset="1" stop-color="#9c6440"/>
+    </linearGradient>
+    <linearGradient id="gSkinLo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7b892"/>
+      <stop offset="1" stop-color="#8a5636"/>
+    </linearGradient>
+    <linearGradient id="gSleeve" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5d7a94"/>
+      <stop offset="1" stop-color="#1d2a3a"/>
+    </linearGradient>
+    <linearGradient id="gCuff" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity=".15"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity=".75"/>
+    </linearGradient>
+
+    <!-- pinch-grip hand: fingertips at the RIGHT edge (x≈94), arm to the left -->
+    <g id="art-hand">
+      <path class="hand-sleeve" d="M18,13 L-16,8 -16,62 18,57 Z"/>
+      <rect class="hand-cuff" x="14" y="12" width="7" height="46" rx="3"/>
+      <path class="hand-palm" d="M70,11 C43,7 18,13 16,35 C14,57 41,65 70,59 C79,57 81,48 79,35 C77,22 79,13 70,11 Z"/>
+      <g class="hand-finger hand-index">
+        <path d="M67,20 C78,15 89,21 93,28 C95,32 91,37 84,36 L64,32 Z"/>
+        <path class="hand-nail" d="M88,26 C91,27 92,30 90,33 C88,34 86,33 85,31 Z"/>
+      </g>
+      <g class="hand-finger hand-thumb">
+        <path d="M67,50 C78,55 89,49 93,42 C95,38 91,33 84,34 L64,38 Z"/>
+        <path class="hand-nail" d="M88,44 C91,43 92,40 90,37 C88,36 86,37 85,39 Z"/>
+      </g>
+      <path class="hand-shade" d="M70,11 C79,13 77,22 79,35 C81,48 79,57 70,59 C74,45 74,25 70,11 Z"/>
+    </g>
+  </defs>
+</svg>
+
+<!-- ================== BOOT ================== -->
+<section id="screen-boot" class="screen is-active">
+  <div class="boot-console panel panel-steel">
+    <div class="boot-crest">
+      <img src="assets/images/ui/emoji/neuron.png" alt="" class="boot-crest-img" />
+    </div>
+    <h2 class="boot-title">Neural Response Bench</h2>
+    <p class="boot-sub" id="boot-line">Powering instrument rail&hellip;</p>
+    <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
+    <div class="boot-meta">
+      <span>g = 9.80 m/s<sup>2</sup></span>
+      <span id="boot-pct">0%</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================== MAIN MENU ================== -->
+<section id="screen-menu" class="screen">
+  <div class="menu-shell">
+    <header class="title-block">
+      <div class="title-crest">
+        <img src="assets/images/ui/emoji/ruler.png" alt="" class="crest-icon" />
+      </div>
+      <h1 class="game-title">
+        <span class="title-line-1">Digital Ruler</span>
+        <span class="title-line-2">Drop Test</span>
+      </h1>
+      <p class="tagline">Measure your reaction time with science</p>
+    </header>
+
+    <nav class="menu-buttons">
+      <button type="button" id="btn-start" class="btn btn-primary btn-hero">
+        <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico" />
+        <span class="btn-text">
+          <span class="btn-label">Begin Calibration</span>
+          <span class="btn-sub" id="menu-progress-sub">6 lab stages</span>
+        </span>
+      </button>
+
+      <div class="menu-row">
+        <button type="button" id="btn-freelab" class="btn btn-ghost">
+          <img src="assets/images/ui/emoji/flask.png" alt="" class="btn-ico" />
+          <span class="btn-label">Free Lab</span>
+        </button>
+        <button type="button" id="btn-howto" class="btn btn-ghost">
+          <img src="assets/images/ui/emoji/help.png" alt="" class="btn-ico" />
+          <span class="btn-label">How to Play</span>
+        </button>
+        <button type="button" id="btn-settings" class="btn btn-ghost">
+          <img src="assets/images/ui/emoji/settings.png" alt="" class="btn-ico" />
+          <span class="btn-label">Settings</span>
+        </button>
+      </div>
+    </nav>
+
+    <footer class="menu-foot">
+      <div class="foot-chip">
+        <img src="assets/images/ui/emoji/medal.png" alt="" />
+        <span class="foot-k">Best</span>
+        <span class="foot-v" id="menu-best">&mdash;</span>
+      </div>
+      <div class="foot-chip">
+        <img src="assets/images/ui/emoji/grade_on.png" alt="" />
+        <span class="foot-k">Grades</span>
+        <span class="foot-v" id="menu-grades">0 / 18</span>
+      </div>
+      <div class="foot-chip">
+        <img src="assets/images/ui/emoji/table.png" alt="" />
+        <span class="foot-k">Trials</span>
+        <span class="foot-v" id="menu-trials">0</span>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<!-- ================== STAGE SELECT ================== -->
+<section id="screen-stages" class="screen">
+  <header class="topbar">
+    <button type="button" class="icon-btn" data-nav="menu" aria-label="Back to menu">
+      <img src="assets/images/ui/emoji/back.png" alt="" />
+    </button>
+    <div class="topbar-titles">
+      <h2>Calibration Stages</h2>
+      <p>Shorter rules leave less time before the ruler slips through</p>
+    </div>
+    <button type="button" class="icon-btn" id="stages-settings" aria-label="Settings">
+      <img src="assets/images/ui/emoji/settings.png" alt="" />
+    </button>
+  </header>
+  <div class="stage-scroll">
+    <div class="stage-grid" id="stage-grid"></div>
+  </div>
+</section>
+
+<!-- ================== GAME ================== -->
+<section id="screen-game" class="screen">
+
+  <header class="hud">
+    <button type="button" class="icon-btn hud-btn" id="hud-back" aria-label="Leave stage">
+      <img src="assets/images/ui/emoji/back.png" alt="" />
+    </button>
+
+    <div class="hud-slot hud-stage">
+      <span class="hud-k" id="hud-stage-kicker">Stage 1</span>
+      <span class="hud-v" id="hud-stage-name">Orientation</span>
+    </div>
+
+    <div class="hud-slot hud-objective">
+      <span class="hud-k">
+        <img src="assets/images/ui/emoji/target.png" alt="" class="hud-k-ico" />Objective
+      </span>
+      <span class="hud-v" id="hud-objective">3 clean catches</span>
+    </div>
+
+    <div class="hud-pips" id="hud-pips" aria-label="Trial progress"></div>
+
+    <div class="hud-gauges">
+      <div class="gauge gauge-last">
+        <span class="gauge-k">Last</span>
+        <span class="gauge-v" id="gauge-last">&mdash;</span>
+      </div>
+      <div class="gauge gauge-mean">
+        <span class="gauge-k">Mean</span>
+        <span class="gauge-v" id="gauge-mean">&mdash;</span>
+      </div>
+      <div class="gauge gauge-rule">
+        <span class="gauge-k">Rule</span>
+        <span class="gauge-v" id="gauge-rule">100 cm</span>
+      </div>
+    </div>
+
+    <button type="button" class="icon-btn hud-btn" id="hud-data" aria-label="Toggle lab data">
+      <img src="assets/images/ui/emoji/table.png" alt="" />
+    </button>
+    <button type="button" class="icon-btn hud-btn" id="hud-settings" aria-label="Settings">
+      <img src="assets/images/ui/emoji/settings.png" alt="" />
+    </button>
+  </header>
+
+  <main class="bench">
+
+    <!-- --- apparatus --- -->
+    <div class="apparatus" id="apparatus">
+      <div class="rig-post rig-post-l" aria-hidden="true"></div>
+      <div class="rig-post rig-post-r" aria-hidden="true"></div>
+
+      <div class="rig-track" id="rig-track">
+
+        <!-- dropper hand + ruler travel together -->
+        <div class="drop-group" id="drop-group">
+          <div class="dropper-hand" id="dropper-hand">
+            <svg viewBox="-16 0 112 70" class="hand-svg"><use href="#art-hand"/></svg>
+            <img src="" alt="" class="hand-img" id="dropper-hand-img" hidden />
+          </div>
+          <div class="ruler-wrap" id="ruler-wrap">
+            <div class="ruler" id="ruler">
+              <div class="ruler-face" id="ruler-face"></div>
+              <div class="ruler-gloss" aria-hidden="true"></div>
+              <div class="ruler-edge" aria-hidden="true"></div>
+            </div>
+            <img src="" alt="" class="ruler-img" id="ruler-img" hidden />
+          </div>
+        </div>
+
+        <!-- catch line + catcher hand are fixed in the rig -->
+        <div class="catch-assembly" id="catch-assembly">
+          <div class="catcher-hand" id="catcher-hand">
+            <svg viewBox="-16 0 112 70" class="hand-svg"><use href="#art-hand"/></svg>
+            <img src="" alt="" class="hand-img" id="catcher-hand-img" hidden />
+          </div>
+          <div class="catch-line-wrap" id="catch-line-wrap">
+            <span class="catch-tick catch-tick-l"></span>
+            <div class="catch-line"></div>
+            <span class="catch-tick catch-tick-r"></span>
+          </div>
+          <p class="catch-label">Catch line &middot; 0 cm</p>
+        </div>
+
+        <canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+        <div class="readout-lamp" id="readout-lamp" aria-hidden="true">
+          <span class="lamp-dot"></span>
+          <span class="lamp-text" id="lamp-text">Standing by</span>
+        </div>
+
+        <div class="live-readout" id="live-readout" aria-hidden="true">
+          <span class="live-k">Fallen</span>
+          <span class="live-v"><span id="live-cm">0.0</span><em>cm</em></span>
+        </div>
+      </div>
+
+      <div class="bench-base" aria-hidden="true"></div>
+    </div>
+
+    <!-- --- lab data side panel --- -->
+    <aside class="side-panel" id="side-panel">
+      <div class="side-head">
+        <h3><img src="assets/images/ui/emoji/flask.png" alt="" />Lab Data</h3>
+        <button type="button" class="icon-btn icon-btn-sm" id="side-close" aria-label="Close lab data">
+          <img src="assets/images/ui/emoji/close.png" alt="" />
+        </button>
+      </div>
+
+      <div class="side-scroll">
+        <section class="data-block">
+          <h4><img src="assets/images/ui/emoji/table.png" alt="" />Trial Results</h4>
+          <p class="data-empty" id="table-empty">No trials recorded yet. Arm the rig to begin.</p>
+          <div class="table-wrap hidden" id="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Trial</th><th>Distance (cm)</th><th>Time (s)</th></tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="data-block">
+          <h4><img src="assets/images/ui/emoji/stats.png" alt="" />Analysis</h4>
+          <p class="data-empty" id="stats-empty">Complete at least 2 trials to see statistics.</p>
+          <div class="stats-grid hidden" id="stats-grid">
+            <div class="stat-card">
+              <span class="stat-k">Mean</span>
+              <span class="stat-v"><span id="stat-mean">N/A</span><em>s</em></span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-k">Median</span>
+              <span class="stat-v"><span id="stat-median">N/A</span><em>s</em></span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-k">Std. Dev.</span>
+              <span class="stat-v"><span id="stat-stddev">N/A</span><em>s</em></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="data-block">
+          <h4><img src="assets/images/ui/emoji/chart.png" alt="" />Trial Chart</h4>
+          <div class="chart-box" id="chart-box"></div>
+        </section>
+
+        <section class="data-block data-block-quiet" id="freelab-tools">
+          <button type="button" class="btn btn-danger btn-sm" id="btn-reset-data">
+            <img src="assets/images/ui/emoji/trash.png" alt="" class="btn-ico" />
+            <span class="btn-label">Reset All Data</span>
+          </button>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <!-- --- prompt / action bar --- -->
+  <footer class="prompt-bar">
+    <p class="prompt-text" id="prompt-text">Press <strong>Arm the Rig</strong> to load the ruler.</p>
+    <div class="prompt-actions">
+      <button type="button" id="btn-main" class="btn btn-primary btn-action">
+        <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico" id="btn-main-ico" />
+        <span class="btn-label" id="btn-main-label">Arm the Rig</span>
+      </button>
+      <button type="button" id="btn-finish" class="btn btn-ghost btn-action hidden">
+        <img src="assets/images/ui/emoji/check.png" alt="" class="btn-ico" />
+        <span class="btn-label">Finish Session</span>
+      </button>
+    </div>
+  </footer>
+
+  <div class="flash" id="flash" aria-hidden="true"></div>
+</section>
+
+<!-- ================== RESULT ================== -->
+<section id="screen-result" class="screen">
+  <div class="result-shell panel panel-steel">
+    <div class="result-banner" id="result-banner">
+      <img src="assets/images/ui/emoji/trophy.png" alt="" class="result-badge" id="result-badge" />
+      <h2 class="result-title" id="result-title">Stage Complete</h2>
+      <p class="result-sub" id="result-sub">Orientation &middot; 100 cm rule</p>
+    </div>
+
+    <div class="grade-row" id="grade-row" aria-label="Grade earned"></div>
+
+    <div class="result-stats" id="result-stats"></div>
+
+    <div class="result-note" id="result-note"></div>
+
+    <div class="chart-box chart-box-result" id="result-chart"></div>
+
+    <div class="result-actions">
+      <button type="button" id="btn-next-stage" class="btn btn-primary">
+        <img src="assets/images/ui/emoji/next.png" alt="" class="btn-ico" />
+        <span class="btn-label">Next Stage</span>
+      </button>
+      <button type="button" id="btn-retry" class="btn btn-ghost">
+        <img src="assets/images/ui/emoji/retry.png" alt="" class="btn-ico" />
+        <span class="btn-label">Retry</span>
+      </button>
+      <button type="button" id="btn-learn" class="btn btn-learn">
+        <img src="assets/images/ui/emoji/brain.png" alt="" class="btn-ico" />
+        <span class="btn-label">Learn More</span>
+      </button>
+      <button type="button" id="btn-result-menu" class="btn btn-ghost">
+        <img src="assets/images/ui/emoji/home.png" alt="" class="btn-ico" />
+        <span class="btn-label">Menu</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ================== MODAL: HOW TO PLAY (gameplay only) ================== -->
+<div class="modal-overlay" id="modal-howto" hidden>
+  <div class="modal panel panel-steel" role="dialog" aria-modal="true" aria-labelledby="howto-h">
+    <header class="modal-head">
+      <h2 id="howto-h"><img src="assets/images/ui/emoji/help.png" alt="" />How to Play</h2>
+      <button type="button" class="icon-btn icon-btn-sm" data-close-modal aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" />
+      </button>
+    </header>
+    <div class="modal-body">
+      <p class="modal-lead">Your goal: catch the falling ruler as fast as you can. Where you catch it is your reaction time.</p>
+
+      <h3><img src="assets/images/ui/emoji/target.png" alt="" />Objective</h3>
+      <ol class="steps">
+        <li><strong>Arm the rig.</strong> The ruler loads with its 0 cm mark on the catch line.</li>
+        <li><strong>Wait.</strong> Release happens after a random 1&ndash;3 second delay. Don't guess.</li>
+        <li><strong>Catch.</strong> The instant it moves, tap the bench or press a key.</li>
+        <li><strong>Repeat</strong> until the stage's trial count is filled, then finish the session.</li>
+      </ol>
+
+      <h3><img src="assets/images/ui/emoji/hand.png" alt="" />Controls</h3>
+      <ul class="ctrl-list">
+        <li><span class="key">Tap</span><span class="key">Click</span> anywhere on the bench</li>
+        <li><span class="key">Space</span><span class="key">Enter</span> or any key</li>
+        <li><span class="key">Esc</span> closes panels and leaves a stage</li>
+      </ul>
+
+      <h3><img src="assets/images/ui/emoji/warn.png" alt="" />Two ways to lose a trial</h3>
+      <ul class="ctrl-list">
+        <li><strong>False start</strong> &mdash; you moved before the release. Nothing is recorded.</li>
+        <li><strong>Slipped through</strong> &mdash; the ruler ran out of length before you caught it. Shorter rules slip sooner.</li>
+      </ul>
+      <p class="modal-foot-note">Neither one is scored against you &mdash; the trial simply repeats.</p>
+    </div>
+    <footer class="modal-foot">
+      <button type="button" class="btn btn-primary" data-close-modal>
+        <span class="btn-label">Got it</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================== MODAL: LEARN MORE (concepts & reference) ================== -->
+<div class="modal-overlay" id="modal-learn" hidden>
+  <div class="modal modal-wide panel panel-parchment" role="dialog" aria-modal="true" aria-labelledby="learn-h">
+    <header class="modal-head">
+      <h2 id="learn-h"><img src="assets/images/ui/emoji/brain.png" alt="" />Learn More</h2>
+      <button type="button" class="icon-btn icon-btn-sm" data-close-modal aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" />
+      </button>
+    </header>
+    <div class="modal-body scroll-body">
+
+      <h3><img src="assets/images/ui/emoji/neuron.png" alt="" />The science of reaction time</h3>
+      <p>Reaction time is the total duration it takes to respond to a stimulus. It is the time lag between when you first perceive something &mdash; the ruler beginning to fall &mdash; and when you initiate a motor response, such as closing your fingers. This process involves your eyes detecting movement, signals travelling to your brain, your brain processing the information, and finally sending a signal to your hand muscles. It is a key measure of your central nervous system's processing speed.</p>
+
+      <h3><img src="assets/images/ui/emoji/gravity.png" alt="" />How the ruler measures it</h3>
+      <p>The ruler is in <strong>free fall</strong>, so the distance it travels depends only on time and gravity:</p>
+      <div class="formula">d = &frac12; g t&sup2;</div>
+      <ul class="def-list">
+        <li><b>d</b> &mdash; the distance the ruler falls (what we read off the scale)</li>
+        <li><b>g</b> &mdash; acceleration due to gravity, a constant &asymp; 9.8 m/s&sup2;</li>
+        <li><b>t</b> &mdash; the time elapsed, which is your reaction time</li>
+      </ul>
+      <p>Rearranging to solve for time gives the formula this lab uses:</p>
+      <div class="formula">t = &radic;(2d / g)</div>
+      <p>The bench measures the distance the ruler fell, plugs it into this formula, and reports your reaction time.</p>
+
+      <h3><img src="assets/images/ui/emoji/ruler.png" alt="" />Worked example</h3>
+      <p>Suppose you catch the ruler at the <strong>20.0 cm</strong> mark. Convert to metres, then substitute:</p>
+      <div class="formula">t = &radic;(2 &times; 0.200 / 9.8) = &radic;0.0408 = 0.202 s</div>
+      <p>Roughly 200 milliseconds &mdash; a typical adult visual reaction time.</p>
+
+      <h3><img src="assets/images/ui/emoji/timer.png" alt="" />Reference: distance to time</h3>
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead><tr><th>Catch distance</th><th>Reaction time</th><th>Reads as</th></tr></thead>
+          <tbody>
+            <tr><td>5 cm</td><td>0.101 s</td><td>Exceptional</td></tr>
+            <tr><td>10 cm</td><td>0.143 s</td><td>Very fast</td></tr>
+            <tr><td>15 cm</td><td>0.175 s</td><td>Fast</td></tr>
+            <tr><td>20 cm</td><td>0.202 s</td><td>Typical adult</td></tr>
+            <tr><td>30 cm</td><td>0.247 s</td><td>Average</td></tr>
+            <tr><td>40 cm</td><td>0.286 s</td><td>Below average</td></tr>
+            <tr><td>50 cm</td><td>0.319 s</td><td>Slow / distracted</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="side-note">This is why rule length sets the difficulty: a 30 cm rule runs out of scale at 0.247 s, so a slower reaction simply cannot be measured with it.</p>
+
+      <h3><img src="assets/images/ui/emoji/stats.png" alt="" />Guiding questions</h3>
+      <p><strong>How consistent is your reaction time?</strong> Look at the standard deviation. A smaller number means your reaction times are more consistent.</p>
+      <p><strong>Why take an average of multiple trials?</strong> A single trial can be affected by random chance &mdash; a distraction, or a lucky guess. Averaging multiple trials gives a more reliable and accurate measure of your typical reaction time.</p>
+      <p><strong>Why does the median matter too?</strong> One very slow trial drags the mean upward. The median ignores that outlier, so comparing the two tells you whether a result was skewed by a single bad trial.</p>
+
+      <h3><img src="assets/images/ui/emoji/bolt.png" alt="" />Lab notes</h3>
+      <p>The classic pen-and-paper version of this experiment uses a real ruler dropped between a partner's fingers. It has been used in psychology and neuroscience teaching for decades because it needs no equipment beyond a ruler, yet it produces genuinely useful data. Known factors that shift the numbers: fatigue, caffeine, practice, age, and whether you were expecting the stimulus.</p>
+    </div>
+    <footer class="modal-foot">
+      <button type="button" class="btn btn-primary" data-close-modal>
+        <span class="btn-label">Close</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================== MODAL: SETTINGS ================== -->
+<div class="modal-overlay" id="modal-settings" hidden>
+  <div class="modal modal-narrow panel panel-steel" role="dialog" aria-modal="true" aria-labelledby="set-h">
+    <header class="modal-head">
+      <h2 id="set-h"><img src="assets/images/ui/emoji/settings.png" alt="" />Settings</h2>
+      <button type="button" class="icon-btn icon-btn-sm" data-close-modal aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" />
+      </button>
+    </header>
+    <div class="modal-body">
+      <button type="button" class="toggle-row" id="toggle-music" aria-pressed="true">
+        <img src="assets/images/ui/emoji/music_on.png" alt="" class="toggle-ico" id="toggle-music-ico" />
+        <span class="toggle-text">
+          <span class="toggle-label">Background Music</span>
+          <span class="toggle-hint">Ambient lab synth pad</span>
+        </span>
+        <span class="switch"><span class="switch-knob"></span></span>
+      </button>
+
+      <button type="button" class="toggle-row" id="toggle-sfx" aria-pressed="true">
+        <img src="assets/images/ui/emoji/sfx_on.png" alt="" class="toggle-ico" id="toggle-sfx-ico" />
+        <span class="toggle-text">
+          <span class="toggle-label">Sound Effects</span>
+          <span class="toggle-hint">Release, catch and alert tones</span>
+        </span>
+        <span class="switch"><span class="switch-knob"></span></span>
+      </button>
+
+      <button type="button" class="toggle-row" id="toggle-motion" aria-pressed="true">
+        <img src="assets/images/ui/emoji/spark.png" alt="" class="toggle-ico" id="toggle-motion-ico" />
+        <span class="toggle-text">
+          <span class="toggle-label">Ambient Motion</span>
+          <span class="toggle-hint">Drifting particles and glow</span>
+        </span>
+        <span class="switch"><span class="switch-knob"></span></span>
+      </button>
+
+      <div class="setting-divider"></div>
+
+      <button type="button" class="btn btn-danger btn-block" id="btn-wipe-progress">
+        <img src="assets/images/ui/emoji/trash.png" alt="" class="btn-ico" />
+        <span class="btn-label">Erase Saved Progress</span>
+      </button>
+      <p class="setting-note">Clears stage grades, records and trial data stored on this device.</p>
+    </div>
+    <footer class="modal-foot">
+      <button type="button" class="btn btn-primary" data-close-modal>
+        <span class="btn-label">Done</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================== MODAL: CONFIRM ================== -->
+<div class="modal-overlay" id="modal-confirm" hidden>
+  <div class="modal modal-narrow panel panel-steel" role="dialog" aria-modal="true" aria-labelledby="confirm-h">
+    <header class="modal-head">
+      <h2 id="confirm-h"><img src="assets/images/ui/emoji/warn.png" alt="" /><span id="confirm-title">Are you sure?</span></h2>
+    </header>
+    <div class="modal-body">
+      <p id="confirm-msg">This cannot be undone.</p>
+    </div>
+    <footer class="modal-foot modal-foot-split">
+      <button type="button" class="btn btn-ghost" id="confirm-no"><span class="btn-label">Cancel</span></button>
+      <button type="button" class="btn btn-danger" id="confirm-yes"><span class="btn-label">Confirm</span></button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================== toast ================== -->
+<div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+<script src="js/assets.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/background.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

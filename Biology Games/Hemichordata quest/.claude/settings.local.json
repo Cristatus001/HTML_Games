@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Admin/Desktop/HTML Games/**)",
+      "Read(//c/Users/Admin/Desktop/HTML Games/Biology Games/**)",
+      "Bash(grep -o -m1 -E \"\\\\-\\\\-[a-z-]+:\\\\s*#[0-9a-fA-F]{3,8}\" \"Arthropoda Treasure Quest/arthropoda_treasure_quest/index.html\")",
+      "Bash(grep -o -E \"\\\\-\\\\-[a-z-]+:\\\\s*#[0-9a-fA-F]{3,8}\" \"Name it right!/name_it_right/index.html\")",
+      "Bash(node -e ' *)",
+      "Bash(python -c ' *)",
+      "Bash(npm -v)",
+      "Bash(node -e \"console.log\\(require\\('sharp'\\).versions\\)\")",
+      "Bash(mkdir -p \"C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Biology-Games-Hemichordata-quest-20260728T090822Z-1-001/17d9d6ce-71c9-4cb2-9b2b-367c59497263/scratchpad/build\")",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(set -e)",
+      "Bash(mkdir -p __TRACKED_VAR__/css __TRACKED_VAR__/js __TRACKED_VAR__/assets/fonts __TRACKED_VAR__/assets/audio __TRACKED_VAR__/assets/images/characters __TRACKED_VAR__/assets/images/reference __TRACKED_VAR__/assets/images/ui/emoji)",
+      "Bash(cp __TRACKED_VAR__/node_modules/@fontsource/fraunces/files/fraunces-latin-700-normal.woff2 __TRACKED_VAR__/assets/fonts/fraunces-700.woff2)",
+      "Bash(cp __TRACKED_VAR__/node_modules/@fontsource/fraunces/files/fraunces-latin-900-normal.woff2 __TRACKED_VAR__/assets/fonts/fraunces-900.woff2)",
+      "Bash(cp __TRACKED_VAR__/node_modules/@fontsource/karla/files/karla-latin-400-normal.woff2 __TRACKED_VAR__/assets/fonts/karla-400.woff2)",
+      "Bash(node build_characters.js)",
+      "Bash(node build_icons.js)",
+      "Bash(node sheet_icons.js)",
+      "Bash(node serve.js)",
+      "Bash(npx puppeteer *)",
+      "Bash(node verify.js desktop)"
+    ]
+  }
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1206">
+    <title>Periodic Odyssey - An Alchemist's Journey</title>
+    <link rel="stylesheet" href="css/fonts.css?v=11">
+    <link rel="stylesheet" href="css/theme.css?v=11">
+</head>
+<body>
+
+    <!-- ============ AMBIENT BACKGROUND (decorative, no gameplay) ============ -->
+    <div id="bg-layer" aria-hidden="true">
+        <div class="bg-vignette"></div>
+        <div class="bg-glow"></div>
+        <div class="bg-symbols" id="bg-symbols"></div>
+        <div class="bg-motes" id="bg-motes"></div>
+        <div class="bg-flicker"></div>
+    </div>
+
+    <!-- ============ TOP-RIGHT PERSISTENT CONTROLS ============ -->
+    <div id="top-controls">
+        <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
+            <img src="assets/images/ui/gear.png" alt="Settings">
+        </button>
+    </div>
+
+    <div id="app">
+
+        <!-- =================== MENU SCREEN =================== -->
+        <section id="screen-menu" class="screen active">
+            <div class="menu-inner">
+                <div class="crest-wrap">
+                    <img class="crest-img" src="assets/images/ui/crest.png" alt="">
+                </div>
+                <h1 class="game-title">Periodic&nbsp;Odyssey</h1>
+                <p class="game-subtitle">An Alchemist's Journey from Chaos to Order</p>
+
+                <div class="menu-buttons">
+                    <button class="btn btn-primary btn-lg" id="btn-begin">
+                        <span class="btn-label" id="begin-label">Begin the Odyssey</span>
+                    </button>
+                    <button class="btn btn-brass" id="btn-chapters">Select Concept</button>
+                    <button class="btn btn-brass" id="btn-howto">How to Play</button>
+                </div>
+                <p class="menu-foot">Drag with mouse or finger &middot; works fully offline</p>
+            </div>
+        </section>
+
+        <!-- =================== LEVEL SELECT SCREEN =================== -->
+        <section id="screen-levels" class="screen">
+            <div class="panel parchment levels-panel">
+                <header class="panel-head">
+                    <button class="btn btn-brass btn-sm" id="btn-levels-back">Back</button>
+                    <h2 class="panel-title">Chapters of Discovery</h2>
+                    <span class="panel-head-spacer"></span>
+                </header>
+                <div class="chapters-grid" id="chapters-grid"><!-- built by JS --></div>
+            </div>
+        </section>
+
+        <!-- =================== GAME SCREEN =================== -->
+        <section id="screen-game" class="screen">
+            <!-- HUD -->
+            <header class="hud">
+                <div class="hud-left">
+                    <button class="icon-btn hud-home" id="btn-home" title="Menu" aria-label="Menu">
+                        <img src="assets/images/ui/crest.png" alt="Menu">
+                    </button>
+                    <div class="hud-era">
+                        <span class="hud-era-year" id="hud-year">1800s</span>
+                        <span class="hud-era-name" id="hud-era">The Chaos Era</span>
+                    </div>
+                </div>
+                <div class="hud-right">
+                    <div class="progress-track" id="progress-track" aria-label="Progress"></div>
+                    <div id="badge-container" class="badge-container" aria-label="Badges earned"></div>
+                    <button class="btn btn-brass btn-sm hidden" id="reset-stage-button">Reset</button>
+                </div>
+            </header>
+
+            <!-- GAME AREA -->
+            <main id="game-area">
+
+                <!-- Stage 1: Chaos -->
+                <div id="stage-1" class="stage">
+                    <h2 class="stage-title">The Chaos Era</h2>
+                    <p class="stage-sub">Before any system, the elements were a bewildering jumble.</p>
+                    <div id="chaos-zone" class="board chaos-zone"></div>
+                </div>
+
+                <!-- Stage 2: Triads -->
+                <div id="stage-2" class="stage">
+                    <h2 class="stage-title">Dobereiner's Triads &mdash; 1829</h2>
+                    <p class="stage-sub">Group the elements into families of three, ordered by atomic mass.</p>
+                    <div class="triad-wrap">
+                        <div id="triad-elements-source" class="board source-tray triad-source"></div>
+                        <div id="triad-drop-zones" class="triad-zones">
+                            <div class="drop-zone triad-slot" data-triad="1"><span class="slot-hint">Triad I</span></div>
+                            <div class="drop-zone triad-slot" data-triad="2"><span class="slot-hint">Triad II</span></div>
+                            <div class="drop-zone triad-slot" data-triad="3"><span class="slot-hint">Triad III</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 3: Octaves -->
+                <div id="stage-3" class="stage">
+                    <h2 class="stage-title">Newlands' Law of Octaves &mdash; 1864</h2>
+                    <p class="stage-sub">Arrange elements by increasing atomic mass. Listen for the pattern every eighth step.</p>
+                    <div class="octave-wrap">
+                        <div id="octave-drop-zone" class="board octave-grid"></div>
+                        <div id="octave-elements-source" class="board source-tray octave-source"></div>
+                    </div>
+                </div>
+
+                <!-- Stage 4: Mendeleev -->
+                <div id="stage-4" class="stage">
+                    <h2 class="stage-title">Mendeleev's Periodic Table &mdash; 1869</h2>
+                    <p class="stage-sub">Place elements by their properties &mdash; and leave gaps for the not-yet-discovered.</p>
+                    <div class="mendeleev-wrap">
+                        <div id="mendeleev-elements-source" class="board source-tray mendeleev-source"></div>
+                        <div id="mendeleev-table" class="board mendeleev-table"></div>
+                    </div>
+                </div>
+
+                <!-- Stage 5: Modern -->
+                <div id="stage-5" class="stage">
+                    <h2 class="stage-title">The Modern Table &mdash; Moseley, 1913</h2>
+                    <p class="stage-sub">A few pairs sit out of order. Tap two plates to swap them into their true places by atomic number.</p>
+                    <div id="modern-table" class="board modern-table"></div>
+                </div>
+
+                <!-- Stage 6: Victory -->
+                <div id="stage-6" class="stage stage-victory">
+                    <div class="victory-burst"><img src="assets/images/ui/emoji/celebration.png" alt=""></div>
+                    <h2 class="victory-title">The Odyssey Complete</h2>
+                    <p class="victory-text">
+                        You have retraced the whole journey &mdash; from bewildering chaos to the elegant order
+                        of the modern Periodic Table. The secrets of the elements are yours.
+                    </p>
+                    <div id="final-summary-container" class="summary-flow">
+                        <div class="summary-item" data-accent="chaos" style="animation-delay:.4s">Chaos Era</div>
+                        <span class="summary-arrow" style="animation-delay:.6s"></span>
+                        <div class="summary-item" data-accent="triad" style="animation-delay:.8s">Dobereiner's Triads</div>
+                        <span class="summary-arrow" style="animation-delay:1s"></span>
+                        <div class="summary-item" data-accent="octave" style="animation-delay:1.2s">Newlands' Octaves</div>
+                        <span class="summary-arrow" style="animation-delay:1.4s"></span>
+                        <div class="summary-item" data-accent="mendeleev" style="animation-delay:1.6s">Mendeleev's Table</div>
+                        <span class="summary-arrow" style="animation-delay:1.8s"></span>
+                        <div class="summary-item" data-accent="modern" style="animation-delay:2s">The Modern Table</div>
+                    </div>
+                    <div class="victory-buttons">
+                        <button class="btn btn-brass" id="btn-learn">
+                            <img class="btn-icon" src="assets/images/ui/scroll.png" alt="">Learn More
+                        </button>
+                        <button class="btn btn-primary" id="restart-button">Play Again</button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Mentor -->
+            <footer id="mentor-area" class="mentor-area">
+                <div class="mentor-avatar" id="mentor-avatar">
+                    <img src="assets/images/characters/mentor.png" alt="Your mentor, Professor Aurum">
+                </div>
+                <div id="mentor-bubble" class="mentor-bubble">
+                    <p id="mentor-text"></p>
+                    <button id="next-stage-button" class="btn btn-primary btn-sm hidden">Onward!</button>
+                </div>
+            </footer>
+        </section>
+    </div>
+
+    <!-- =================== OVERLAYS =================== -->
+
+    <!-- How to Play (gameplay controls + objective only) -->
+    <div id="ov-howto" class="overlay">
+        <div class="panel parchment overlay-panel">
+            <button class="icon-btn overlay-close" data-close="ov-howto" aria-label="Close">
+                <img src="assets/images/ui/close.png" alt="Close">
+            </button>
+            <h2 class="panel-title">How to Play</h2>
+            <div class="howto-body">
+                <div class="howto-row">
+                    <span class="howto-key">Objective</span>
+                    <p>Rebuild the history of the Periodic Table across five chapters, from chaos to the modern order.</p>
+                </div>
+                <div class="howto-row">
+                    <span class="howto-key">Drag &amp; Drop</span>
+                    <p>Press and drag an element plate to its correct place. Works with mouse or touch.</p>
+                </div>
+                <div class="howto-row">
+                    <span class="howto-key">Swap</span>
+                    <p>In the final chapter, tap one plate then another to swap their positions.</p>
+                </div>
+                <div class="howto-row">
+                    <span class="howto-key">The Mentor</span>
+                    <p>Professor Aurum offers a clue at the foot of each chapter. Follow the guidance.</p>
+                </div>
+                <div class="howto-row">
+                    <span class="howto-key">Reset</span>
+                    <p>Stuck? Use <em>Reset</em> in the top bar to clear the current chapter and try again.</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" data-close="ov-howto">Got it</button>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="ov-settings" class="overlay">
+        <div class="panel parchment overlay-panel overlay-narrow">
+            <button class="icon-btn overlay-close" data-close="ov-settings" aria-label="Close">
+                <img src="assets/images/ui/close.png" alt="Close">
+            </button>
+            <h2 class="panel-title">Settings</h2>
+            <div class="settings-body">
+                <div class="setting-row">
+                    <span class="setting-label">Background Music</span>
+                    <button class="toggle-btn" id="toggle-music" data-on="true" aria-pressed="true">
+                        <img id="toggle-music-img" src="assets/images/ui/music-on.png" alt="Music on">
+                    </button>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Sound Effects</span>
+                    <button class="toggle-btn" id="toggle-sfx" data-on="true" aria-pressed="true">
+                        <img id="toggle-sfx-img" src="assets/images/ui/sound-on.png" alt="Sound on">
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-primary" data-close="ov-settings">Close</button>
+        </div>
+    </div>
+
+    <!-- Learn More (conceptual / reference / lore) -->
+    <div id="ov-learn" class="overlay">
+        <div class="panel parchment overlay-panel overlay-wide">
+            <button class="icon-btn overlay-close" data-close="ov-learn" aria-label="Close">
+                <img src="assets/images/ui/close.png" alt="Close">
+            </button>
+            <h2 class="panel-title">Learn More &mdash; The Story of the Elements</h2>
+            <div class="learn-body">
+                <article class="learn-card">
+                    <h3>The Chaos Era</h3>
+                    <p>By the early 1800s dozens of elements were known, but with no organising principle. Chemists could not predict how any element would behave, and there was no way to see the hidden relationships between them.</p>
+                </article>
+                <article class="learn-card">
+                    <h3>Dobereiner's Triads (1829)</h3>
+                    <p>Johann Dobereiner noticed groups of three elements with similar properties, where the atomic mass of the middle element was roughly the average of the other two &mdash; for example Lithium, Sodium, Potassium; Calcium, Strontium, Barium; and Chlorine, Bromine, Iodine.</p>
+                </article>
+                <article class="learn-card">
+                    <h3>Newlands' Law of Octaves (1864)</h3>
+                    <p>John Newlands arranged elements by increasing atomic mass and found that every eighth element shared similar properties, like the octaves of a musical scale. It worked for lighter elements but broke down for heavier ones, and was mocked at the time.</p>
+                </article>
+                <article class="learn-card">
+                    <h3>Mendeleev's Vision (1869)</h3>
+                    <p>Dmitri Mendeleev arranged elements by atomic mass into a table of rows and columns &mdash; and boldly left gaps for elements not yet discovered, predicting their properties. When Gallium, Scandium and Germanium were later found matching his predictions, the table's power was proven.</p>
+                </article>
+                <article class="learn-card">
+                    <h3>The Modern Table (Moseley, 1913)</h3>
+                    <p>Henry Moseley showed that the true ordering principle is atomic number (the number of protons), not atomic mass. This fixed the handful of pairs that sat awkwardly when ordered by mass &mdash; such as Argon and Potassium &mdash; giving us the modern Periodic Table.</p>
+                </article>
+                <article class="learn-card">
+                    <h3>How to Read a Plate</h3>
+                    <p>Each element plate shows its atomic number (top), chemical symbol (centre) and name (bottom). The colour of its inner glow marks its family: alkali metals, alkaline earths, halogens, noble gases, transition metals and more.</p>
+                </article>
+            </div>
+            <button class="btn btn-primary" data-close="ov-learn">Close the Book</button>
+        </div>
+    </div>
+
+    <!-- effect layers -->
+    <div id="confetti-container" aria-hidden="true"></div>
+    <div id="drag-clone-layer" aria-hidden="true"></div>
+
+    <script src="js/game.js?v=11"></script>
+</body>
+</html>

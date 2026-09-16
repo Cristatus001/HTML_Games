@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0720">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Element Hunt - Drag &amp; Strike: find element symbols in the alchemist's letter grid.">
+<title>Element Hunt: Drag &amp; Strike</title>
+<link rel="icon" type="image/png" href="assets/images/ui/emoji/atom.png">
+<link rel="apple-touch-icon" href="assets/images/ui/emoji/atom.png">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ===================== ambient background ===================== -->
+<div class="bg-stack" aria-hidden="true">
+    <div class="bg-base"></div>
+    <div class="bg-layer bg-layer--far"></div>
+    <div class="bg-layer bg-layer--mid"></div>
+    <div class="bg-layer bg-layer--near"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-beam bg-beam--a"></div>
+    <div class="bg-beam bg-beam--b"></div>
+    <canvas id="bg-canvas"></canvas>
+    <div class="bg-vignette"></div>
+</div>
+
+<div id="app">
+
+    <!-- ===================== boot ===================== -->
+    <section id="screen-boot" class="screen is-active" data-screen="boot">
+        <div class="boot">
+            <div class="boot-emblem">
+                <span class="emblem-ring"></span>
+                <span class="emblem-ring emblem-ring--2"></span>
+                <img class="emblem-core" src="assets/images/ui/emoji/atom.png" alt="">
+            </div>
+            <h1 class="boot-title title-engraved">Element Hunt</h1>
+            <p class="boot-sub">Drag &amp; Strike Edition</p>
+            <div class="boot-bar"><span id="boot-fill" class="boot-bar-fill"></span></div>
+            <p id="boot-status" class="boot-status">Warming the crucible&hellip;</p>
+        </div>
+    </section>
+
+    <!-- ===================== main menu ===================== -->
+    <section id="screen-menu" class="screen" data-screen="menu">
+        <div class="menu-wrap">
+            <header class="brand">
+                <div class="brand-mark">
+                    <img class="brand-logo" src="assets/images/ui/emoji/flask.png" alt="">
+                </div>
+                <h1 class="brand-title title-engraved">Element Hunt</h1>
+                <p class="brand-sub">Drag &amp; Strike Edition</p>
+            </header>
+
+            <div class="panel panel--glass menu-panel">
+                <div class="panel-sheen" aria-hidden="true"></div>
+                <div class="menu-stats">
+                    <div class="stat-orb stat-orb--score">
+                        <img class="icon icon--lg" src="assets/images/ui/emoji/score.png" alt="">
+                        <div>
+                            <span class="stat-orb-label">Best Score</span>
+                            <strong id="menu-best" class="stat-orb-value">0</strong>
+                        </div>
+                    </div>
+                    <div class="stat-orb stat-orb--star">
+                        <img class="icon icon--lg" src="assets/images/ui/emoji/star_on.png" alt="">
+                        <div>
+                            <span class="stat-orb-label">Crystals Earned</span>
+                            <strong id="menu-stars" class="stat-orb-value">0 / 6</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button type="button" id="btn-play" class="btn btn--primary btn--xl">
+                        <img class="icon" src="assets/images/ui/emoji/play.png" alt="">
+                        <span>Begin the Hunt</span>
+                    </button>
+                    <button type="button" id="btn-howto" class="btn btn--ghost">
+                        <img class="icon" src="assets/images/ui/emoji/scroll.png" alt="">
+                        <span>How to Play</span>
+                    </button>
+                    <button type="button" id="btn-settings-menu" class="btn btn--ghost">
+                        <img class="icon" src="assets/images/ui/emoji/settings.png" alt="">
+                        <span>Settings</span>
+                    </button>
+                </div>
+            </div>
+            <p class="menu-foot">A periodic-table word hunt for young alchemists</p>
+        </div>
+    </section>
+
+    <!-- ===================== level select ===================== -->
+    <section id="screen-levels" class="screen" data-screen="levels">
+        <div class="levels-wrap">
+            <div class="screen-head">
+                <button type="button" class="btn btn--icon" data-action="menu" aria-label="Back to menu">
+                    <img class="icon" src="assets/images/ui/emoji/back.png" alt="">
+                </button>
+                <h2 class="screen-title title-engraved">Choose a Vault</h2>
+                <span class="screen-head-spacer"></span>
+            </div>
+            <div id="level-list" class="level-list"></div>
+            <button type="button" id="btn-reset-progress" class="btn btn--ghost btn--sm">
+                <img class="icon" src="assets/images/ui/emoji/restart.png" alt="">
+                <span>Reset Progress</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ===================== game ===================== -->
+    <section id="screen-game" class="screen" data-screen="game">
+        <div class="game-wrap">
+
+            <div class="topbar panel panel--metal">
+                <button type="button" class="btn btn--icon" data-action="menu" aria-label="Back to menu">
+                    <img class="icon" src="assets/images/ui/emoji/home.png" alt="">
+                </button>
+
+                <div class="hud">
+                    <div class="hud-chip hud-chip--score">
+                        <span class="hud-glow" aria-hidden="true"></span>
+                        <img class="icon" src="assets/images/ui/emoji/score.png" alt="">
+                        <span class="hud-text">
+                            <span class="hud-label">Score</span>
+                            <strong id="score" class="hud-value">0</strong>
+                        </span>
+                    </div>
+                    <div class="hud-chip hud-chip--level">
+                        <span class="hud-glow" aria-hidden="true"></span>
+                        <img class="icon" src="assets/images/ui/emoji/level.png" alt="">
+                        <span class="hud-text">
+                            <span class="hud-label">Vault</span>
+                            <strong id="level-display" class="hud-value">1</strong>
+                        </span>
+                    </div>
+                    <div class="hud-chip hud-chip--attempts">
+                        <span class="hud-glow" aria-hidden="true"></span>
+                        <img class="icon" src="assets/images/ui/emoji/attempts.png" alt="">
+                        <span class="hud-text">
+                            <span class="hud-label">Strikes</span>
+                            <strong id="attempts" class="hud-value">0</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn--icon" data-action="settings" aria-label="Settings">
+                    <img class="icon" src="assets/images/ui/emoji/settings.png" alt="">
+                </button>
+            </div>
+
+            <main class="game-main">
+                <div class="grid-col">
+                    <div id="grid-frame" class="grid-frame panel panel--metal">
+                        <div class="grid-frame-rivets" aria-hidden="true"></div>
+                        <div id="grid-well" class="grid-well">
+                            <div id="game-grid" class="game-grid" aria-label="Letter grid"></div>
+                            <svg id="line-layer" class="line-layer" viewBox="0 0 15 15" preserveAspectRatio="none" aria-hidden="true"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="side-col">
+                    <div class="panel panel--glass clue-panel">
+                        <div class="panel-sheen" aria-hidden="true"></div>
+                        <div class="clue-head">
+                            <h2 class="panel-title">Specimen <span id="element-progress">1/15</span></h2>
+                            <div class="time-pill" title="Speed bonus">
+                                <img class="icon icon--sm" src="assets/images/ui/emoji/clock.png" alt="">
+                                <span id="bonus-value">+5</span>
+                            </div>
+                        </div>
+                        <div class="time-track"><span id="time-fill" class="time-fill"></span></div>
+
+                        <p class="clue-label">Clue</p>
+                        <p id="clue-hint" class="clue-text">&nbsp;</p>
+
+                        <div class="dials">
+                            <div class="dial">
+                                <span class="dial-label">Period</span>
+                                <span id="clue-period" class="dial-value">1</span>
+                            </div>
+                            <div class="dial">
+                                <span class="dial-label">Group</span>
+                                <span id="clue-group" class="dial-value">1</span>
+                            </div>
+                        </div>
+
+                        <button type="button" id="hint-btn" class="btn btn--gold btn--block">
+                            <img class="icon" src="assets/images/ui/emoji/hint.png" alt="">
+                            <span>Reveal a Hint <em>(-5)</em></span>
+                        </button>
+                    </div>
+
+                    <div class="panel panel--glass tray-panel">
+                        <div class="panel-sheen" aria-hidden="true"></div>
+                        <h2 class="panel-title">Specimen Tray</h2>
+                        <div id="found-tray" class="found-tray"></div>
+                    </div>
+                </aside>
+            </main>
+        </div>
+    </section>
+
+    <!-- ===================== results ===================== -->
+    <section id="screen-results" class="screen" data-screen="results">
+        <div class="results-wrap">
+            <div class="panel panel--parchment results-panel">
+                <div class="panel-sheen" aria-hidden="true"></div>
+                <div class="seal" aria-hidden="true">
+                    <img class="seal-img" id="results-seal" src="assets/images/ui/emoji/check.png" alt="">
+                </div>
+                <h2 id="results-title" class="results-title title-engraved">Vault 1 Cleared</h2>
+                <p id="results-sub" class="results-sub">Foundations &amp; Common Elements</p>
+
+                <div id="star-rating" class="star-rating">
+                    <img class="star" src="assets/images/ui/emoji/star_off.png" data-index="0" alt="">
+                    <img class="star" src="assets/images/ui/emoji/star_off.png" data-index="1" alt="">
+                    <img class="star" src="assets/images/ui/emoji/star_off.png" data-index="2" alt="">
+                </div>
+
+                <div id="final-reward" class="final-reward is-hidden">
+                    <img class="reward-img" src="assets/images/ui/emoji/trophy.png" alt="">
+                    <p class="reward-text">You have mastered the periodic vaults. An outstanding achievement, Alchemist!</p>
+                </div>
+
+                <div class="score-readout">
+                    <span class="score-readout-label">Final Score</span>
+                    <span class="score-readout-value">
+                        <img class="icon icon--sm" src="assets/images/ui/emoji/score.png" alt="">
+                        <strong id="final-score">0</strong>
+                    </span>
+                </div>
+
+                <div class="results-breakdown">
+                    <div class="bd-item">
+                        <img class="icon icon--sm" src="assets/images/ui/emoji/check.png" alt="">
+                        <span class="bd-label">Found</span>
+                        <strong id="bd-found">0</strong>
+                    </div>
+                    <div class="bd-item">
+                        <img class="icon icon--sm" src="assets/images/ui/emoji/attempts.png" alt="">
+                        <span class="bd-label">Strikes</span>
+                        <strong id="bd-attempts">0</strong>
+                    </div>
+                    <div class="bd-item">
+                        <img class="icon icon--sm" src="assets/images/ui/emoji/hint.png" alt="">
+                        <span class="bd-label">Hints</span>
+                        <strong id="bd-hints">0</strong>
+                    </div>
+                </div>
+
+                <div class="results-buttons">
+                    <button type="button" id="btn-next-level" class="btn btn--primary btn--xl">
+                        <img class="icon" src="assets/images/ui/emoji/next.png" alt="">
+                        <span id="btn-next-label">Next Vault</span>
+                    </button>
+                    <button type="button" id="btn-learn" class="btn btn--ghost">
+                        <img class="icon" src="assets/images/ui/emoji/book.png" alt="">
+                        <span>Learn More</span>
+                    </button>
+                    <button type="button" id="btn-replay" class="btn btn--ghost btn--sm">
+                        <img class="icon" src="assets/images/ui/emoji/restart.png" alt="">
+                        <span>Replay Vault</span>
+                    </button>
+                    <button type="button" class="btn btn--ghost btn--sm" data-action="menu">
+                        <img class="icon" src="assets/images/ui/emoji/home.png" alt="">
+                        <span>Main Menu</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+<!-- ===================== how to play (menu only: controls + objective) ===================== -->
+<div id="modal-howto" class="modal" role="dialog" aria-modal="true" aria-labelledby="howto-title" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card panel panel--parchment">
+        <div class="panel-sheen" aria-hidden="true"></div>
+        <button type="button" class="modal-close" data-close aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 id="howto-title" class="modal-title title-engraved">How to Play</h2>
+        <p class="modal-kicker">Controls &amp; objective</p>
+
+        <ul class="howto-list">
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/scroll.png" alt="">
+                <span><b>Read the clue.</b> The panel gives you a hint plus the element's period and group.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/hint.png" alt="">
+                <span><b>Find the symbol</b> hidden in the 15 &times; 15 letter grid. Symbols run across, down or diagonally.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/level.png" alt="">
+                <span><b>Capitals matter.</b> A symbol is written exactly as on the periodic table &mdash; <b>He</b>, never <b>HE</b> or <b>he</b>. The grid is full of both cases, so strike the right one.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/drag.png" alt="">
+                <span><b>Drag to strike.</b> Press on the <b>first</b> letter of the symbol and drag to the <b>last</b>, then release &mdash; in reading order. Dragging it backwards does not count. Touch and mouse both work.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/check.png" alt="">
+                <span><b>Correct:</b> the symbol is struck through and you score <b>10</b> points first try, <b>5</b> after that, plus up to <b>+5</b> for speed.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/cross.png" alt="">
+                <span><b>Wrong:</b> the grid shakes and you lose <b>2</b> points. Keep hunting - specimens must be found in order.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/bulb.png" alt="">
+                <span><b>Stuck?</b> A hint reveals the first letter for <b>5</b> points. Clear all 15 specimens to open the next vault.</span>
+            </li>
+            <li>
+                <img class="howto-icon" src="assets/images/ui/emoji/clock.png" alt="">
+                <span><b>Really stuck?</b> After <b>45 seconds</b> the symbol starts beating on the board until you strike it &mdash; free, no points lost.</span>
+            </li>
+        </ul>
+
+        <button type="button" class="btn btn--primary btn--block" data-close>
+            <img class="icon" src="assets/images/ui/emoji/play.png" alt="">
+            <span>Got it</span>
+        </button>
+    </div>
+</div>
+
+<!-- ===================== settings ===================== -->
+<div id="modal-settings" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card modal-card--narrow panel panel--metal">
+        <div class="panel-sheen" aria-hidden="true"></div>
+        <button type="button" class="modal-close" data-close aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 id="settings-title" class="modal-title title-engraved">Settings</h2>
+
+        <div class="setting-row">
+            <span class="setting-name">Music</span>
+            <button type="button" id="toggle-music" class="toggle" aria-pressed="true">
+                <img id="icon-music" class="icon icon--lg" src="assets/images/ui/emoji/music_on.png" alt="">
+                <span id="label-music" class="toggle-state">On</span>
+            </button>
+        </div>
+        <div class="setting-row">
+            <span class="setting-name">Sound Effects</span>
+            <button type="button" id="toggle-sfx" class="toggle" aria-pressed="true">
+                <img id="icon-sfx" class="icon icon--lg" src="assets/images/ui/emoji/sfx_on.png" alt="">
+                <span id="label-sfx" class="toggle-state">On</span>
+            </button>
+        </div>
+        <p id="music-source" class="setting-note">Music: procedural synth (offline)</p>
+
+        <button type="button" class="btn btn--primary btn--block" data-close>
+            <img class="icon" src="assets/images/ui/emoji/check.png" alt="">
+            <span>Done</span>
+        </button>
+    </div>
+</div>
+
+<!-- ===================== fun fact (post-answer reveal) ===================== -->
+<div id="modal-fact" class="modal" role="dialog" aria-modal="true" aria-labelledby="fact-name" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card modal-card--fact panel panel--glass">
+        <div class="panel-sheen" aria-hidden="true"></div>
+        <div class="fact-head">
+            <div id="fact-tile" class="element-tile">
+                <span id="fact-z" class="element-tile-z">1</span>
+                <span id="fact-symbol" class="element-tile-symbol">H</span>
+                <span id="fact-name-small" class="element-tile-name">Hydrogen</span>
+                <img id="fact-portrait" class="element-tile-portrait is-hidden" src="" alt="">
+            </div>
+            <div class="fact-meta">
+                <h2 id="fact-name" class="fact-name">Hydrogen</h2>
+                <span id="fact-cat" class="cat-chip">Reactive non-metal</span>
+                <div class="fact-coords">
+                    <span>Period <b id="fact-period">1</b></span>
+                    <span>Group <b id="fact-group">1</b></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="fact-body">
+            <img class="fact-bulb" src="assets/images/ui/emoji/bulb.png" alt="">
+            <p id="fact-text" class="fact-text"></p>
+        </div>
+
+        <div class="fact-points">
+            <img class="icon icon--sm" src="assets/images/ui/emoji/score.png" alt="">
+            <span id="fact-points" class="fact-points-value">+10</span>
+            <span id="fact-points-note" class="fact-points-note">first-try bonus</span>
+        </div>
+
+        <button type="button" id="btn-fact-next" class="btn btn--primary btn--block">
+            <img class="icon" src="assets/images/ui/emoji/next.png" alt="">
+            <span id="fact-next-label">Next Specimen</span>
+        </button>
+    </div>
+</div>
+
+<!-- ===================== learn more (results screen only: reference/lore) ===================== -->
+<div id="modal-learn" class="modal" role="dialog" aria-modal="true" aria-labelledby="learn-title" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card modal-card--wide panel panel--parchment">
+        <div class="panel-sheen" aria-hidden="true"></div>
+        <button type="button" class="modal-close" data-close aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 id="learn-title" class="modal-title title-engraved">Learn More</h2>
+        <p class="modal-kicker">Reference &amp; element lore</p>
+
+        <div class="learn-scroll">
+            <h3 class="learn-heading">Reading the periodic table</h3>
+            <dl id="learn-terms" class="learn-terms"></dl>
+
+            <h3 class="learn-heading">Element families in this vault</h3>
+            <div id="learn-legend" class="learn-legend"></div>
+
+            <h3 class="learn-heading">Every specimen you hunted</h3>
+            <div id="learn-elements" class="learn-elements"></div>
+        </div>
+
+        <button type="button" class="btn btn--primary btn--block" data-close>
+            <img class="icon" src="assets/images/ui/emoji/back.png" alt="">
+            <span>Back to Results</span>
+        </button>
+    </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/assets.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/ambience.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/game.js"></script>
+</body>
+</html>

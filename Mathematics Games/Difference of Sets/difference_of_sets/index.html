@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#b8ecff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Set Garden — Difference of Sets</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Animated parallax background (decorative only) -->
+  <div id="bg" aria-hidden="true">
+    <div class="bg-sun" data-img="decor/sun.png"></div>
+    <div class="cloud c1" data-img="decor/cloud.png"></div>
+    <div class="cloud c2" data-img="decor/cloud.png"></div>
+    <div class="cloud c3" data-img="decor/cloud.png"></div>
+    <div class="bg-hills">
+      <div class="hill h1"></div>
+      <div class="hill h2"></div>
+      <div class="hill h3"></div>
+    </div>
+    <div class="bg-ground"></div>
+    <div id="leaves"></div>
+  </div>
+
+  <!-- App -->
+  <div id="app">
+
+    <!-- ===== BOOT ===== -->
+    <section id="boot-screen" class="screen active">
+      <div class="boot-inner">
+        <div class="boot-badge" data-img="ui/logo.png">🌱</div>
+        <div class="boot-title">Set Garden</div>
+        <div class="boot-bar"><i></i></div>
+        <div class="boot-hint">Planting your garden…</div>
+      </div>
+    </section>
+
+    <!-- ===== MENU ===== -->
+    <section id="menu-screen" class="screen">
+      <div class="wrap">
+        <div class="menu-hero">
+          <div class="game-logo" data-img="ui/logo.png">🌳</div>
+          <h1 class="title-main">Set Garden</h1>
+          <div class="title-sub">🍏 Learn the Difference of Sets 🍒</div>
+          <div class="menu-btns">
+            <button class="btn" id="btn-play">🌻 Play</button>
+            <button class="btn wood" id="btn-howto">📖 How to Play</button>
+            <button class="btn ghost" id="btn-sound">🔊 Sound: On</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== LEVEL SELECT ===== -->
+    <section id="levels-screen" class="screen">
+      <div class="wrap">
+        <div class="screen-head">
+          <button class="icon-btn" data-nav="menu-screen" aria-label="Back">🏡</button>
+          <h2>Choose a Patch</h2>
+        </div>
+        <div class="level-grid" id="level-grid"><!-- cards injected --></div>
+        <div class="stats-row" id="stats-row"><!-- stat chips injected --></div>
+      </div>
+    </section>
+
+    <!-- ===== GAME ===== -->
+    <section id="game-screen" class="screen">
+      <div class="wrap">
+        <!-- HUD -->
+        <div class="hud">
+          <button class="icon-btn" data-nav="levels-screen" aria-label="Back to patches">↩️</button>
+          <div class="hud-title" id="hud-title">Learn: A − B</div>
+          <div class="spacer"></div>
+          <div class="hud-stat" id="hud-score" title="Fruit harvested">🍎 <span>0</span></div>
+          <div class="hud-stat" id="hud-streak" title="Streak">🌿 <span>0</span></div>
+          <button class="icon-btn" id="hud-sound" aria-label="Toggle sound">🔊</button>
+        </div>
+
+        <!-- Playfield -->
+        <div id="play-area">
+          <p class="game-instruction" id="game-instruction"></p>
+
+          <div class="plots">
+            <div class="plot-wrap">
+              <div class="plot-label a">🍏 Set A</div>
+              <div class="plot a" id="plot-a" data-img="ui/plot_a.png"></div>
+            </div>
+            <div class="plot-wrap">
+              <div class="plot-label b">🍏 Set B</div>
+              <div class="plot b" id="plot-b" data-img="ui/plot_b.png"></div>
+            </div>
+          </div>
+
+          <div class="harvest-wrap">
+            <div class="harvest-label">🧺 Harvest Basket <span class="eq" id="harvest-eq">A − B</span></div>
+            <div class="basket" id="basket" data-img="ui/basket.png">
+              <span class="basket-empty-hint" id="basket-hint">Drag or tap the correct fruit here</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn wood small" id="btn-clear">🧹 Clear</button>
+            <button class="btn small" id="btn-validate">✅ Check Harvest</button>
+          </div>
+        </div>
+
+        <!-- Venn result -->
+        <div id="venn-area" style="display:none;">
+          <h3 class="venn-title" id="venn-title">Let's see the garden ponds!</h3>
+          <div class="venn-stage">
+            <svg class="venn-svg" viewBox="0 0 320 200" id="venn-svg" aria-hidden="true">
+              <defs>
+                <mask id="mask-a-minus-b">
+                  <rect width="100%" height="100%" fill="white"/>
+                  <circle cx="205" cy="100" r="78" fill="black"/>
+                </mask>
+                <mask id="mask-b-minus-a">
+                  <rect width="100%" height="100%" fill="white"/>
+                  <circle cx="115" cy="100" r="78" fill="black"/>
+                </mask>
+                <radialGradient id="pondA" cx="40%" cy="35%">
+                  <stop offset="0%" stop-color="#8ee0a4"/><stop offset="100%" stop-color="#38a85a"/>
+                </radialGradient>
+                <radialGradient id="pondB" cx="60%" cy="35%">
+                  <stop offset="0%" stop-color="#ffa9c9"/><stop offset="100%" stop-color="#e65d92"/>
+                </radialGradient>
+              </defs>
+              <rect x="6" y="6" width="308" height="188" rx="16" fill="#eafbe6" stroke="#7d551f" stroke-width="3"/>
+              <!-- shaded difference regions -->
+              <circle id="shade-a-minus-b" cx="115" cy="100" r="78" fill="url(#pondA)" mask="url(#mask-a-minus-b)" opacity="0"/>
+              <circle id="shade-b-minus-a" cx="205" cy="100" r="78" fill="url(#pondB)" mask="url(#mask-b-minus-a)" opacity="0"/>
+              <!-- pond outlines -->
+              <circle cx="115" cy="100" r="78" fill="rgba(56,168,90,.14)" stroke="#2b8145" stroke-width="4"/>
+              <circle cx="205" cy="100" r="78" fill="rgba(230,93,146,.10)" stroke="#c33e73" stroke-width="4"/>
+              <text x="60" y="34" font-family="Nunito, sans-serif" font-size="24" font-weight="800" fill="#2b8145">A</text>
+              <text x="252" y="34" font-family="Nunito, sans-serif" font-size="24" font-weight="800" fill="#c33e73">B</text>
+              <text x="14" y="28" font-family="Nunito, sans-serif" font-size="18" font-weight="800" fill="#7d551f">U</text>
+            </svg>
+            <div class="venn-labels-layer">
+              <div class="venn-group ga" id="venn-a"></div>
+              <div class="venn-group gi" id="venn-i"></div>
+              <div class="venn-group gb" id="venn-b"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn wood small" id="btn-learnmore">📖 Learn More</button>
+            <button class="btn small" id="btn-next">🌱 Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Particle FX layer -->
+  <div id="fx" aria-hidden="true"></div>
+
+  <!-- Message modal -->
+  <div class="modal-back" id="modal-back">
+    <div class="modal" id="modal">
+      <span class="m-emoji" id="modal-emoji">🎉</span>
+      <h3 id="modal-title"></h3>
+      <div id="modal-body"><p id="modal-text"></p></div>
+      <button class="btn small" id="modal-ok">OK</button>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>

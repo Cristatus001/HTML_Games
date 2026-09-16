@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mollusc_maze",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\C--Users-Admin-Desktop-HTML-Games-Mollusc-Maze\\2b3f2f82-a4d6-4a4c-acf6-b2d30d4f0416\\scratchpad\\mmbuild\\serve.js"
+      ],
+      "port": 8123
+    }
+  ]
+}

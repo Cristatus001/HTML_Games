@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#050a24" />
+<title>Hybrid Shooter</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="stage-outer">
+  <div id="game-root">
+
+    <!-- Decorative + gameplay canvases -->
+    <canvas id="bg-canvas"></canvas>
+    <div id="hex-grid-overlay" aria-hidden="true"></div>
+    <canvas id="game-canvas"></canvas>
+    <div id="scanline-overlay" aria-hidden="true"></div>
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- ================= BOOT / LOADING ================= -->
+    <section id="screen-boot" class="screen">
+      <div class="boot-ship-wrap">
+        <svg width="72" height="72" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M32 4c8 8 12 20 12 32 0 6-2 10-2 10l-6-4v6l-4 4-4-4v-6l-6 4s-2-4-2-10c0-12 4-24 12-32Z" fill="#0d1442" stroke="#4deeff" stroke-width="2"/>
+          <circle cx="32" cy="26" r="5" fill="#4deeff" stroke="#eaf6ff" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="boot-logo">HYBRID SHOOTER</div>
+      <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+      <div class="boot-fact">
+        <div class="boot-fact-label">Did you know?</div>
+        <div id="boot-fact-text">Loading chemistry facts...</div>
+      </div>
+    </section>
+
+    <!-- ================= TITLE ================= -->
+    <section id="screen-title" class="screen" hidden>
+      <div class="title-topbar">
+        <button class="icon-btn" id="btn-settings" aria-label="Settings">
+          <img src="assets/images/ui/emoji/settings_gear.png" alt="" />
+        </button>
+      </div>
+      <div class="best-score-pill">
+        <img src="assets/images/ui/emoji/trophy.png" alt="" />
+        <span id="best-score-value">0</span>
+      </div>
+
+      <div class="title-logo-wrap">
+        <svg class="orbit-rings" viewBox="0 0 260 260" aria-hidden="true">
+          <ellipse class="ring ring-1" cx="130" cy="130" rx="118" ry="46" fill="none" stroke="#4deeff" stroke-opacity="0.35" stroke-width="1.5"/>
+          <circle cx="248" cy="130" r="4" fill="#4deeff"><animate attributeName="opacity" values="1;0.3;1" dur="1.6s" repeatCount="indefinite"/></circle>
+          <ellipse class="ring ring-2" cx="130" cy="130" rx="98" ry="98" fill="none" stroke="#b06bff" stroke-opacity="0.3" stroke-width="1.5"/>
+          <circle cx="130" cy="32" r="4" fill="#b06bff"><animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/></circle>
+          <ellipse class="ring ring-3" cx="130" cy="130" rx="46" ry="118" fill="none" stroke="#ff5c8a" stroke-opacity="0.25" stroke-width="1.5"/>
+          <circle cx="130" cy="12" r="3.5" fill="#ff5c8a"><animate attributeName="opacity" values="1;0.3;1" dur="1.3s" repeatCount="indefinite"/></circle>
+        </svg>
+        <div class="title-logo">HYBRID<br /><span class="accent">SHOOTER</span></div>
+      </div>
+      <div class="title-sub">A Hybridisation Collector Mini-Game</div>
+
+      <div class="title-menu">
+        <button class="btn btn--primary" id="btn-play">
+          <img src="assets/images/ui/emoji/play.png" alt="" /> Play
+        </button>
+        <button class="btn btn--secondary" id="btn-instructions">
+          <img src="assets/images/ui/emoji/info.png" alt="" /> How To Play
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= GAMEPLAY ================= -->
+    <section id="screen-gameplay" class="screen" hidden>
+      <div class="hud-top">
+        <div class="lives-row" id="lives-row"></div>
+        <div class="timer-pod" id="timer-pod">
+          <div class="timer-label">Time</div>
+          <div class="timer-value" id="timer-value">1:00</div>
+        </div>
+        <div class="score-pod">
+          <div class="score-label">Score</div>
+          <div class="score-value" id="score-value">0</div>
+        </div>
+        <button class="icon-btn hud-pause-btn" id="btn-pause" aria-label="Pause">
+          <img src="assets/images/ui/emoji/pause.png" alt="" />
+        </button>
+      </div>
+
+      <div class="question-tab" id="question-tab">
+        <div class="qt-dot" id="qt-dot"></div>
+        <div>
+          <div class="qt-label">Shoot down:</div>
+          <div class="qt-value" id="qt-value">sp³ Hybridized</div>
+        </div>
+      </div>
+
+      <div class="streak-pod" id="streak-pod" hidden>
+        <span class="flame-dot"></span>
+        <span id="streak-value">Streak: 0</span>
+      </div>
+
+      <div class="ship-track-hint"></div>
+
+      <div class="powerup-tray">
+        <button class="powerup-btn" id="pw-surehit" data-pw="sureHit" aria-label="Sure Hit power up">
+          <img src="assets/images/ui/emoji/powerup_surehit.png" alt="" />
+          <span class="badge-count" id="pw-surehit-count" hidden>0</span>
+        </button>
+        <button class="powerup-btn" id="pw-slowtime" data-pw="slowTime" aria-label="Slow Time power up">
+          <img src="assets/images/ui/emoji/powerup_slowtime.png" alt="" />
+          <span class="badge-count" id="pw-slowtime-count" hidden>0</span>
+        </button>
+        <button class="powerup-btn" id="pw-timefreeze" data-pw="timeFreeze" aria-label="Time Freeze power up">
+          <img src="assets/images/ui/emoji/powerup_timefreeze.png" alt="" />
+          <span class="badge-count" id="pw-timefreeze-count" hidden>0</span>
+        </button>
+      </div>
+
+      <button class="shoot-btn shoot-btn--left" id="btn-shoot-left" aria-label="Shoot">
+        <img src="assets/images/ui/emoji/star.png" alt="" />
+      </button>
+      <button class="shoot-btn shoot-btn--right" id="btn-shoot-right" aria-label="Shoot">
+        <img src="assets/images/ui/emoji/star.png" alt="" />
+      </button>
+
+      <div class="toast" id="toast"></div>
+    </section>
+
+    <!-- ================= FTUE ================= -->
+    <div class="ftue-dim" id="ftue-dim" hidden></div>
+    <div class="ftue-hole" id="ftue-hole" hidden></div>
+    <div class="ftue-callout point-down" id="ftue-callout" hidden>
+      <div id="ftue-text">Drag anywhere on the line to move your ship.</div>
+      <button class="btn btn--orange btn--small" id="ftue-next" style="margin-top:10px;">Got it</button>
+    </div>
+
+    <!-- ================= PAUSE ================= -->
+    <section id="screen-pause" class="screen screen--transparent-bg" hidden>
+      <div class="panel">
+        <div class="panel-title">Paused</div>
+        <div class="title-menu" style="width:100%;">
+          <button class="btn btn--primary btn--full" id="btn-resume">
+            <img src="assets/images/ui/emoji/play.png" alt="" /> Resume
+          </button>
+          <button class="btn btn--secondary btn--full" id="btn-pause-settings">
+            <img src="assets/images/ui/emoji/settings_gear.png" alt="" /> Settings
+          </button>
+          <button class="btn btn--pink btn--full" id="btn-pause-home">
+            <img src="assets/images/ui/emoji/home.png" alt="" /> Quit To Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESULT ================= -->
+    <section id="screen-result" class="screen" hidden>
+      <img class="result-badge" id="result-badge" src="assets/images/ui/emoji/trophy.png" alt="" />
+      <div class="result-title" id="result-title">Mission Complete!</div>
+      <div class="result-stats">
+        <div class="stat-chip"><div class="stat-label">Score</div><div class="stat-value" id="result-score">0</div></div>
+        <div class="stat-chip"><div class="stat-label">Correct</div><div class="stat-value" id="result-correct">0</div></div>
+        <div class="stat-chip"><div class="stat-label">Best Streak</div><div class="stat-value" id="result-streak">0</div></div>
+      </div>
+      <div class="result-fact">
+        <strong>Did you know?</strong>
+        <div id="result-fact-text"></div>
+      </div>
+      <div class="review-panel" id="review-panel" hidden></div>
+      <div class="result-buttons">
+        <button class="btn btn--secondary" id="btn-result-home">
+          <img src="assets/images/ui/emoji/home.png" alt="" /> Menu
+        </button>
+        <button class="btn btn--primary" id="btn-result-retry">
+          <img src="assets/images/ui/emoji/retry.png" alt="" /> Retry
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= SETTINGS MODAL ================= -->
+    <div class="modal-backdrop" id="modal-settings" hidden>
+      <div class="panel">
+        <button class="icon-btn panel-close" id="settings-close"><img src="assets/images/ui/emoji/close.png" alt="Close" /></button>
+        <div class="panel-title">Settings</div>
+        <div class="setting-row">
+          <div class="label-group"><img class="setting-icon" src="assets/images/ui/emoji/music_on.png" alt="" id="settings-music-icon" /><span>Music</span></div>
+          <button class="switch on" id="switch-music" aria-label="Toggle music"></button>
+        </div>
+        <div class="setting-row">
+          <div class="label-group"><img class="setting-icon" src="assets/images/ui/emoji/sound_on.png" alt="" id="settings-sfx-icon" /><span>Sound Effects</span></div>
+          <button class="switch on" id="switch-sfx" aria-label="Toggle sound effects"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= INSTRUCTIONS MODAL ================= -->
+    <div class="modal-backdrop" id="modal-instructions" hidden>
+      <div class="panel">
+        <button class="icon-btn panel-close" id="instructions-close"><img src="assets/images/ui/emoji/close.png" alt="Close" /></button>
+        <div class="panel-title">How To Play</div>
+        <ul class="instructions-list">
+          <li><img src="assets/images/ui/emoji/check.png" alt="" /><span><b>Drag</b> along the bottom line to move your spaceship (or press <b>A</b> / <b>D</b>).</span></li>
+          <li><img src="assets/images/ui/emoji/star.png" alt="" /><span>Tap either <b>Shoot</b> button to fire (or press <b>Spacebar</b>).</span></li>
+          <li><img src="assets/images/ui/emoji/info.png" alt="" /><span>The <b>question tab</b> tells you which hybridization to shoot down.</span></li>
+          <li><img src="assets/images/ui/emoji/heart_full.png" alt="" /><span>You have <b>3 lives</b>. Shooting the wrong compound costs a life and 5 points. A missed target only costs 5 points — no life lost.</span></li>
+          <li><img src="assets/images/ui/emoji/powerup_slowtime.png" alt="" /><span>Survive the <b>60-second timer</b> (or reach 15 correct hits) to complete the run.</span></li>
+          <li><img src="assets/images/ui/emoji/powerup_surehit.png" alt="" /><span>Chain correct answers to earn <b>power-ups</b>: Sure Hit, Slow Time, and Time Freeze.</span></li>
+        </ul>
+        <div class="legend-row"><span class="legend-swatch" style="background:#3ddc97;"></span> sp³ — Tetrahedral, ~109.5°</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#ffb03b;"></span> sp² — Trigonal Planar, ~120°</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:#ff5c8a;"></span> sp — Linear, 180°</div>
+        <button class="btn btn--primary btn--full" id="instructions-ok" style="margin-top:14px;">Got It</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

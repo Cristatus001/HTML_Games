@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#120024">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Bio-Logic: Frog Lab &mdash; a higher-order-thinking case study module on the anatomy of Rana tigrina.">
+<title>Bio-Logic: Frog Lab</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- =============================== AMBIENT BACKDROP ======================= -->
+<div class="stage-bg" aria-hidden="true">
+  <div class="bg-deep"></div>
+  <div class="bg-cells"></div>
+  <div class="bg-helix">
+    <svg viewBox="0 0 220 900" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="helixA" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e040fb" stop-opacity="0"/>
+          <stop offset="35%" stop-color="#e040fb" stop-opacity=".85"/>
+          <stop offset="100%" stop-color="#41e0d0" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="helixB" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#41e0d0" stop-opacity="0"/>
+          <stop offset="45%" stop-color="#41e0d0" stop-opacity=".8"/>
+          <stop offset="100%" stop-color="#e040fb" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path class="hx" d="M60 0C60 90 160 90 160 180S60 270 60 360s100 90 100 180-100 90-100 180 100 90 100 180" fill="none" stroke="url(#helixA)" stroke-width="7" stroke-linecap="round"/>
+      <path class="hx" d="M160 0c0 90-100 90-100 180s100 90 100 180-100 90-100 180 100 90 100 180-100 90-100 180" fill="none" stroke="url(#helixB)" stroke-width="7" stroke-linecap="round"/>
+      <g class="rungs" stroke="#f2e6ff" stroke-width="4" stroke-linecap="round" opacity=".5">
+        <path d="M72 45h76"/><path d="M62 135h96"/><path d="M72 225h76"/><path d="M62 315h96"/>
+        <path d="M72 405h76"/><path d="M62 495h96"/><path d="M72 585h76"/><path d="M62 675h96"/>
+        <path d="M72 765h76"/><path d="M62 855h96"/>
+      </g>
+    </svg>
+  </div>
+  <div class="bg-helix bg-helix--right">
+    <svg viewBox="0 0 220 900" preserveAspectRatio="none">
+      <path class="hx" d="M60 0C60 90 160 90 160 180S60 270 60 360s100 90 100 180-100 90-100 180 100 90 100 180" fill="none" stroke="url(#helixB)" stroke-width="6" stroke-linecap="round"/>
+      <path class="hx" d="M160 0c0 90-100 90-100 180s100 90 100 180-100 90-100 180 100 90 100 180-100 90-100 180" fill="none" stroke="url(#helixA)" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="bg-organs">
+    <svg class="organ-ghost organ-ghost--heart" viewBox="0 0 100 100">
+      <path d="M50 88S8 60 8 34a20 20 0 0 1 42-11 20 20 0 0 1 42 11c0 26-42 54-42 54z" fill="none" stroke="#ff7d92" stroke-width="2.4"/>
+      <path d="M50 23v44M50 45h34" stroke="#ff7d92" stroke-width="2" opacity=".7"/>
+    </svg>
+    <svg class="organ-ghost organ-ghost--kidney" viewBox="0 0 100 100">
+      <path d="M36 8c14 0 22 14 22 30S50 68 36 68C25 68 18 59 18 40S25 8 36 8z" fill="none" stroke="#ffc94d" stroke-width="2.4"/>
+      <path d="M58 40h9c8 0 13 7 13 15v37" fill="none" stroke="#ffc94d" stroke-width="2.4"/>
+    </svg>
+    <svg class="organ-ghost organ-ghost--gut" viewBox="0 0 100 100">
+      <path d="M18 12c24 0 24 16 0 16s-24 16 0 16 24 16 0 16 0 16 24 16h40" fill="none" stroke="#ff8ab0" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+    <svg class="organ-ghost organ-ghost--brain" viewBox="0 0 100 100">
+      <path d="M47 18a16 16 0 0 0-26 10 13 13 0 0 0-6 19 14 14 0 0 0 10 19c3 9 16 13 22 6z" fill="none" stroke="#c79bff" stroke-width="2.4"/>
+      <path d="M53 18a16 16 0 0 1 26 10 13 13 0 0 1 6 19 14 14 0 0 1-10 19c-3 9-16 13-22 6z" fill="none" stroke="#c79bff" stroke-width="2.4"/>
+    </svg>
+  </div>
+  <div class="bg-rays"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-vignette"></div>
+  <div class="bg-scan"></div>
+</div>
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+<!-- =============================== CONTROL RAIL =========================== -->
+<div class="rail" id="rail">
+  <button class="rail-btn" id="music-toggle" type="button" aria-pressed="true" aria-label="Toggle music" title="Music">
+    <img id="music-icon" src="assets/images/ui/emoji/music-on.png" alt="Music on" width="30" height="30">
+  </button>
+  <button class="rail-btn" id="sfx-toggle" type="button" aria-pressed="true" aria-label="Toggle sound effects" title="Sound effects">
+    <img id="sfx-icon" src="assets/images/ui/emoji/sound-on.png" alt="Sound on" width="30" height="30">
+  </button>
+  <button class="rail-btn" id="rail-settings" type="button" aria-label="Open settings" title="Settings">
+    <img src="assets/images/ui/emoji/settings.png" alt="Settings" width="30" height="30">
+  </button>
+</div>
+
+<main id="app">
+
+  <!-- ============================== BOOT ================================== -->
+  <section class="screen screen--boot is-active" id="boot-screen">
+    <div class="boot-inner">
+      <div class="boot-mark">
+        <img src="assets/images/ui/emoji/dna.png" alt="" width="120" height="120" class="boot-dna">
+        <div class="boot-ring"></div>
+      </div>
+      <h1 class="boot-title">BIO&#8209;LOGIC</h1>
+      <p class="boot-sub">FROG LAB &middot; DIAGNOSTIC CONSOLE</p>
+      <div class="boot-bar"><span id="boot-fill"></span></div>
+      <p class="boot-status" id="boot-status">CALIBRATING OPTICS</p>
+    </div>
+  </section>
+
+  <!-- ============================== MENU ================================== -->
+  <section class="screen screen--menu" id="menu-screen">
+    <div class="menu-wrap">
+
+      <div class="title-lockup">
+        <div class="art title-art" data-art="title-logo">
+          <div class="art-vector title-vector">
+            <img src="assets/images/ui/emoji/dna.png" alt="" width="86" height="86" class="title-dna">
+            <div class="title-words">
+              <span class="title-line1">BIO&#8209;LOGIC</span>
+              <span class="title-line2">FROG LAB</span>
+            </div>
+            <img src="assets/images/ui/emoji/frog.png" alt="" width="86" height="86" class="title-frog">
+          </div>
+        </div>
+        <p class="tagline">&ldquo;Memorizing parts is easy. Understanding systems is science.&rdquo;</p>
+      </div>
+
+      <div class="panel panel--brief">
+        <div class="panel-rivets"></div>
+        <h2 class="engraved">MODULE BRIEF</h2>
+        <p>This module tests <b>Application</b>, <b>Analysis</b> and <b>Clinical Logic</b> on the anatomy of <i>Rana&nbsp;tigrina</i>.</p>
+        <div class="brief-stats">
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/petri.png" alt="" width="26" height="26">
+            <span class="stat-val">10</span><span class="stat-key">CASE STUDIES</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/badge.png" alt="" width="26" height="26">
+            <span class="stat-val" id="menu-best">0</span><span class="stat-key">BEST SCORE</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/star-filled.png" alt="" width="26" height="26">
+            <span class="stat-val" id="menu-mastered">0</span><span class="stat-key">MASTERED</span>
+          </div>
+        </div>
+        <p class="best-rank" id="menu-rank-line"></p>
+      </div>
+
+      <div class="menu-actions">
+        <button class="btn btn--primary btn--xl" id="start-game-btn" type="button">
+          <img src="assets/images/ui/emoji/play.png" alt="" width="30" height="30">
+          <span id="start-label">ENTER SIMULATION</span>
+        </button>
+        <button class="btn btn--ghost hidden" id="resume-btn" type="button">
+          <img src="assets/images/ui/emoji/replay.png" alt="" width="26" height="26">
+          <span>RESUME CASE <span id="resume-num">1</span></span>
+        </button>
+        <div class="menu-row">
+          <button class="btn btn--slab" id="howto-btn" type="button">
+            <img src="assets/images/ui/emoji/clipboard.png" alt="" width="26" height="26">
+            <span>HOW TO PLAY</span>
+          </button>
+          <button class="btn btn--slab" id="dossier-btn" type="button">
+            <img src="assets/images/ui/emoji/petri.png" alt="" width="26" height="26">
+            <span>CASE DOSSIER</span>
+          </button>
+          <button class="btn btn--slab" id="settings-btn" type="button">
+            <img src="assets/images/ui/emoji/settings.png" alt="" width="26" height="26">
+            <span>SETTINGS</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="menu-foot">Higher Order Thinking Skills &middot; Zoology Practical Module</p>
+    </div>
+  </section>
+
+  <!-- ============================== GAME ================================== -->
+  <section class="screen screen--game" id="game-screen">
+
+    <header class="hud">
+      <div class="hud-plate hud-case">
+        <img class="hud-sys-icon" id="hud-sys-icon" src="assets/images/ui/emoji/petri.png" alt="" width="34" height="34">
+        <div class="hud-case-text">
+          <span class="hud-key">CASE STUDY</span>
+          <span class="hud-val" id="level-indicator">1 / 10</span>
+        </div>
+      </div>
+
+      <div class="hud-progress">
+        <div class="progress-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-nodes" id="progress-nodes"></div>
+      </div>
+
+      <div class="hud-plate hud-score">
+        <span class="score-pod">
+          <img src="assets/images/ui/emoji/beaker.png" alt="" width="34" height="34">
+        </span>
+        <div class="hud-case-text">
+          <span class="hud-key">SCORE</span>
+          <span class="hud-val"><span id="score">0</span><small>/10</small></span>
+        </div>
+      </div>
+    </header>
+
+    <div class="lab-body">
+      <div class="slide-frame">
+        <div class="slide-clip slide-clip--l"></div>
+        <div class="slide-clip slide-clip--r"></div>
+        <div class="question-box" id="question-box">
+          <div class="q-head">
+            <span class="scenario-tag" id="q-tag">
+              <img class="tag-icon" id="q-tag-icon" src="assets/images/ui/emoji/sys-comparative.png" alt="" width="22" height="22">
+              <span id="q-tag-text">PHYSIOLOGY</span>
+            </span>
+            <span class="q-serial" id="q-serial">SPECIMEN 01</span>
+          </div>
+          <p class="question-text" id="question-text">Loading&hellip;</p>
+          <div class="art organ-plate" id="organ-plate" data-art="organ-comparative">
+            <div class="art-vector organ-vector" id="organ-vector"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="options-grid" id="options-area"></div>
+
+      <div class="feedback" id="feedback-text" role="status" aria-live="polite">
+        <div class="fb-glow"></div>
+        <div class="fb-head">
+          <span class="fb-badge"><img id="fb-icon" src="assets/images/ui/emoji/check.png" alt="" width="40" height="40"></span>
+          <span class="fb-title" id="fb-title">ANALYSIS</span>
+          <span class="fb-countdown" id="fb-countdown" title="Auto-advance">
+            <svg viewBox="0 0 40 40">
+              <circle class="cd-track" cx="20" cy="20" r="16"></circle>
+              <circle class="cd-fill" id="cd-fill" cx="20" cy="20" r="16"></circle>
+            </svg>
+            <img src="assets/images/ui/emoji/timer.png" alt="" width="18" height="18">
+          </span>
+        </div>
+        <div class="fb-body"><span id="feedback-content"></span></div>
+        <button id="next-btn" type="button">
+          <span>NEXT CASE</span>
+          <img src="assets/images/ui/emoji/arrow-right.png" alt="" width="22" height="22">
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= DOSSIER ================================ -->
+  <section class="screen screen--dossier" id="dossier-screen">
+    <div class="dossier-wrap">
+      <header class="sub-head">
+        <button class="btn btn--icon" id="dossier-back" type="button" aria-label="Back">
+          <img src="assets/images/ui/emoji/arrow-left.png" alt="" width="28" height="28">
+        </button>
+        <h2 class="engraved">CASE DOSSIER</h2>
+        <div class="sub-head-spacer"></div>
+      </header>
+
+      <div class="panel panel--dossier">
+        <div class="panel-rivets"></div>
+        <p class="dossier-note">Cases you have answered correctly are logged below. Progress is saved on this device.</p>
+        <div class="dossier-grid" id="dossier-grid"></div>
+        <div class="dossier-summary">
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/star-filled.png" alt="" width="24" height="24">
+            <span class="stat-val" id="dossier-mastered">0</span><span class="stat-key">/ 10 MASTERED</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/badge.png" alt="" width="24" height="24">
+            <span class="stat-val" id="dossier-best">0</span><span class="stat-key">BEST SCORE</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/petri.png" alt="" width="24" height="24">
+            <span class="stat-val" id="dossier-runs">0</span><span class="stat-key">SESSIONS</span>
+          </div>
+        </div>
+        <button class="btn btn--danger-soft" id="dossier-reset" type="button">
+          <img src="assets/images/ui/emoji/cross.png" alt="" width="22" height="22">
+          <span>CLEAR SAVED PROGRESS</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== RESULT ================================ -->
+  <section class="screen screen--end" id="end-screen">
+    <div class="result-wrap">
+      <div class="crest">
+        <img src="assets/images/ui/emoji/badge.png" alt="" width="118" height="118" class="crest-img">
+        <div class="crest-halo"></div>
+      </div>
+      <h1 id="end-title" class="result-title">Evaluation Complete</h1>
+      <div class="star-row" id="star-row"></div>
+
+      <div class="panel panel--result">
+        <div class="panel-rivets"></div>
+        <p id="end-message" class="result-msg">Result goes here.</p>
+        <div class="result-stats">
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/beaker.png" alt="" width="26" height="26">
+            <span class="stat-val" id="result-score">0</span><span class="stat-key">SCORE</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/check.png" alt="" width="26" height="26">
+            <span class="stat-val" id="result-accuracy">0%</span><span class="stat-key">ACCURACY</span>
+          </div>
+          <div class="stat-chip">
+            <img src="assets/images/ui/emoji/star-filled.png" alt="" width="26" height="26">
+            <span class="stat-val" id="result-best">0</span><span class="stat-key">PERSONAL BEST</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn--primary btn--xl" id="restart-game-btn" type="button">
+          <img src="assets/images/ui/emoji/replay.png" alt="" width="30" height="30">
+          <span>NEW SESSION</span>
+        </button>
+        <div class="menu-row">
+          <button class="btn btn--slab" id="learn-btn" type="button">
+            <img src="assets/images/ui/emoji/journal.png" alt="" width="26" height="26">
+            <span>LEARN MORE</span>
+          </button>
+          <button class="btn btn--slab" id="result-dossier-btn" type="button">
+            <img src="assets/images/ui/emoji/petri.png" alt="" width="26" height="26">
+            <span>DOSSIER</span>
+          </button>
+          <button class="btn btn--slab" id="result-menu-btn" type="button">
+            <img src="assets/images/ui/emoji/home.png" alt="" width="26" height="26">
+            <span>MAIN MENU</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- =============================== MODALS ================================= -->
+
+<!-- How to Play: controls and objective only. -->
+<div class="modal" id="howto-modal" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+  <div class="modal-card modal-card--clip">
+    <header class="modal-head">
+      <img src="assets/images/ui/emoji/clipboard.png" alt="" width="34" height="34">
+      <h2 id="howto-title" class="engraved">HOW TO PLAY</h2>
+      <button class="btn btn--icon modal-x" data-close="howto-modal" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" width="26" height="26">
+      </button>
+    </header>
+    <div class="modal-body">
+      <h3 class="mini-head">OBJECTIVE</h3>
+      <p>Work through <b>10 case studies</b> on the anatomy of the frog. Each case describes a situation and offers four possible explanations &mdash; choose the one that is physiologically correct. One point per correct call, and your rank at the end depends on the total.</p>
+
+      <h3 class="mini-head">CONTROLS</h3>
+      <ul class="ctrl-list">
+        <li>
+          <span class="ctrl-key ctrl-key--wide">TAP / CLICK</span>
+          <span>Select an answer, or press any button.</span>
+        </li>
+        <li>
+          <span class="ctrl-key">1</span><span class="ctrl-key">2</span><span class="ctrl-key">3</span><span class="ctrl-key">4</span>
+          <span>Choose option A, B, C or D from the keyboard.</span>
+        </li>
+        <li>
+          <span class="ctrl-key ctrl-key--wide">ENTER</span>
+          <span>Skip the wait and advance to the next case.</span>
+        </li>
+        <li>
+          <span class="ctrl-key ctrl-key--wide">ESC</span>
+          <span>Close any open panel.</span>
+        </li>
+      </ul>
+
+      <h3 class="mini-head">SCORING</h3>
+      <p>After every answer the console explains the reasoning and holds for <b>8 seconds</b> so you can read it &mdash; press <b>NEXT CASE</b> to move on sooner. A wrong call cannot be retaken in the same session, so read the scenario carefully before committing.</p>
+      <div class="rank-legend">
+        <div class="rank-row"><span class="rank-pill rank-pill--gold">9&ndash;10</span><span>Chief Surgeon</span></div>
+        <div class="rank-row"><span class="rank-pill rank-pill--violet">6&ndash;8</span><span>Resident</span></div>
+        <div class="rank-row"><span class="rank-pill rank-pill--red">0&ndash;5</span><span>Intern</span></div>
+      </div>
+      <p class="soft-note">Background notes and definitions are kept out of the way during play &mdash; find them under <b>LEARN MORE</b> on the results screen.</p>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn btn--primary" data-close="howto-modal" type="button">
+        <span>GOT IT</span>
+        <img src="assets/images/ui/emoji/check.png" alt="" width="24" height="24">
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="modal" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal-card modal-card--metal">
+    <header class="modal-head">
+      <img src="assets/images/ui/emoji/settings.png" alt="" width="34" height="34">
+      <h2 id="settings-title" class="engraved">SETTINGS</h2>
+      <button class="btn btn--icon modal-x" data-close="settings-modal" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" width="26" height="26">
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="setting-row">
+        <span class="setting-ico"><img id="set-music-icon" src="assets/images/ui/emoji/music-on.png" alt="" width="30" height="30"></span>
+        <span class="setting-label">Background music<small>Synthesised in-browser</small></span>
+        <button class="switch is-on" id="set-music" type="button" role="switch" aria-checked="true" aria-label="Background music">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="setting-row">
+        <span class="setting-ico"><img id="set-sfx-icon" src="assets/images/ui/emoji/sound-on.png" alt="" width="30" height="30"></span>
+        <span class="setting-label">Sound effects<small>Taps, verdicts, transitions</small></span>
+        <button class="switch is-on" id="set-sfx" type="button" role="switch" aria-checked="true" aria-label="Sound effects">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="setting-row">
+        <span class="setting-ico"><img src="assets/images/ui/emoji/petri.png" alt="" width="30" height="30"></span>
+        <span class="setting-label">Ambient motion<small>Drifting cells and particles</small></span>
+        <button class="switch is-on" id="set-motion" type="button" role="switch" aria-checked="true" aria-label="Ambient motion">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <p class="soft-note">Drop an <b>assets/audio/bgm.mp3</b> next to the game to replace the synthesised score. Preferences are saved on this device.</p>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn btn--primary" data-close="settings-modal" type="button">
+        <span>DONE</span>
+        <img src="assets/images/ui/emoji/check.png" alt="" width="24" height="24">
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Learn More: conceptual reference, reached from the results screen. -->
+<div class="modal" id="learn-modal" role="dialog" aria-modal="true" aria-labelledby="learn-title">
+  <div class="modal-card modal-card--journal modal-card--tall">
+    <header class="modal-head">
+      <img src="assets/images/ui/emoji/journal.png" alt="" width="34" height="34">
+      <h2 id="learn-title" class="engraved">FIELD NOTES &middot; <i>RANA TIGRINA</i></h2>
+      <button class="btn btn--icon modal-x" data-close="learn-modal" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" width="26" height="26">
+      </button>
+    </header>
+    <div class="modal-body" id="learn-body">
+      <p class="soft-note">Reference material for revision. Nothing here is required to finish a session &mdash; the gameplay instructions live under <b>HOW TO PLAY</b> on the main menu.</p>
+      <div id="learn-sections"></div>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn btn--primary" data-close="learn-modal" type="button">
+        <span>CLOSE NOTES</span>
+        <img src="assets/images/ui/emoji/check.png" alt="" width="24" height="24">
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Case review, opened from a logged dossier node. -->
+<div class="modal" id="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title">
+  <div class="modal-card modal-card--metal">
+    <header class="modal-head">
+      <img id="review-icon" src="assets/images/ui/emoji/petri.png" alt="" width="34" height="34">
+      <h2 id="review-title" class="engraved">CASE 01</h2>
+      <button class="btn btn--icon modal-x" data-close="review-modal" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="" width="26" height="26">
+      </button>
+    </header>
+    <div class="modal-body">
+      <span class="scenario-tag" id="review-tag"><span id="review-tag-text">TAG</span></span>
+      <p class="review-q" id="review-q"></p>
+      <div class="review-answer">
+        <span class="review-answer-key">CORRECT CALL</span>
+        <p id="review-a"></p>
+      </div>
+      <div class="review-expl" id="review-e"></div>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn btn--primary" data-close="review-modal" type="button">
+        <span>CLOSE</span>
+        <img src="assets/images/ui/emoji/check.png" alt="" width="24" height="24">
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Screen-wipe used between screens. -->
+<div class="wipe" id="wipe" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<script src="js/data.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

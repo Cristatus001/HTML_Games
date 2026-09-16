@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ISRO Mission: Orbital Injection</title>
+    <!-- 100% OFFLINE: p5.js + fonts are local copies, no CDN / internet needed -->
+    <script src="assets/js/p5.min.js"></script>
+    <link rel="stylesheet" href="assets/fonts/fonts.css">
+    <style>
+        :root {
+            --bg-color: #050810;
+            --isro-orange: #ff9933;
+            --isro-blue: #00aaff;
+            --isro-green: #138808;
+            --hud-bg: rgba(5, 12, 25, 0.9);
+            --success: #00ff88;
+            --fail: #ff3333;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Share Tech Mono', monospace;
+            user-select: none;
+            touch-action: none;
+            width: 100%; height: 100%;
+        }
+
+        canvas { touch-action: none; display: block; }
+
+        /* ============ AMBIENT SCREEN FX ============ */
+        #scanline-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 6;
+            background:
+                repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px),
+                radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
+        }
+
+        #top-ribbon {
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            font-family: 'Rajdhani', sans-serif; font-weight: 600;
+            font-size: 0.72rem; letter-spacing: 3px; color: #cfe6ff;
+            padding: 5px 22px; background: rgba(5,10,20,0.65);
+            border: 1px solid rgba(255,153,51,0.4); border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 7; pointer-events: none; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        #top-ribbon .dot { color: var(--isro-orange); margin: 0 8px; }
+        #top-ribbon .g { color: var(--isro-green); }
+
+        #mute-btn {
+            position: fixed; top: 14px; right: 16px; z-index: 20;
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(5,12,25,0.8); border: 1px solid rgba(0,170,255,.5);
+            color: #cfe6ff; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #mute-btn:hover { background: rgba(0,170,255,.2); box-shadow: 0 0 10px rgba(0,170,255,.4); }
+        #mute-btn.muted { color: #667; border-color: #445; }
+
+        /* ============ CORNER-BRACKET FRAME (reusable) ============ */
+        .corner-frame { position: relative; color: var(--isro-blue); }
+        .corner-frame::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background:
+                linear-gradient(to right, currentColor 14px, transparent 14px) top left,
+                linear-gradient(to left, currentColor 14px, transparent 14px) top right,
+                linear-gradient(to right, currentColor 14px, transparent 14px) bottom left,
+                linear-gradient(to left, currentColor 14px, transparent 14px) bottom right,
+                linear-gradient(to bottom, currentColor 14px, transparent 14px) top left,
+                linear-gradient(to bottom, currentColor 14px, transparent 14px) top right,
+                linear-gradient(to top, currentColor 14px, transparent 14px) bottom left,
+                linear-gradient(to top, currentColor 14px, transparent 14px) bottom right;
+            background-repeat: no-repeat;
+            background-size: 14px 2px, 14px 2px, 14px 2px, 14px 2px, 2px 14px, 2px 14px, 2px 14px, 2px 14px;
+        }
+        .corner-frame.orange { color: var(--isro-orange); }
+
+        /* ============ HUD OVERLAY (Left) ============ */
+        #hud-left {
+            position: absolute;
+            top: 66px; left: 20px;
+            z-index: 10;
+        }
+
+        .panel {
+            background: var(--hud-bg);
+            border-left: 4px solid var(--isro-orange);
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+            padding: 15px;
+            width: 300px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+            pointer-events: none;
+        }
+
+        h2 { margin: 0; font-family: 'Rajdhani', sans-serif; color: var(--isro-orange); text-transform: uppercase; font-size: 1.6rem; letter-spacing: 1px; text-shadow: 0 0 12px rgba(255,153,51,0.5); }
+        .data-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.95rem; }
+        .val { color: var(--isro-blue); font-weight: bold; text-shadow: 0 0 6px rgba(0,170,255,0.6); }
+
+        .orbit-pips { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+        .pip {
+            width: 11px; height: 11px; border-radius: 50%;
+            border: 1px solid var(--isro-blue); background: transparent;
+            transition: 0.3s;
+        }
+        .pip.active { background: var(--isro-blue); box-shadow: 0 0 10px var(--isro-blue); }
+        .pip.complete { background: var(--success); border-color: var(--success); box-shadow: 0 0 10px var(--success); }
+        .pip-label { font-size: 0.7rem; color: #888; letter-spacing: 1px; }
+
+        .hub-mini-btn {
+            pointer-events: auto; margin-top: 12px; background: transparent;
+            border: 1px solid var(--isro-blue); color: var(--isro-blue);
+            font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+            padding: 6px 12px; letter-spacing: 1px; cursor: pointer; border-radius: 3px;
+        }
+        .hub-mini-btn:hover { background: rgba(0,170,255,0.15); box-shadow: 0 0 10px rgba(0,170,255,.4); }
+
+        /* ============ PHYSICS PANEL (Right) ============ */
+        #hud-right {
+            position: absolute;
+            top: 66px; right: 20px;
+            pointer-events: none;
+            z-index: 10;
+            text-align: right;
+        }
+
+        .physics-panel {
+            background: var(--hud-bg);
+            border-right: 4px solid var(--isro-blue);
+            clip-path: polygon(18px 0, 100% 0, 100% 100%, 0 100%, 0 18px);
+            padding: 15px;
+            width: 280px;
+        }
+
+        .formula { font-style: italic; color: #88ccff; margin-bottom: 5px; display: block; }
+
+        .power-gauge-wrap { margin-top: 12px; display: none; }
+        .power-gauge-track {
+            width: 100%; height: 8px; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;
+        }
+        .power-gauge-fill {
+            height: 100%; width: 0%; background: var(--success);
+            transition: width 0.05s linear, background-color 0.15s linear;
+        }
+        .power-gauge-label { font-size: 0.75rem; color: #aaa; margin-top: 4px; letter-spacing: 1px; }
+
+        /* ============ MINI ORBIT RADAR ============ */
+        #mini-radar-label {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            font-size: 0.65rem; letter-spacing: 2px; color: #789; z-index: 10; display: none;
+        }
+        #mini-radar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 76px; height: 76px; border-radius: 50%;
+            border: 1px solid rgba(0,170,255,.5); background: rgba(5,12,25,.75);
+            z-index: 10; display: none; overflow: hidden;
+        }
+        #mini-radar .radar-sweep {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(rgba(0,170,255,.3), transparent 40%);
+            animation: radarspin 3s linear infinite;
+        }
+        @keyframes radarspin { to { transform: rotate(360deg); } }
+        #mini-radar .radar-earth {
+            position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+            margin: -5px; border-radius: 50%; background: var(--isro-blue);
+            box-shadow: 0 0 8px var(--isro-blue);
+        }
+        #mini-radar .radar-sat {
+            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+            margin: -3px; border-radius: 50%; background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        /* ============ FULLSCREEN OVERLAY (boot / hub / brief) ============ */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 5, 10, 0.95);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Boot sequence terminal */
+        #boot-screen {
+            width: min(650px, 92vw); min-height: 200px;
+            background: #060a12;
+            border: 1px solid rgba(0,255,136,0.4);
+            padding: 30px;
+        }
+        #boot-text {
+            margin: 0; font-family: 'Share Tech Mono', monospace;
+            color: var(--success); font-size: 0.95rem; line-height: 1.7;
+            white-space: pre-wrap; text-shadow: 0 0 6px rgba(0,255,136,0.5);
+        }
+        #boot-text::after {
+            content: '_'; animation: blink 0.8s steps(1) infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .fade-in { animation: cardIn 0.45s ease-out; }
+        @keyframes cardIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .tricolor-bar { height: 5px; width: 100%; background: linear-gradient(to right, var(--isro-orange) 0% 33%, #f0f0f0 33% 66%, var(--isro-green) 66% 100%); }
+
+        /* ---- Hub screen ---- */
+        #hub-screen {
+            display: none;
+            width: min(720px, 94vw);
+            background: #0b101c;
+            border: 2px solid var(--isro-orange);
+            box-shadow: 0 0 40px rgba(255, 153, 51, 0.2);
+        }
+        .hub-body { padding: 26px 40px 36px; }
+        .hub-title {
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 2.1rem;
+            color: var(--isro-orange); text-align: center; margin: 16px 0 4px;
+            letter-spacing: 2px; text-shadow: 0 0 18px rgba(255,153,51,0.4);
+        }
+        .hub-tagline { text-align: center; color: #9fb3c8; font-size: 0.9rem; margin-bottom: 24px; }
+        .level-grid { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .level-card {
+            position: relative; width: 170px; padding: 18px 12px 16px; text-align: center;
+            background: rgba(0,170,255,0.06); border: 1px solid rgba(0,170,255,.35);
+            clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+            cursor: pointer; transition: 0.2s;
+        }
+        .level-card:hover:not(.locked) { background: rgba(0,170,255,.14); box-shadow: 0 0 20px rgba(0,170,255,.3); transform: translateY(-3px); }
+        .level-card.locked { cursor: not-allowed; opacity: 0.55; }
+        .level-card .lock-overlay {
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,.55);
+            align-items: center; justify-content: center; font-size: 1.8rem;
+        }
+        .level-card.locked .lock-overlay { display: flex; }
+        .level-icon { font-size: 2.2rem; margin-bottom: 6px; }
+        .level-name { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1rem; color: #fff; letter-spacing: 0.5px; }
+        .level-diff { font-size: 0.65rem; letter-spacing: 1px; margin-top: 6px; padding: 3px 6px; border-radius: 3px; display: inline-block; }
+        .diff-easy { background: rgba(255,51,51,.15); color: var(--fail); }
+        .diff-medium { background: rgba(255,153,51,.15); color: var(--isro-orange); }
+        .diff-hard { background: rgba(0,255,136,.15); color: var(--success); }
+        .level-stars { margin-top: 10px; font-size: 1rem; letter-spacing: 3px; color: #333; }
+        .level-stars .star.filled { color: #ffd23f; text-shadow: 0 0 8px rgba(255,210,63,.7); }
+        .hub-footer { text-align: center; margin-top: 22px; }
+        #reset-progress-link { font-size: 0.7rem; color: #556; letter-spacing: 1px; cursor: pointer; text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            .level-grid { flex-direction: column; align-items: center; }
+            .level-card { width: 80%; }
+        }
+
+        /* ---- Mission briefing card (per-level, reused for boot->hub->brief flow) ---- */
+        #brief-card {
+            display: none;
+            width: min(650px, 94vw);
+            background: #0b101c;
+            border: 2px solid var(--isro-orange);
+            box-shadow: 0 0 40px rgba(255, 153, 51, 0.2);
+        }
+        .card-inner { padding: 32px 40px 40px; }
+
+        .mission-header { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #333; padding-bottom: 12px; margin-bottom: 5px; }
+        .mission-logo { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 15px var(--isro-orange); flex-shrink: 0; }
+        #brief-card h1 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.9rem; color: var(--isro-orange); margin: 0; letter-spacing: 1px; text-shadow: 0 0 18px rgba(255,153,51,0.4); }
+        .briefing-text { font-size: 1.05rem; line-height: 1.6; color: #ccc; margin-bottom: 18px; }
+
+        .instruction-box {
+            background: rgba(0, 170, 255, 0.1);
+            border-left: 4px solid var(--isro-blue);
+            padding: 15px;
+            margin: 18px 0;
+            color: #fff;
+        }
+
+        .core-concept {
+            background: rgba(255, 153, 51, 0.15);
+            color: var(--isro-orange);
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 15px;
+            border: 1px dashed var(--isro-orange);
+            font-size: 1.05rem;
+            line-height: 1.4;
+        }
+
+        .btn-launch {
+            background: var(--isro-orange); color: black; border: none;
+            padding: 15px 40px; font-family: 'Rajdhani', sans-serif;
+            font-size: 1.3rem; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; width: 100%;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+        .btn-launch:hover { background: #ffcc80; box-shadow: 0 0 20px var(--isro-orange); }
+        .btn-launch:active { transform: scale(0.98); }
+        .btn-secondary { background: transparent !important; color: var(--isro-blue) !important; border: 1px solid var(--isro-blue) !important; }
+        .btn-secondary:hover { background: rgba(0,170,255,.15) !important; box-shadow: 0 0 15px var(--isro-blue) !important; }
+        .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+
+        /* ============ GAME OVER MODAL ============ */
+        #result-modal {
+            display: none;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 15, 30, 0.97);
+            border: 2px solid white;
+            padding: 30px;
+            text-align: center;
+            width: min(400px, 90vw);
+            z-index: 110;
+        }
+        #result-modal.show { animation: cardIn 0.35s ease-out; }
+        .res-badge { width: 78px; height: 78px; display: block; margin: 0 auto 10px; filter: drop-shadow(0 0 12px rgba(255,255,255,0.4)); }
+        #res-stars { display: flex; justify-content: center; gap: 4px; margin: 8px 0; font-size: 1.2rem; letter-spacing: 3px; color: #333; min-height: 1.2rem; }
+        #res-stars .star.filled { color: #ffd23f; text-shadow: 0 0 8px rgba(255,210,63,.7); }
+
+        @media (max-width: 700px) {
+            #hud-left, #hud-right { position: fixed; }
+            .panel, .physics-panel { width: 42vw; min-width: 140px; padding: 10px; font-size: 0.8rem; }
+            h2 { font-size: 1.05rem; }
+            .pip-label { display: none; }
+            #top-ribbon { font-size: 0.6rem; padding: 4px 12px; letter-spacing: 1.5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCREEN FX -->
+    <div id="scanline-overlay"></div>
+    <div id="top-ribbon">ISRO MISSION CONTROL <span class="dot">&bull;</span> ORBITAL MECHANICS <span class="g">TRAINER</span></div>
+    <button id="mute-btn" title="Toggle sound">🔊</button>
+
+    <!-- FULLSCREEN FLOW: boot -> hub (level select) -> brief -> gameplay -->
+    <div id="modal-overlay">
+
+        <!-- Boot Sequence -->
+        <div id="boot-screen" class="corner-frame">
+            <pre id="boot-text"></pre>
+        </div>
+
+        <!-- Level Select Hub -->
+        <div id="hub-screen" class="corner-frame orange">
+            <div class="tricolor-bar"></div>
+            <div class="hub-body">
+                <h1 class="hub-title">ORBITAL INJECTION</h1>
+                <p class="hub-tagline">Select a mission to begin deployment.</p>
+                <div class="level-grid">
+                    <div class="level-card" data-level="1">
+                        <div class="lock-overlay">🔒</div>
+                        <div class="level-icon">🛰️</div>
+                        <div class="level-name">LOW EARTH ORBIT</div>
+                        <div class="level-diff diff-easy">HIGH SPEED</div>
+                        <div class="level-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+                    </div>
+                    <div class="level-card" data-level="2">
+                        <div class="lock-overlay">🔒</div>
+                        <div class="level-icon">🌍</div>
+                        <div class="level-name">MEDIUM ORBIT</div>
+                        <div class="level-diff diff-medium">MODERATE SPEED</div>
+                        <div class="level-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+                    </div>
+                    <div class="level-card" data-level="3">
+                        <div class="lock-overlay">🔒</div>
+                        <div class="level-icon">📡</div>
+                        <div class="level-name">GEOSTATIONARY</div>
+                        <div class="level-diff diff-hard">GENTLE TOUCH</div>
+                        <div class="level-stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+                    </div>
+                </div>
+                <div class="hub-footer"><span id="reset-progress-link">RESET PROGRESS</span></div>
+            </div>
+        </div>
+
+        <!-- Per-level Mission Brief -->
+        <div id="brief-card" class="corner-frame orange">
+            <div class="tricolor-bar"></div>
+            <div class="card-inner">
+                <div class="mission-header">
+                    <img src="assets/images/ui/logo.png" class="mission-logo" onerror="this.style.display='none'" alt="">
+                    <h1 id="brief-title">MISSION: ORBITAL INJECTION</h1>
+                </div>
+                <div class="briefing-text" id="brief-text"></div>
+
+                <div class="core-concept">
+                    "The further I go (increase <i>h</i>), the less Earth pulls on me (decrease <i>g</i>), so I don't need to move as fast to stay in orbit."
+                </div>
+
+                <div class="instruction-box">
+                    <strong>HOW TO PLAY:</strong><br>
+                    1. Look for the Rocket 🚀 near Earth.<br>
+                    2. <strong>CLICK/TAP & DRAG</strong> backwards to aim.<br>
+                    3. Use the <strong>Dotted Line</strong> to predict trajectory.<br>
+                    4. <strong>RELEASE</strong> to Launch.<br>
+                    5. Stay <strong>as close as possible to the dotted line</strong> while circling - the trail glows green when you're on target, and your star rating depends on it.
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-launch btn-secondary" id="brief-back-btn" style="flex: 0 0 38%;">BACK</button>
+                    <button class="btn-launch" id="brief-launch-btn" style="flex: 1;">LAUNCH MISSION</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IN-GAME RESULT MODAL -->
+    <div id="result-modal" class="corner-frame">
+        <img id="res-badge" class="res-badge" src="" onerror="this.style.display='none'" alt="">
+        <h2 id="res-title">CRASH</h2>
+        <div id="res-stars"></div>
+        <p id="res-desc">Velocity too low.</p>
+        <div class="btn-row">
+            <button class="btn-launch btn-secondary" id="hub-btn-result" style="flex: 0 0 38%; padding:10px; font-size:0.85rem;">LEVEL HUB</button>
+            <button class="btn-launch" id="res-btn" style="flex: 1; padding:10px; font-size:1rem;">RETRY</button>
+        </div>
+    </div>
+
+    <!-- HUD LEFT (Status) -->
+    <div id="hud-left">
+        <div class="panel corner-frame orange">
+            <h2 id="level-display">LEVEL 1</h2>
+            <div class="data-row"><span>ALTITUDE (r):</span> <span class="val" id="hud-r">-- km</span></div>
+            <div class="data-row"><span>GRAVITY (g):</span> <span class="val" id="hud-g">-- m/s²</span></div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#888;">STATUS: <span id="status-text" style="color:var(--isro-orange)">AWAITING LAUNCH</span></div>
+            <div class="orbit-pips">
+                <span class="pip" data-lvl="1"></span>
+                <span class="pip" data-lvl="2"></span>
+                <span class="pip" data-lvl="3"></span>
+                <span class="pip-label">MISSION PROGRESS</span>
+            </div>
+            <button class="hub-mini-btn" id="hub-btn">⌂ HUB</button>
+        </div>
+    </div>
+
+    <!-- HUD RIGHT (Physics) -->
+    <div id="hud-right">
+        <div class="panel physics-panel corner-frame">
+            <span class="formula">Required Velocity: v = √(GM/r)</span>
+            <div class="data-row"><span>TARGET VEL:</span> <span class="val" id="phys-req">--</span></div>
+            <div class="data-row"><span>YOUR VEL:</span> <span class="val" id="phys-act">0</span></div>
+            <div style="font-size:0.75rem; color:#aaa; margin-top:5px; text-align:left;">
+                *Closer orbits require faster speeds to fight stronger gravity.
+            </div>
+            <div class="power-gauge-wrap" id="power-gauge-wrap">
+                <div class="power-gauge-track"><div class="power-gauge-fill" id="power-gauge-fill"></div></div>
+                <div class="power-gauge-label" id="power-gauge-label">THRUST PWR 0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI ORBIT RADAR -->
+    <div id="mini-radar-label">ORBIT RADAR</div>
+    <div id="mini-radar">
+        <div class="radar-sweep"></div>
+        <div class="radar-earth"></div>
+        <div class="radar-sat" id="radar-sat"></div>
+    </div>
+
+    <script>
+        // --- PROGRESS PERSISTENCE (this is a real standalone game file, not a
+        // hosted "artifact" view, so saving progress locally is safe & useful) ---
+        const PROGRESS_KEY = 'orbitalInjection_progress_v1';
+        let unlockedLevel = 1;
+        let starsByLevel = [0, 0, 0];
+
+        function loadProgress() {
+            try {
+                const raw = localStorage.getItem(PROGRESS_KEY);
+                if (raw) {
+                    const d = JSON.parse(raw);
+                    unlockedLevel = d.unlockedLevel || 1;
+                    starsByLevel = d.stars || [0, 0, 0];
+                }
+            } catch (e) { /* localStorage unavailable - just play without saving */ }
+        }
+        function saveProgress() {
+            try { localStorage.setItem(PROGRESS_KEY, JSON.stringify({ unlockedLevel, stars: starsByLevel })); } catch (e) {}
+        }
+
+        // --- BOOT SEQUENCE (pure DOM/CSS, runs independent of p5 preload) ---
+        const bootLines = [
+            "> ISRO MISSION CONTROL -- GROUND STATION LINK ESTABLISHED",
+            "> LOADING TELEMETRY MODULES ................. OK",
+            "> CALIBRATING GRAVITATIONAL MODEL ............ OK",
+            "> ORBITAL INJECTION SYSTEM ................... READY"
+        ];
+        function runBoot() {
+            const el = document.getElementById('boot-text');
+            let i = 0;
+            function step() {
+                if (i < bootLines.length) {
+                    el.textContent += bootLines[i] + "\n";
+                    i++;
+                    setTimeout(step, 320);
+                } else {
+                    setTimeout(() => {
+                        if (typeof p5 === 'undefined') {
+                            // The game engine never loaded (e.g. assets/js/p5.min.js
+                            // is missing or blocked) -- say so instead of a silent
+                            // black screen forever.
+                            el.textContent += "\n> ERROR: game engine (p5.js) failed to load.\n> Make sure the 'assets' folder sits right next to this HTML file, then reload.";
+                            return;
+                        }
+                        document.getElementById('boot-screen').style.display = 'none';
+                        showHub();
+                    }, 400);
+                }
+            }
+            step();
+        }
+        // Kick off the boot/menu sequence immediately -- this must NOT wait on
+        // p5.js. If p5 (canvas/game engine) ever fails to load for any reason,
+        // the menu should still appear instead of leaving a stuck black screen.
+        loadProgress();
+        runBoot();
+
+        // --- PHYSICS ENGINE CONFIG ---
+        const GM = 12000; // Gravitational Parameter (Scaled for gameplay)
+        const EARTH_R = 60; // Visual Earth Radius
+
+        // --- GAME VARIABLES ---
+        let level = 1;
+        let gameState = "PAUSED"; // PAUSED, AIMING, FLYING, ORBITING, WON, CRASHED
+        let earthPos;
+        let rocketPos;
+        let satPos;
+        let satVel;
+        let path = [];
+        let stars = [];
+        let particles = [];
+        let asteroids = [];
+        let bgShips = [];
+        let bgPlanets = [];
+        let shootingStars = [];
+        let timeSurvived = 0; // Frames in orbit
+        let orbitSuccessTimer = 0; // Timer for the delay after winning
+        let lastLaunchSpeed = 0;
+        let lastIdealSpeed = 0;
+        let radiusErrorSum = 0; // accumulated |actual radius - target radius| / target radius
+        let radiusErrorSamples = 0;
+        let satOnTrack = false; // is the satellite currently close to the dotted ideal-orbit line?
+        const ORBIT_TOLERANCE = 0.3; // how far (as a fraction of target radius) you can drift from the dotted line and still count as "in orbit"
+
+        // Launch Dragging vars
+        let isDragging = false;
+
+        // --- IMAGE ASSETS (all optional - game falls back to vector art if missing) ---
+        let imgEarth, imgRocket, imgSat, imgBg;
+        let hasEarthImg = false, hasRocketImg = false, hasSatImg = false, hasBgImg = false;
+
+        // --- AUDIO (native Web Audio API -- NOT p5.sound, which tries to load an
+        // AudioWorklet via a blob: URL that Chrome blocks entirely on file:// pages,
+        // which was silently preventing the whole sketch from ever starting) ---
+        let audioBgmEl, audioLaunchEl, audioCrashEl, audioSuccessEl, audioClickEl;
+        let hasBgmFile = false, hasLaunchFile = false, hasCrashFile = false, hasSuccessFile = false, hasClickFile = false;
+        let audioStarted = false;
+        let isMuted = false;
+        let audioCtx, masterGain, bgmOsc1, bgmOsc2, bgmGain1, bgmGain2, bgmFilter;
+
+        // Level Configuration
+        const LEVELS = [
+            { r: 120, title: "LOW EARTH ORBIT", desc: "Gravity is STRONG here. You need HIGH velocity (~10 km/s) to avoid crashing." },
+            { r: 240, title: "MEDIUM ORBIT", desc: "Gravity is MODERATE. Reduce launch force slightly." },
+            { r: 380, title: "GEOSTATIONARY", desc: "Gravity is WEAK. A gentle push is enough. Too fast and you escape!" }
+        ];
+
+        // UI References
+        const hudR = document.getElementById('hud-r');
+        const hudG = document.getElementById('hud-g');
+        const hudStatus = document.getElementById('status-text');
+        const levelDisplay = document.getElementById('level-display');
+        const physReq = document.getElementById('phys-req');
+        const physAct = document.getElementById('phys-act');
+        const resModal = document.getElementById('result-modal');
+        const resTitle = document.getElementById('res-title');
+        const resDesc = document.getElementById('res-desc');
+        const resBtn = document.getElementById('res-btn');
+        const resBadge = document.getElementById('res-badge');
+        const resStars = document.getElementById('res-stars');
+        const powerWrap = document.getElementById('power-gauge-wrap');
+        const powerFill = document.getElementById('power-gauge-fill');
+        const powerLabel = document.getElementById('power-gauge-label');
+        const miniRadar = document.getElementById('mini-radar');
+        const miniRadarLabel = document.getElementById('mini-radar-label');
+        const radarSat = document.getElementById('radar-sat');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const hubScreen = document.getElementById('hub-screen');
+        const briefCard = document.getElementById('brief-card');
+
+        function preload() {
+            // Every loadImage call has a failure callback so a missing file
+            // never halts the sketch -- it just keeps the flag false and the
+            // game silently uses the built-in vector-art version instead.
+            imgEarth = loadImage('assets/images/earth/earth.png', () => hasEarthImg = true, () => {});
+            imgRocket = loadImage('assets/images/rocket/rocket.png', () => hasRocketImg = true, () => {});
+            imgSat = loadImage('assets/images/satellite/satellite.png', () => hasSatImg = true, () => {});
+            imgBg = loadImage('assets/images/background/starfield.jpg', () => hasBgImg = true, () => {
+                imgBg = loadImage('assets/images/background/starfield.png', () => hasBgImg = true, () => {});
+            });
+        }
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            earthPos = createVector(width/2, height/2);
+            // Stars
+            for(let i=0; i<200; i++) stars.push({x: random(width), y: random(height), s: random(0.5, 2)});
+
+            // Ambient background gamification: drifting asteroids, distant
+            // ships, background planets and the occasional shooting star.
+            initAsteroids();
+            initBgShips();
+            initBgPlanets();
+
+            // Optional custom audio overrides -- plain <audio> elements load
+            // via the browser's normal media pipeline, not fetch(), so they
+            // work fine on file:// and can never block the sketch either way.
+            setupOptionalAudioFiles();
+        }
+
+        // ---------- AUDIO (BGM + SFX via native Web Audio API) ----------
+        function setupOptionalAudioFiles() {
+            // Plain <audio> elements load through the browser's normal media
+            // pipeline (not fetch), so unlike p5.sound these are safe on file://
+            // and can never block or crash the sketch either way.
+            const wire = (el, flagSetter) => {
+                el.addEventListener('canplaythrough', flagSetter, { once: true });
+                el.addEventListener('error', () => {}, { once: true });
+            };
+            audioBgmEl = new Audio('assets/audio/bgm.mp3'); wire(audioBgmEl, () => hasBgmFile = true);
+            audioLaunchEl = new Audio('assets/audio/launch.mp3'); wire(audioLaunchEl, () => hasLaunchFile = true);
+            audioCrashEl = new Audio('assets/audio/crash.mp3'); wire(audioCrashEl, () => hasCrashFile = true);
+            audioSuccessEl = new Audio('assets/audio/success.mp3'); wire(audioSuccessEl, () => hasSuccessFile = true);
+            audioClickEl = new Audio('assets/audio/click.mp3'); wire(audioClickEl, () => hasClickFile = true);
+        }
+
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 1;
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function initAudio() {
+            if (audioStarted) return;
+            audioStarted = true;
+            ensureAudioContext(); // must run from a user gesture (browser autoplay policy)
+
+            // Ambient background pad: two slightly-detuned sine oscillators
+            // through a lowpass filter, faded in slowly.
+            bgmFilter = audioCtx.createBiquadFilter();
+            bgmFilter.type = 'lowpass';
+            bgmFilter.frequency.value = 500;
+            bgmFilter.connect(masterGain);
+
+            bgmGain1 = audioCtx.createGain(); bgmGain1.gain.value = 0;
+            bgmGain2 = audioCtx.createGain(); bgmGain2.gain.value = 0;
+            bgmOsc1 = audioCtx.createOscillator(); bgmOsc1.type = 'sine'; bgmOsc1.frequency.value = 65.4;
+            bgmOsc2 = audioCtx.createOscillator(); bgmOsc2.type = 'sine'; bgmOsc2.frequency.value = 98.0;
+            bgmOsc1.connect(bgmGain1); bgmGain1.connect(bgmFilter);
+            bgmOsc2.connect(bgmGain2); bgmGain2.connect(bgmFilter);
+            bgmOsc1.start(); bgmOsc2.start();
+
+            const t0 = audioCtx.currentTime;
+            bgmGain1.gain.linearRampToValueAtTime(isMuted ? 0 : 0.05, t0 + 2);
+            bgmGain2.gain.linearRampToValueAtTime(isMuted ? 0 : 0.035, t0 + 2);
+
+            if (hasBgmFile && audioBgmEl) {
+                audioBgmEl.loop = true;
+                audioBgmEl.volume = isMuted ? 0 : 0.35;
+                audioBgmEl.play().catch(() => {});
+            }
+        }
+
+        function setMuted(muted) {
+            isMuted = muted;
+            const btn = document.getElementById('mute-btn');
+            btn.textContent = muted ? '🔇' : '🔊';
+            btn.classList.toggle('muted', muted);
+            if (!audioStarted) return;
+            const t = audioCtx.currentTime;
+            bgmGain1.gain.linearRampToValueAtTime(muted ? 0 : 0.05, t + 0.4);
+            bgmGain2.gain.linearRampToValueAtTime(muted ? 0 : 0.035, t + 0.4);
+            if (hasBgmFile && audioBgmEl) audioBgmEl.volume = muted ? 0 : 0.35;
+        }
+
+        function playTone(freq, dur, type, vol) {
+            if (isMuted || !audioStarted) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            osc.type = type || 'sine';
+            osc.frequency.value = freq;
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.linearRampToValueAtTime(vol || 0.25, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            osc.connect(g); g.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + dur + 0.05);
+        }
+
+        function createNoiseBuffer(duration) {
+            const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * duration));
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            return buffer;
+        }
+
+        function playNoiseBurst(dur, filterFreq, vol) {
+            if (isMuted || !audioStarted) return;
+            const t = audioCtx.currentTime;
+            const src = audioCtx.createBufferSource();
+            src.buffer = createNoiseBuffer(dur + 0.1);
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = filterFreq || 800;
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.linearRampToValueAtTime(vol || 0.3, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            src.connect(filter); filter.connect(g); g.connect(masterGain);
+            src.start(t);
+            src.stop(t + dur + 0.05);
+        }
+
+        function playFile(el) {
+            if (isMuted) return;
+            try { el.currentTime = 0; el.play().catch(() => {}); } catch (e) {}
+        }
+
+        function playClick() {
+            if (hasClickFile && audioClickEl) { playFile(audioClickEl); return; }
+            playTone(880, 0.08, 'sine', 0.18);
+        }
+
+        function playLaunch() {
+            if (hasLaunchFile && audioLaunchEl) { playFile(audioLaunchEl); return; }
+            playNoiseBurst(0.5, 1200, 0.28);
+            playTone(90, 0.4, 'sawtooth', 0.15);
+        }
+
+        function playCrash() {
+            if (hasCrashFile && audioCrashEl) { playFile(audioCrashEl); return; }
+            playNoiseBurst(0.6, 300, 0.35);
+            playTone(70, 0.5, 'sawtooth', 0.25);
+        }
+
+        function playEscape() {
+            if (isMuted || !audioStarted) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(700, t);
+            osc.frequency.linearRampToValueAtTime(120, t + 1.0);
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.linearRampToValueAtTime(0.22, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+            osc.connect(g); g.connect(masterGain);
+            osc.start(t); osc.stop(t + 1.3);
+        }
+
+        function playSuccess() {
+            if (hasSuccessFile && audioSuccessEl) { playFile(audioSuccessEl); return; }
+            if (isMuted || !audioStarted) return;
+            [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                setTimeout(() => playTone(f, 0.35, 'triangle', 0.2), i * 110);
+            });
+        }
+
+        // ---------- AMBIENT BACKGROUND (asteroids / ships / planets / comets) ----------
+        function initAsteroids() {
+            asteroids = [];
+            for (let i = 0; i < 7; i++) {
+                let r = random(7, 19);
+                let n = floor(random(7, 10));
+                let verts = [];
+                for (let k = 0; k < n; k++) {
+                    verts.push({ a: (TWO_PI / n) * k, rad: r * random(0.7, 1.15) });
+                }
+                asteroids.push({
+                    x: random(width), y: random(height),
+                    r: r, verts: verts,
+                    rot: random(TWO_PI), rotSpeed: random(-0.006, 0.006),
+                    vx: random(0.08, 0.3) * (random() < 0.5 ? 1 : -1),
+                    vy: random(-0.05, 0.05),
+                    a: random(90, 190)
+                });
+            }
+        }
+
+        function updateAndDrawAsteroids() {
+            asteroids.forEach(a => {
+                a.x += a.vx; a.y += a.vy; a.rot += a.rotSpeed;
+                if (a.x < -40) a.x = width + 40; if (a.x > width + 40) a.x = -40;
+                if (a.y < -40) a.y = height + 40; if (a.y > height + 40) a.y = -40;
+
+                push();
+                translate(a.x, a.y);
+                rotate(a.rot);
+                noStroke();
+                fill(95, 84, 76, a.a);
+                beginShape();
+                a.verts.forEach(v => vertex(cos(v.a) * v.rad, sin(v.a) * v.rad));
+                endShape(CLOSE);
+                fill(60, 52, 48, a.a);
+                circle(-a.r * 0.25, -a.r * 0.15, a.r * 0.35);
+                circle(a.r * 0.2, a.r * 0.3, a.r * 0.25);
+                pop();
+            });
+        }
+
+        function initBgShips() {
+            bgShips = [];
+            for (let i = 0; i < 3; i++) {
+                bgShips.push({
+                    x: random(width), y: random(height * 0.08, height * 0.42),
+                    speed: random(0.25, 0.6) * (random() < 0.5 ? 1 : -1),
+                    size: random(10, 18), blinkOffset: random(1000)
+                });
+            }
+        }
+
+        function updateAndDrawBgShips() {
+            bgShips.forEach(s => {
+                s.x += s.speed;
+                if (s.speed > 0 && s.x > width + 40) s.x = -40;
+                if (s.speed < 0 && s.x < -40) s.x = width + 40;
+
+                push();
+                translate(s.x, s.y);
+                if (s.speed < 0) scale(-1, 1); // face travel direction
+                noStroke();
+                fill(150, 170, 190, 150);
+                beginShape();
+                vertex(s.size, 0);
+                vertex(s.size * 0.2, -s.size * 0.3);
+                vertex(-s.size, -s.size * 0.22);
+                vertex(-s.size, s.size * 0.22);
+                vertex(s.size * 0.2, s.size * 0.3);
+                endShape(CLOSE);
+                fill(120, 200, 255, 180);
+                circle(s.size * 0.1, 0, s.size * 0.22);
+
+                let blink = (sin((frameCount + s.blinkOffset) * 0.08) + 1) / 2;
+                fill(255, 80, 80, blink * 255);
+                circle(-s.size, 0, 3);
+
+                stroke(150, 170, 190, 60); strokeWeight(1); noFill();
+                line(-s.size, 0, -s.size - s.size * 1.6, 0);
+                noStroke();
+                pop();
+            });
+        }
+
+        function initBgPlanets() {
+            bgPlanets = [
+                { x: width * 0.14, y: height * 0.22, r: 34, col: [150, 100, 190], ring: false, vx: 0.02 },
+                { x: width * 0.87, y: height * 0.78, r: 24, col: [210, 150, 80], ring: true, vx: -0.015 }
+            ];
+        }
+
+        function updateAndDrawBgPlanets() {
+            bgPlanets.forEach(p => {
+                p.x += p.vx;
+                if (p.x < -60) p.x = width + 60; if (p.x > width + 60) p.x = -60;
+
+                push();
+                translate(p.x, p.y);
+                if (p.ring) {
+                    noFill(); stroke(p.col[0], p.col[1], p.col[2], 90); strokeWeight(3);
+                    push(); rotate(-0.3); ellipse(0, 0, p.r * 2.6, p.r * 0.9); pop();
+                }
+                noStroke();
+                fill(p.col[0], p.col[1], p.col[2], 130);
+                circle(0, 0, p.r * 2);
+                fill(0, 0, 0, 55);
+                arc(0, 0, p.r * 2, p.r * 2, HALF_PI * 0.3, PI * 1.15);
+                pop();
+            });
+        }
+
+        function maybeSpawnShootingStar() {
+            if (shootingStars.length < 2 && random() < 0.006) {
+                let fromLeft = random() < 0.5;
+                shootingStars.push({
+                    x: fromLeft ? random(-50, width * 0.3) : random(width * 0.7, width + 50),
+                    y: random(-50, height * 0.4),
+                    vx: fromLeft ? random(3, 5) : random(-5, -3),
+                    vy: random(2, 3.2),
+                    life: 60
+                });
+            }
+        }
+
+        function updateAndDrawShootingStars() {
+            maybeSpawnShootingStar();
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                let s = shootingStars[i];
+                stroke(255, 255, 255, map(s.life, 0, 60, 0, 220));
+                strokeWeight(2);
+                line(s.x, s.y, s.x - s.vx * 6, s.y - s.vy * 6);
+                noStroke(); fill(255, 255, 255, map(s.life, 0, 60, 0, 255));
+                circle(s.x, s.y, 2.4);
+
+                s.x += s.vx; s.y += s.vy; s.life--;
+                if (s.life <= 0 || s.x < -80 || s.x > width + 80 || s.y > height + 80) {
+                    shootingStars.splice(i, 1);
+                }
+            }
+        }
+
+        function drawAmbientBackground() {
+            if (hasBgImg) {
+                imageMode(CORNER);
+                image(imgBg, 0, 0, width, height);
+                noStroke(); fill(5, 8, 16, 130); // darken for HUD/text contrast
+                rect(0, 0, width, height);
+            } else {
+                background(5, 8, 16);
+            }
+
+            updateAndDrawBgPlanets();
+
+            noStroke(); fill(255, 150);
+            stars.forEach(s => ellipse(s.x, s.y, s.s));
+
+            updateAndDrawShootingStars();
+            updateAndDrawAsteroids();
+            updateAndDrawBgShips();
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            earthPos.set(width/2, height/2);
+            if(gameState !== "PAUSED") initLevel(level-1);
+        }
+
+        // ---------- HUB / LEVEL SELECT ----------
+        function showHub() {
+            briefCard.style.display = 'none';
+            hubScreen.style.display = 'block';
+            hubScreen.classList.add('fade-in');
+            modalOverlay.style.display = 'flex';
+            renderHub();
+        }
+
+        function renderHub() {
+            for (let i = 0; i < 3; i++) {
+                const card = document.querySelector('.level-card[data-level="' + (i + 1) + '"]');
+                const locked = (i + 1) > unlockedLevel;
+                card.classList.toggle('locked', locked);
+                const starEls = card.querySelectorAll('.level-stars .star');
+                starEls.forEach((s, si) => s.classList.toggle('filled', si < (starsByLevel[i] || 0)));
+                card.onclick = locked ? null : () => { playClick(); showBrief(i); };
+            }
+        }
+
+        function showBrief(idx) {
+            const L = LEVELS[idx];
+            document.getElementById('brief-title').innerText = 'MISSION: ' + L.title;
+            document.getElementById('brief-text').innerHTML =
+                '<p><strong>COMMANDER,</strong></p><p>' + L.desc + ' Apply the exact <strong>Horizontal Velocity</strong> to achieve a stable orbit.</p>';
+            hubScreen.style.display = 'none';
+            briefCard.style.display = 'block';
+            briefCard.classList.remove('fade-in');
+            void briefCard.offsetWidth; // restart animation
+            briefCard.classList.add('fade-in');
+
+            document.getElementById('brief-launch-btn').onclick = () => {
+                playClick();
+                modalOverlay.style.display = 'none';
+                initLevel(idx);
+            };
+        }
+
+        document.getElementById('brief-back-btn').onclick = () => {
+            playClick();
+            briefCard.style.display = 'none';
+            hubScreen.style.display = 'block';
+            renderHub();
+        };
+
+        function returnToHub() {
+            resModal.style.display = 'none';
+            resModal.classList.remove('show');
+            gameState = 'PAUSED';
+            miniRadar.style.display = 'none';
+            miniRadarLabel.style.display = 'none';
+            powerWrap.style.display = 'none';
+            showHub();
+        }
+
+        document.getElementById('hub-btn').onclick = () => { playClick(); returnToHub(); };
+        document.getElementById('hub-btn-result').onclick = () => { playClick(); returnToHub(); };
+        document.getElementById('reset-progress-link').onclick = () => {
+            playClick();
+            try { localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+            unlockedLevel = 1;
+            starsByLevel = [0, 0, 0];
+            renderHub();
+        };
+
+        // Start audio on the very first tap/click anywhere (browser autoplay
+        // policy requires a user gesture before sound can play).
+        document.addEventListener('pointerdown', initAudio, { once: true });
+        document.getElementById('mute-btn').onclick = () => setMuted(!isMuted);
+
+        function initLevel(idx) {
+            level = idx + 1;
+            gameState = "AIMING";
+            resModal.style.display = "none";
+            resModal.classList.remove('show');
+            particles = [];
+            miniRadar.style.display = 'none';
+            miniRadarLabel.style.display = 'none';
+
+            let radius = LEVELS[idx].r;
+
+            // Spawn Rocket at specific radius
+            rocketPos = createVector(width/2, height/2 - radius);
+
+            // Reset Vars
+            satPos = rocketPos.copy();
+            satVel = createVector(0,0);
+            path = [];
+            timeSurvived = 0;
+            orbitSuccessTimer = 0;
+            radiusErrorSum = 0;
+            radiusErrorSamples = 0;
+
+            // Update UI
+            levelDisplay.innerText = LEVELS[idx].title;
+            hudStatus.innerText = "AIMING";
+            hudStatus.style.color = "var(--isro-orange)";
+            powerWrap.style.display = "none";
+            updatePips();
+
+            // Calculate Physics Display values
+            let dist = radius;
+            let gForce = GM / (dist * dist); // g = GM/r^2
+            let reqVel = Math.sqrt(GM / dist); // v = sqrt(GM/r)
+
+            hudR.innerText = Math.round(dist * 10) + " km";
+            hudG.innerText = gForce.toFixed(2) + " m/s²";
+            physReq.innerText = (reqVel * 0.8).toFixed(1) + " km/s"; // Scaled for readability
+            physAct.innerText = "0.0";
+        }
+
+        function updatePips() {
+            document.querySelectorAll('.pip').forEach((el, i) => {
+                el.classList.remove('active', 'complete');
+                if (i + 1 < level) el.classList.add('complete');
+                else if (i + 1 === level) el.classList.add('active');
+            });
+        }
+
+        function draw() {
+            // Ambient scene (stars, asteroids, distant ships/planets, comets)
+            // keeps animating even behind the menus, so the game never looks frozen.
+            drawAmbientBackground();
+            drawEarth();
+
+            if(gameState === "PAUSED") return;
+
+            // State Logic
+            if (gameState === "AIMING") {
+                drawRocket();
+                if (isDragging) drawTrajectory();
+            }
+            else if (gameState === "FLYING" || gameState === "ORBITING") {
+                updateSatellite();
+                drawSatellite();
+            }
+
+            updateParticles();
+        }
+
+        function drawEarth() {
+            // Atmosphere Glow
+            drawingContext.shadowBlur = 60;
+            drawingContext.shadowColor = "#00aaff";
+            noStroke(); fill(10, 30, 60);
+            ellipse(earthPos.x, earthPos.y, EARTH_R * 2);
+            drawingContext.shadowBlur = 0;
+
+            if (hasEarthImg) {
+                push();
+                drawingContext.save();
+                drawingContext.beginPath();
+                drawingContext.arc(earthPos.x, earthPos.y, EARTH_R - 5, 0, TWO_PI);
+                drawingContext.clip();
+                imageMode(CENTER);
+                image(imgEarth, earthPos.x, earthPos.y, (EARTH_R - 5) * 2, (EARTH_R - 5) * 2);
+                drawingContext.restore();
+                pop();
+                noFill(); stroke(0, 150, 255, 180); strokeWeight(2);
+                ellipse(earthPos.x, earthPos.y, EARTH_R * 2 - 10);
+            } else {
+                // Planet Body
+                fill(20, 50, 100); stroke(0, 150, 255); strokeWeight(2);
+                ellipse(earthPos.x, earthPos.y, EARTH_R * 2 - 10);
+            }
+
+            // Decorative radar-sweep ring (pure flourish, no gameplay effect)
+            push();
+            translate(earthPos.x, earthPos.y);
+            rotate(frameCount * 0.01);
+            noFill(); stroke(0, 170, 255, 55); strokeWeight(1);
+            arc(0, 0, EARTH_R * 2 + 26, EARTH_R * 2 + 26, 0, PI * 0.55);
+            pop();
+
+            // Ideal Orbit Line (Dotted) -- glows green while the satellite is
+            // actually hugging it, so it's obvious when you're on target.
+            let hugging = (gameState === "FLYING" || gameState === "ORBITING") && satOnTrack;
+            noFill();
+            stroke(hugging ? color(0, 255, 136, 200) : color(255, 100));
+            strokeWeight(hugging ? 2 : 1);
+            drawingContext.setLineDash([5, 10]);
+            let currentLevelR = LEVELS[level-1].r;
+            ellipse(earthPos.x, earthPos.y, currentLevelR * 2);
+            drawingContext.setLineDash([]);
+        }
+
+        function drawRocket() {
+            push();
+            translate(rocketPos.x, rocketPos.y);
+            // Rotate to point parallel to surface tangent
+            rotate(PI/2);
+
+            if (hasRocketImg) {
+                imageMode(CENTER);
+                image(imgRocket, 0, 0, 30, 14);
+            } else {
+                // Rocket -- nose cone + fuselage + swept fins + nozzle,
+                // drawn back-to-front so it reads as a rocket, not a candle.
+                noStroke(); rectMode(CENTER);
+
+                // Engine nozzle (furthest back)
+                fill(55);
+                rect(-13, 0, 6, 7, 1);
+
+                // Swept tail fins
+                fill(190);
+                triangle(-11, -4.5, -18, -10, -6, -4.5);
+                triangle(-11, 4.5, -18, 10, -6, 4.5);
+
+                // Main fuselage
+                fill(238);
+                rect(-1, 0, 20, 9, 3);
+
+                // ISRO-style orange accent band
+                fill('#ff9933');
+                rect(3, 0, 4, 9.4);
+
+                // Nose cone tip
+                fill(30);
+                triangle(9, -4.5, 9, 4.5, 18, 0);
+
+                // Capsule window
+                fill(0, 200, 255, 220);
+                circle(5, 0, 3.2);
+            }
+
+            // Idle engine flicker (both image & fallback art get this)
+            let flameLen = 8 + noise(frameCount * 0.15) * 9;
+            noStroke();
+            fill(255, 180, 60, 190);
+            triangle(-14, -4, -14, 4, -14 - flameLen, 0);
+            fill(255, 230, 150, 170);
+            triangle(-14, -2, -14, 2, -14 - flameLen * 0.6, 0);
+
+            // Pulse effect to show "Drag Me"
+            if(!isDragging && frameCount % 60 < 30) {
+                noFill(); stroke(255, 150);
+                circle(0,0, 40);
+            }
+            pop();
+        }
+
+        function drawTrajectory() {
+            // Predictor Line
+            let dragVec = createVector(mouseX, mouseY);
+            let launchVec = p5.Vector.sub(rocketPos, dragVec).mult(0.1); // Power scaling
+
+            // Update UI with "Predicted Velocity"
+            physAct.innerText = (launchVec.mag() * 10).toFixed(1);
+
+            // Thrust power gauge (true escape velocity = sqrt(2GM/r), a real physics threshold)
+            let escapeVel = Math.sqrt(2 * GM / LEVELS[level-1].r);
+            let pwr = constrain(launchVec.mag() / escapeVel, 0, 1);
+            powerWrap.style.display = "block";
+            powerFill.style.width = (pwr * 100) + "%";
+            powerFill.style.background = pwr < 0.55 ? "var(--success)" : (pwr < 0.85 ? "var(--isro-orange)" : "var(--fail)");
+            powerLabel.innerText = "THRUST PWR " + Math.round(pwr * 100) + "%";
+
+            // Visual Drag Line
+            stroke(255, 150); strokeWeight(1);
+            line(rocketPos.x, rocketPos.y, mouseX, mouseY);
+
+            // Aim reticle at cursor / fingertip
+            noFill(); stroke(255, 180); strokeWeight(1);
+            circle(mouseX, mouseY, 18);
+            line(mouseX - 12, mouseY, mouseX - 6, mouseY);
+            line(mouseX + 6, mouseY, mouseX + 12, mouseY);
+            line(mouseX, mouseY - 12, mouseX, mouseY - 6);
+            line(mouseX, mouseY + 6, mouseX, mouseY + 12);
+
+            // Calculate Path Simulation
+            let simPos = rocketPos.copy();
+            let simVel = launchVec.copy();
+
+            // Predictor Curve
+            noFill(); stroke('#ffaa33'); strokeWeight(3);
+            drawingContext.shadowBlur = 15;
+            drawingContext.shadowColor = "#ffaa33";
+            drawingContext.setLineDash([3, 5]);
+
+            beginShape();
+            for(let i=0; i<40; i++) { // Predict 40 frames
+                vertex(simPos.x, simPos.y);
+                let rVec = p5.Vector.sub(earthPos, simPos);
+                let rMag = rVec.mag();
+                let fMag = GM / (rMag * rMag);
+                let acc = rVec.normalize().mult(fMag);
+                simVel.add(acc);
+                simPos.add(simVel);
+                if(rMag < EARTH_R) break; // Stop if crash
+            }
+            endShape();
+            drawingContext.setLineDash([]);
+            drawingContext.shadowBlur = 0; // Reset
+        }
+
+        function updateSatellite() {
+            // Physics: F = ma
+            let rVector = p5.Vector.sub(earthPos, satPos);
+            let rMag = rVector.mag();
+            let fMag = GM / (rMag * rMag);
+            let acc = rVector.normalize().mult(fMag);
+
+            satVel.add(acc);
+            satPos.add(satVel);
+
+            // Update real-time Physics Panel
+            physAct.innerText = (satVel.mag() * 10).toFixed(1);
+            hudR.innerText = Math.round(rMag) + " km";
+            hudG.innerText = (GM/(rMag*rMag)).toFixed(2) + " m/s²";
+
+            // Trail
+            if (frameCount % 3 === 0) {
+                path.push(satPos.copy());
+                if (path.length > 200) path.shift();
+            }
+
+            // Mini radar: show satellite's live angle/distance around Earth
+            miniRadar.style.display = 'block';
+            miniRadarLabel.style.display = 'block';
+            let angle = Math.atan2(satPos.y - earthPos.y, satPos.x - earthPos.x);
+            let radarR = 30;
+            radarSat.style.transform = 'translate(' + (Math.cos(angle) * radarR) + 'px,' + (Math.sin(angle) * radarR) + 'px)';
+
+            // Win/Loss
+            if (rMag < EARTH_R) triggerResult(false, "IMPACT DETECTED", "Launch velocity was too low. Gravity pulled it down.");
+            else if (rMag > height * 1.5) triggerResult(false, "LOST SIGNAL", "Launch velocity was too high. Satellite escaped orbit.");
+
+            // How close is the actual path to the dotted ideal-orbit line right now?
+            let targetR = LEVELS[level-1].r;
+            let deviation = Math.abs(rMag - targetR) / targetR;
+            let onTrack = deviation <= ORBIT_TOLERANCE;
+            satOnTrack = onTrack;
+            radiusErrorSum += deviation;
+            radiusErrorSamples++;
+
+            // Win Condition Logic -- progress only builds up while the orbit is
+            // actually hugging the dotted line; drifting away just pauses the
+            // clock instead of failing outright, so it stays forgiving.
+            if(gameState === "FLYING") {
+                if (onTrack) {
+                    timeSurvived++;
+                    hudStatus.innerText = "TRACKING ORBIT LINE";
+                    hudStatus.style.color = "var(--isro-blue)";
+                } else {
+                    hudStatus.innerText = "DRIFTING - GET CLOSER TO THE ORBIT LINE";
+                    hudStatus.style.color = "var(--isro-orange)";
+                }
+                // If flown ~5 seconds close to the line without crashing
+                if (timeSurvived > 300) {
+                    gameState = "ORBITING"; // Switch visual state
+                    hudStatus.innerText = "STABLE ORBIT CONFIRMED";
+                    hudStatus.style.color = "var(--success)";
+                }
+            } else if (gameState === "ORBITING") {
+                if (onTrack) {
+                    orbitSuccessTimer++;
+                } else {
+                    hudStatus.innerText = "HOLD STEADY - STAY ON THE LINE";
+                    hudStatus.style.color = "var(--isro-orange)";
+                }
+                if(orbitSuccessTimer > 240) {
+                    triggerResult(true, "STABLE ORBIT", "Velocity matched gravitational pull perfectly.");
+                }
+            }
+        }
+
+        function drawSatellite() {
+            // Path -- glows green whenever it's hugging the dotted ideal-orbit line
+            noFill(); stroke(satOnTrack ? '#00ff88' : 255); strokeWeight(1);
+            beginShape(); path.forEach(p => vertex(p.x, p.y)); endShape();
+
+            // Sat
+            push(); translate(satPos.x, satPos.y);
+            if (satOnTrack) {
+                noFill(); stroke(0, 255, 136, 110); strokeWeight(1);
+                circle(0, 0, 30);
+            }
+            if (hasSatImg) {
+                imageMode(CENTER);
+                image(imgSat, 0, 0, 26, 26);
+            } else {
+                fill(satOnTrack ? '#00ff88' : '#00aaff'); noStroke();
+                circle(0, 0, 10);
+                rectMode(CENTER); fill(100); rect(-8, 0, 4, 8); rect(8, 0, 4, 8);
+            }
+            pop();
+        }
+
+        function spawnBurst(pos, vel) {
+            for (let i = 0; i < 26; i++) {
+                particles.push({
+                    pos: pos.copy(),
+                    vel: p5.Vector.random2D().mult(random(1, 4)).add(p5.Vector.mult(vel, 0.04)),
+                    life: random(20, 40),
+                    maxLife: 40,
+                    col: random(['#ffcc80', '#ff9933', '#00aaff', '#ffffff'])
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.pos.add(p.vel);
+                p.vel.mult(0.94);
+                p.life--;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+                let c = color(p.col);
+                let alpha = map(p.life, 0, p.maxLife, 0, 255);
+                noStroke();
+                fill(red(c), green(c), blue(c), alpha);
+                circle(p.pos.x, p.pos.y, map(p.life, 0, p.maxLife, 1, 4));
+            }
+        }
+
+        function computeStars(errRatio) {
+            if (errRatio <= 0.08) return 3;
+            if (errRatio <= 0.20) return 2;
+            return 1;
+        }
+
+        function renderResultStars(n) {
+            resStars.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const s = document.createElement('span');
+                s.className = 'star' + (i < n ? ' filled' : '');
+                s.textContent = '★';
+                resStars.appendChild(s);
+            }
+        }
+
+        function triggerResult(win, title, desc) {
+            if(gameState === "CRASHED" || gameState === "WON") return; // prevent loop
+
+            gameState = win ? "WON" : "CRASHED";
+            powerWrap.style.display = "none";
+            miniRadar.style.display = 'none';
+            miniRadarLabel.style.display = 'none';
+
+            resModal.style.display = "block";
+            resModal.classList.add('show');
+            resTitle.innerText = title;
+            resTitle.style.color = win ? "var(--success)" : "var(--fail)";
+            resDesc.innerText = desc;
+            resBadge.style.display = "block";
+            resBadge.src = win ? "assets/images/ui/badge-success.png" : "assets/images/ui/badge-fail.png";
+
+            if(win) {
+                // Stars reward how tightly the orbit actually hugged the dotted
+                // line (average deviation), not just the initial launch speed.
+                let avgDeviation = radiusErrorSamples > 0 ? (radiusErrorSum / radiusErrorSamples) : 1;
+                let earnedStars = computeStars(avgDeviation);
+                starsByLevel[level-1] = Math.max(starsByLevel[level-1] || 0, earnedStars);
+                unlockedLevel = Math.max(unlockedLevel, level + 1);
+                saveProgress();
+                renderResultStars(earnedStars);
+                resDesc.innerText = desc + " Average distance from the ideal orbit line: " + Math.round(avgDeviation * 100) + "%.";
+                playSuccess();
+
+                if(level < 3) {
+                    resBtn.innerText = "NEXT ORBIT LEVEL";
+                    resBtn.onclick = () => { playClick(); initLevel(level); };
+                } else {
+                    resBtn.innerText = "PLAY AGAIN";
+                    resBtn.onclick = () => { playClick(); initLevel(0); };
+                    document.querySelectorAll('.pip').forEach(el => { el.classList.remove('active'); el.classList.add('complete'); });
+                }
+            } else {
+                renderResultStars(0);
+                resBtn.innerText = "RETRY LAUNCH";
+                resBtn.onclick = () => { playClick(); initLevel(level-1); };
+                if (title === "LOST SIGNAL") playEscape(); else playCrash();
+            }
+        }
+
+        // --- CONTROLS (mouse + touch share the same handlers, so the game
+        // works the same on desktop and inside a mobile WebView) ---
+        function handlePressStart(x, y) {
+            if (gameState === "AIMING") {
+                if(dist(x, y, rocketPos.x, rocketPos.y) < 100) {
+                    isDragging = true;
+                }
+            }
+        }
+
+        function handleReleaseEnd(x, y) {
+            if (isDragging) {
+                isDragging = false;
+                let launchVec = p5.Vector.sub(rocketPos, createVector(x, y)).mult(0.1);
+                satVel = launchVec;
+                lastLaunchSpeed = launchVec.mag();
+                lastIdealSpeed = Math.sqrt(GM / LEVELS[level-1].r);
+                gameState = "FLYING";
+                hudStatus.innerText = "IN FLIGHT";
+                hudStatus.style.color = "#00aaff";
+                powerWrap.style.display = "none";
+                spawnBurst(rocketPos, launchVec);
+                playLaunch();
+            }
+        }
+
+        function mousePressed() { handlePressStart(mouseX, mouseY); }
+        function mouseReleased() { handleReleaseEnd(mouseX, mouseY); }
+        function touchStarted() { handlePressStart(mouseX, mouseY); return false; }
+        function touchEnded() { handleReleaseEnd(mouseX, mouseY); return false; }
+
+    </script>
+</body>
+</html>

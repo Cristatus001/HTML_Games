@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(cp C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Equal-vectors/89ebd65f-e4ca-4175-8348-9d629625e6ce/scratchpad/node_modules/@fontsource/orbitron/files/orbitron-latin-700-normal.woff2 'C:/Users/Admin/Desktop/HTML Games/Physics Games/Equal vectors/vector_analysis_lab/assets/fonts/orbitron-700.woff2')",
+      "Bash(cp C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Equal-vectors/89ebd65f-e4ca-4175-8348-9d629625e6ce/scratchpad/node_modules/@fontsource/orbitron/files/orbitron-latin-900-normal.woff2 'C:/Users/Admin/Desktop/HTML Games/Physics Games/Equal vectors/vector_analysis_lab/assets/fonts/orbitron-900.woff2')",
+      "Bash(cp C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Equal-vectors/89ebd65f-e4ca-4175-8348-9d629625e6ce/scratchpad/node_modules/@fontsource/rajdhani/files/rajdhani-latin-500-normal.woff2 'C:/Users/Admin/Desktop/HTML Games/Physics Games/Equal vectors/vector_analysis_lab/assets/fonts/rajdhani-500.woff2')",
+      "Bash(cp C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Equal-vectors/89ebd65f-e4ca-4175-8348-9d629625e6ce/scratchpad/node_modules/@fontsource/rajdhani/files/rajdhani-latin-600-normal.woff2 'C:/Users/Admin/Desktop/HTML Games/Physics Games/Equal vectors/vector_analysis_lab/assets/fonts/rajdhani-600.woff2')",
+      "Bash(cp C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Equal-vectors/89ebd65f-e4ca-4175-8348-9d629625e6ce/scratchpad/node_modules/@fontsource/rajdhani/files/rajdhani-latin-700-normal.woff2 'C:/Users/Admin/Desktop/HTML Games/Physics Games/Equal vectors/vector_analysis_lab/assets/fonts/rajdhani-700.woff2')",
+      "Bash(node tools/gen_icons.mjs)"
+    ]
+  }
+}

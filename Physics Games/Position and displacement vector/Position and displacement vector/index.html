@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#10283a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Vector Explorer: Sky Realm - fly an airship and learn position, distance and displacement.">
+<title>Vector Explorer: Sky Realm</title>
+<link rel="icon" href="assets/images/ui/emoji/compass.png">
+<link rel="apple-touch-icon" href="assets/images/ui/emoji/compass.png">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/flight.css">
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+<div id="vignette"></div>
+
+<!-- ============================== FLIGHT HUD ============================== -->
+<div id="hud">
+  <div class="f-top">
+    <div class="f-plate mat-brass riveted">
+      <span id="f-no" class="f-no">M01</span>
+      <span id="f-name" class="f-name">FIRST FLIGHT</span>
+    </div>
+
+    <div class="f-gauges">
+      <div class="f-gauge mat-glass">
+        <span class="label"><img src="assets/images/ui/emoji/path.png" alt="">Distance</span>
+        <span id="f-dist" class="v v-dist">0</span>
+      </div>
+      <div class="f-gauge mat-glass">
+        <span class="label"><img src="assets/images/ui/emoji/vector.png" alt="">Displacement</span>
+        <span id="f-disp" class="v v-disp">0</span>
+      </div>
+      <div class="f-gauge mat-glass">
+        <span class="label"><img src="assets/images/ui/emoji/compass.png" alt="">Efficiency</span>
+        <span id="f-eff" class="v v-eff">0%</span>
+        <div class="effbar"><div id="f-effbar" class="fill"></div></div>
+      </div>
+    </div>
+
+    <div class="f-tools">
+      <button id="f-restart" class="icon-btn" type="button" title="Restart (R)" aria-label="Restart">
+        <img src="assets/images/ui/emoji/refresh.png" alt="">
+      </button>
+      <button id="f-menu" class="icon-btn" type="button" title="Missions" aria-label="Missions">
+        <img src="assets/images/ui/emoji/island.png" alt="">
+      </button>
+    </div>
+  </div>
+
+  <div id="board-slot"></div>
+
+  <div class="f-bottom">
+    <div class="f-strip mat-glass">
+      <span class="label"><img src="assets/images/ui/emoji/fuel.png" alt="">Fuel</span>
+      <div class="fuelbar"><div id="f-fuel" class="fill"></div></div>
+    </div>
+    <div class="f-strip mat-glass">
+      <span class="label">Hull</span>
+      <span id="f-hull" class="pips"></span>
+    </div>
+    <div class="f-strip mat-glass" id="f-crystals-wrap">
+      <span class="label"><img src="assets/images/ui/emoji/crystal.png" alt="">Cargo</span>
+      <span id="f-crystals" class="pips"></span>
+    </div>
+    <button id="beacon-btn" class="btn btn-small" type="button" style="display:none">
+      <img src="assets/images/ui/emoji/origin.png" alt=""> Beacon <b id="f-beacons">0</b>
+    </button>
+  </div>
+
+  <div id="bark" class="bark mat-wood riveted">
+    <span id="bark-who" class="who">CAPTAIN NOVA</span>
+    <span id="bark-line" class="line"></span>
+  </div>
+</div>
+
+<!-- ============================== BOOT ============================== -->
+<div id="boot" class="screen dim active">
+  <img class="boot-mark" src="assets/images/ui/emoji/airship.png" alt="">
+  <div class="boot-title engraved">Vector Explorer</div>
+  <div class="gauge-bar mat-brass"><div id="boot-fill" class="fill"></div></div>
+  <div id="boot-note" class="boot-note">Warming the envelope&hellip;</div>
+  <button id="btn-boot" class="btn" type="button" style="display:none">
+    <img src="assets/images/ui/emoji/compass.png" alt=""> Board the Airship
+  </button>
+</div>
+
+<!-- ============================== HANGAR (main menu) ============================== -->
+<div id="hangar" class="screen dim">
+  <div class="title-plate mat-brass riveted">
+    <img class="rose" src="assets/images/ui/emoji/compass.png" alt="">
+    <h1 class="etched">Vector Explorer<span class="sub">Sky Realm Flight Trials</span></h1>
+  </div>
+
+  <div class="pilot-strip mat-wood riveted">
+    <div class="pilot-row">
+      <img src="assets/images/ui/emoji/xp.png" alt="">
+      <span class="label">Pilot Rank</span>
+      <b id="h-level" class="rankno">1</b>
+      <div class="xpbar"><div id="h-xpbar" class="fill"></div></div>
+    </div>
+    <div class="pilot-cells">
+      <div class="pcell mat-glass"><span class="label">XP</span><span id="h-xp" class="v">0</span></div>
+      <div class="pcell mat-glass"><span class="label"><img src="assets/images/ui/emoji/coin.png" alt="">Gold</span><span id="h-coins" class="v">0</span></div>
+      <div class="pcell mat-glass"><span class="label"><img src="assets/images/ui/emoji/star_on.png" alt="">Stars</span><span id="h-stars" class="v">0</span></div>
+      <div class="pcell mat-glass"><span class="label">Missions</span><span id="h-cleared" class="v">0</span></div>
+      <div class="pcell mat-glass"><span class="label"><img src="assets/images/ui/emoji/trophy.png" alt="">Badges</span><span id="h-badges" class="v">0</span></div>
+    </div>
+  </div>
+
+  <div class="menu-stack">
+    <button id="btn-continue" class="btn wide" type="button" style="display:none">
+      <img src="assets/images/ui/emoji/airship.png" alt=""> Continue
+    </button>
+    <button id="btn-fly" class="btn wide" type="button">
+      <img src="assets/images/ui/emoji/island.png" alt=""> Mission Select
+    </button>
+    <button id="btn-howto" class="btn btn-ghost wide" type="button">
+      <img src="assets/images/ui/emoji/book.png" alt=""> How to Play
+    </button>
+    <button id="btn-badges" class="btn btn-ghost wide" type="button">
+      <img src="assets/images/ui/emoji/trophy.png" alt=""> Badges
+    </button>
+    <button id="btn-settings" class="btn btn-ghost wide" type="button">
+      <img src="assets/images/ui/emoji/helm.png" alt=""> Settings
+    </button>
+  </div>
+
+  <div class="credit">Position &amp; Displacement Vectors &middot; Physics Flight Trials</div>
+</div>
+
+<!-- ============================== MISSION MAP ============================== -->
+<div id="map" class="screen dim">
+  <div class="map-head">
+    <button id="map-back" class="icon-btn" type="button" aria-label="Back">
+      <img src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="engraved">Flight Route <span id="map-total" class="label"></span></h2>
+    <button id="map-howto" class="icon-btn" type="button" aria-label="How to Play">
+      <img src="assets/images/ui/emoji/book.png" alt="">
+    </button>
+  </div>
+  <div id="map-grid" class="map-grid"></div>
+</div>
+
+<!-- ============================== MISSION BRIEF ============================== -->
+<div id="brief" class="screen dim">
+  <div class="brief-card mat-wood riveted">
+    <div class="brief-head">
+      <span id="b-no" class="b-no">MISSION 01</span>
+      <span id="b-mech" class="b-mech mat-glass">Flight</span>
+    </div>
+    <h2 id="b-name" class="engraved">FIRST FLIGHT</h2>
+
+    <div class="nova mat-glass">
+      <img src="assets/images/ui/emoji/helm.png" alt="">
+      <div>
+        <span class="who">CAPTAIN NOVA</span>
+        <span id="b-nova" class="line"></span>
+      </div>
+    </div>
+
+    <p id="b-brief" class="b-brief"></p>
+
+    <div id="b-obj" class="chips"></div>
+
+    <div class="hair-rule"></div>
+    <div class="label" style="margin-bottom:7px">Star conditions</div>
+    <div id="b-stars" class="starconds"></div>
+
+    <div class="brief-actions">
+      <button id="b-launch" class="btn wide" type="button">
+        <img src="assets/images/ui/emoji/airship.png" alt=""> Launch
+      </button>
+      <button id="b-back" class="btn btn-ghost wide" type="button">Back to Route</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== HOW TO PLAY (controls only) ====================== -->
+<div id="howto-modal" class="modal">
+  <div class="sheet parchment">
+    <div class="sheet-head">
+      <img class="mark" src="assets/images/ui/emoji/book.png" alt="">
+      <h2>How to Play</h2>
+      <button id="close-howto" class="close-x" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="">
+      </button>
+    </div>
+    <div class="rule-double"></div>
+
+    <p><b>Objective:</b> fly your airship from the blue pad to the gold pad. Your glowing
+      trail is the <b>distance</b> you actually flew. The straight line between start and
+      finish is your <b>displacement</b>. Score well by keeping them close.</p>
+
+    <ol class="step-list">
+      <li>
+        <b>Fly by holding.</b><br>
+        <span class="key-hint">Hold</span> your finger (or the mouse button) anywhere on the sky
+        and the ship flies to that spot. Move your finger and she follows it. <b>Let go and she
+        slows to a stop.</b> On a keyboard use <span class="key-hint">WASD</span> or the
+        <span class="key-hint">Arrows</span> instead.
+      </li>
+      <li>
+        <b>Land inside the gold ring.</b><br>
+        The dashed gold circle is the landing zone, and a small arrow on your ship always points
+        at it. Just hold your finger over the ring and she will settle into it.
+      </li>
+      <li>
+        <b>Nothing here is punishing.</b><br>
+        You get three hulls, a moment of safety after every bump, and unlimited retries with
+        <span class="key-hint">R</span>. Only spires and lit-up gates hurt you &mdash; clouds and
+        islands are harmless.
+      </li>
+      <li>
+        <b>Watch your fuel.</b><br>
+        Fuel is measured in <b>distance</b>, not time. Hovering is free; wandering is not.
+      </li>
+      <li>
+        <b>Collect crystals</b> where a mission asks for them, and use
+        <span class="key-hint">Space</span> or the Beacon button to drop a survey beacon
+        when one is offered.
+      </li>
+      <li>
+        <b>Read the reveal.</b><br>
+        On landing your trail is redrawn to show the distance, then a red laser fires to show
+        the displacement. Three stars means you flew it tight.
+      </li>
+    </ol>
+
+    <p style="font-size:0.86em;opacity:0.85">
+      <span class="key-hint">R</span> restarts a mission. There is no penalty for retrying.
+    </p>
+
+    <button id="howto-ok" class="btn wide" type="button">Understood</button>
+  </div>
+</div>
+
+<!-- ================= LEARN MORE (concepts &amp; reference) ================= -->
+<div id="learn-modal" class="modal">
+  <div class="sheet parchment">
+    <div class="sheet-head">
+      <img class="mark" src="assets/images/ui/emoji/compass.png" alt="">
+      <h2>Field Manual</h2>
+      <button id="close-learn" class="close-x" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="">
+      </button>
+    </div>
+    <div class="rule-double"></div>
+
+    <div class="concept c-initial">
+      <h3><img src="assets/images/ui/emoji/origin.png" alt="">Position vector (r)</h3>
+      <p>An arrow from a chosen <b>origin</b> to an object. It answers "where is it?" &mdash;
+        but only relative to a reference point somebody picked.</p>
+      <ul>
+        <li>Written <code>r = (x, y)</code>, measured in units from the origin.</li>
+        <li>Left and down are negative, so <code>(-3, -2)</code> is three left and two down.</li>
+        <li><b>Move the origin and every position vector changes</b>, even though nothing
+          physically moved. That is what the survey beacons in Mission 2 and Mission 8 show you.</li>
+      </ul>
+    </div>
+
+    <div class="concept c-disp">
+      <h3><img src="assets/images/ui/emoji/vector.png" alt="">Displacement (&Delta;r)</h3>
+      <p>The straight-line <b>change</b> in position from start to finish &mdash; a vector, so it
+        has both a size and a direction.</p>
+      <div class="formula">&Delta;r = r_final &minus; r_initial</div>
+      <p>Because the origin cancels out in that subtraction, displacement is
+        <b>identical in every frame of reference</b>. That is why the two beacons in Mission 8
+        disagree about your position but agree exactly about your displacement.</p>
+    </div>
+
+    <div class="concept c-final">
+      <h3><img src="assets/images/ui/emoji/path.png" alt="">Distance (d) versus displacement</h3>
+      <p><b>Distance</b> is a scalar: the total length of the route you flew, every wobble
+        included. It is the number climbing in your HUD and the trail glowing behind you.</p>
+      <p><b>Displacement</b> is a vector and only cares about the two endpoints. So:</p>
+      <ul>
+        <li>Fly a detour for crystals: distance grows, displacement does not move at all.</li>
+        <li>Fly a perfect straight line: <code>d = |&Delta;r|</code> &mdash; the only case where they agree.</li>
+        <li>Fly a round trip home: distance is large, displacement is <b>zero</b> (Mission 7).</li>
+        <li>In general <code>d &ge; |&Delta;r|</code>, always. Never less.</li>
+      </ul>
+      <p style="margin-top:9px">Your <b>efficiency</b> score is simply
+        |&Delta;r| &divide; d as a percentage.</p>
+    </div>
+
+    <div class="concept">
+      <h3><img src="assets/images/ui/emoji/wind.png" alt="">Adding vectors</h3>
+      <p>In Mission 6 a crosswind is added to your thrust every frame. Where you actually go
+        is the <b>sum</b> of the two arrows, not the one you pointed. Vectors add tip-to-tail,
+        component by component: <code>(a&#8321;+b&#8321;, a&#8322;+b&#8322;)</code>.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:36%">Quantity</th><th style="width:32%">Depends on origin?</th><th style="width:32%">Vector or scalar?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Position <code>r</code></td><td class="yes">Yes</td><td>Vector</td></tr>
+          <tr><td>Displacement <code>&Delta;r</code></td><td class="no">No</td><td>Vector</td></tr>
+          <tr><td>Distance <code>d</code></td><td class="no">No</td><td>Scalar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button id="learn-ok" class="btn wide" style="margin-top:20px" type="button">Back to the Field</button>
+  </div>
+</div>
+
+<!-- ============================== WHY CARD ============================== -->
+<div id="why-modal" class="modal">
+  <div class="sheet parchment" style="max-width:520px">
+    <div class="sheet-head">
+      <img class="mark" src="assets/images/ui/emoji/lantern.png" alt="">
+      <h2>Hold on&hellip;</h2>
+    </div>
+    <div class="rule-double"></div>
+
+    <div class="why-nums">
+      <div class="why-num">
+        <span class="label">You flew</span>
+        <b id="why-d" class="v-dist">0</b>
+      </div>
+      <div class="why-num">
+        <span class="label">You only moved</span>
+        <b id="why-disp" class="v-disp">0</b>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:1.05em">
+      Where did the other <b id="why-gap">0</b> units go?
+    </p>
+
+    <button id="why-reveal" class="btn btn-ghost wide" type="button">Show Me</button>
+
+    <div id="why-answer" style="display:none">
+      <div class="teach-note">
+        Every turn you made added <b>distance</b>. None of it moved your endpoints, so the
+        <b>displacement</b> never changed. Distance counts the whole journey; displacement
+        only compares where you started with where you stopped.
+      </div>
+      <button id="why-ok" class="btn wide" type="button">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== DEBRIEF ============================== -->
+<div id="debrief-modal" class="modal">
+  <div class="sheet parchment">
+    <div class="cert-title">
+      <h2 id="d-title">MISSION CLEARED</h2>
+      <div id="d-stars" class="clear-stars"></div>
+    </div>
+
+    <div class="score-hero mat-glass">
+      <span class="label">Score</span>
+      <b id="d-score">0</b>
+    </div>
+
+    <div class="ledger">
+      <div class="lrow"><span><img src="assets/images/ui/emoji/path.png" alt="">Distance</span><b id="d-dist" class="v-dist">0</b></div>
+      <div class="lrow"><span><img src="assets/images/ui/emoji/vector.png" alt="">Displacement</span><b id="d-disp" class="v-disp">0</b></div>
+      <div class="lrow"><span><img src="assets/images/ui/emoji/compass.png" alt="">Efficiency</span><b id="d-eff" class="v-eff">0%</b></div>
+      <div class="lrow"><span>Time</span><b id="d-time">0s</b></div>
+      <div class="lrow"><span><img src="assets/images/ui/emoji/trophy.png" alt="">Best score</span><b id="d-best">0</b></div>
+      <div class="lrow"><span><img src="assets/images/ui/emoji/crystal.png" alt="">Crystals</span><b id="d-crystals">0</b></div>
+      <div class="lrow"><span>Damage</span><b id="d-damage">0</b></div>
+    </div>
+
+    <div class="rewards">
+      <div class="rw mat-glass"><img src="assets/images/ui/emoji/xp.png" alt=""><b id="d-xp">+0</b></div>
+      <div class="rw mat-glass"><img src="assets/images/ui/emoji/coin.png" alt=""><b id="d-coins">+0</b></div>
+    </div>
+
+    <div id="d-teach" class="teach-note"></div>
+
+    <button id="btn-next" class="btn wide" type="button">
+      Next Mission <img src="assets/images/ui/emoji/arrow_right.png" alt="">
+    </button>
+    <button id="btn-replay" class="btn btn-ghost wide" style="margin-top:9px" type="button">
+      <img src="assets/images/ui/emoji/refresh.png" alt=""> Fly It Again
+    </button>
+    <button id="btn-learn" class="btn btn-ghost wide" style="margin-top:9px" type="button">
+      <img src="assets/images/ui/emoji/book.png" alt=""> Learn More
+    </button>
+    <button id="btn-d-map" class="btn btn-ghost wide" style="margin-top:9px" type="button">Flight Route</button>
+  </div>
+</div>
+
+<!-- ============================== FAIL ============================== -->
+<div id="fail-modal" class="modal">
+  <div class="sheet parchment" style="max-width:500px">
+    <div class="cert-title">
+      <img class="cert-mark" src="assets/images/ui/emoji/storm.png" alt="">
+      <h2 style="color:#a8322b">MISSION LOST</h2>
+    </div>
+    <p id="fail-why" style="text-align:center"></p>
+    <div class="ledger">
+      <div class="lrow"><span>Distance flown</span><b id="fail-dist" class="v-dist">0</b></div>
+      <div class="lrow"><span>Displacement</span><b id="fail-disp" class="v-disp">0</b></div>
+    </div>
+    <button id="fail-retry" class="btn wide" type="button">
+      <img src="assets/images/ui/emoji/refresh.png" alt=""> Try Again
+    </button>
+    <button id="fail-map" class="btn btn-ghost wide" style="margin-top:9px" type="button">Flight Route</button>
+  </div>
+</div>
+
+<!-- ============================== BADGES ============================== -->
+<div id="badges-modal" class="modal">
+  <div class="sheet parchment">
+    <div class="sheet-head">
+      <img class="mark" src="assets/images/ui/emoji/trophy.png" alt="">
+      <h2>Badges</h2>
+      <button id="close-badges" class="close-x" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="">
+      </button>
+    </div>
+    <div class="rule-double"></div>
+    <div id="badge-grid" class="badge-grid"></div>
+    <button id="badges-ok" class="btn wide" style="margin-top:18px" type="button">Close</button>
+  </div>
+</div>
+
+<!-- ============================== SETTINGS ============================== -->
+<div id="settings-modal" class="modal">
+  <div class="sheet parchment">
+    <div class="sheet-head">
+      <img class="mark" src="assets/images/ui/emoji/helm.png" alt="">
+      <h2>Settings</h2>
+      <button id="close-settings" class="close-x" type="button" aria-label="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="">
+      </button>
+    </div>
+    <div class="rule-double"></div>
+
+    <div class="setting-row">
+      <div class="txt">
+        <strong>Background Music</strong>
+        <span>Airship-deck ambience, generated live in the browser. Drops in
+          <code>assets/audio/bgm.mp3</code> automatically if you add one.</span>
+      </div>
+      <button id="sw-music" class="lever" type="button" role="switch" aria-checked="true" aria-label="Background music">
+        <span class="knob"><img src="assets/images/ui/emoji/music_on.png" alt=""></span>
+      </button>
+    </div>
+
+    <div class="setting-row">
+      <div class="txt">
+        <strong>Sound Effects</strong>
+        <span>Engine, crystals, impacts and the reveal.</span>
+      </div>
+      <button id="sw-sfx" class="lever" type="button" role="switch" aria-checked="true" aria-label="Sound effects">
+        <span class="knob"><img src="assets/images/ui/emoji/sfx_on.png" alt=""></span>
+      </button>
+    </div>
+
+    <div class="hair-rule"></div>
+    <button id="settings-ok" class="btn wide" type="button">Close</button>
+    <button id="btn-wipe" class="btn btn-danger wide" style="margin-top:10px;padding:10px 16px;font-size:0.82rem" type="button">
+      Clear Flight Log
+    </button>
+  </div>
+</div>
+
+<div id="toast" class="mat-brass etched"></div>
+
+<script src="js/core.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#060b14">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Three riddles on average velocity and average speed, set in a kinetics test lab.">
+<title>Physics Riddle Challenge — Velocity &amp; Speed</title>
+<link rel="icon" type="image/png" href="assets/images/ui/emoji/speedometer.png">
+<link rel="stylesheet" href="assets/css/game.css">
+</head>
+<body>
+
+<!-- ============================ ambient backdrop ======================= -->
+<div id="backdrop" aria-hidden="true">
+  <div class="backdrop__art backdrop__art--far"></div>
+  <div class="backdrop__art backdrop__art--near"></div>
+  <canvas id="backdrop-canvas"></canvas>
+  <div class="backdrop__vignette"></div>
+  <div class="backdrop__scanlines"></div>
+</div>
+
+<!-- feedback particles; never receives pointer events -->
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+<!-- optional drop-in soundtrack; absent by default, procedural pad takes over -->
+<audio id="bgm-file" src="assets/audio/bgm.mp3" preload="none" loop></audio>
+
+<!-- shared vector art: one definition, reused by every crest on every screen -->
+<svg class="svg-defs" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    <linearGradient id="crestPlate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a5f79"/>
+      <stop offset="0.42" stop-color="#1b2a3d"/>
+      <stop offset="1" stop-color="#070d16"/>
+    </linearGradient>
+    <linearGradient id="crestRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f9ff"/>
+      <stop offset="0.5" stop-color="#8ea3ba"/>
+      <stop offset="1" stop-color="#2b3a4c"/>
+    </linearGradient>
+    <linearGradient id="crestArc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3ce6a0"/>
+      <stop offset="0.55" stop-color="#ffb020"/>
+      <stop offset="1" stop-color="#ff4d6d"/>
+    </linearGradient>
+    <radialGradient id="crestCore" cx="0.38" cy="0.34" r="0.72">
+      <stop offset="0" stop-color="#fff6e0"/>
+      <stop offset="0.45" stop-color="#ffb020"/>
+      <stop offset="1" stop-color="#8a4404"/>
+    </radialGradient>
+    <filter id="crestGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <symbol id="crest-art" viewBox="0 0 200 200">
+    <polygon points="100,6 172,48 172,152 100,194 28,152 28,48" fill="url(#crestRim)"/>
+    <polygon points="100,16 163,53 163,147 100,184 37,147 37,53" fill="url(#crestPlate)"/>
+    <path d="M42 124 A58 58 0 0 1 158 124" fill="none" stroke="url(#crestArc)" stroke-width="11"
+          stroke-linecap="round" filter="url(#crestGlow)"/>
+    <g stroke="#cfe0f0" stroke-width="3.4" stroke-linecap="round" opacity="0.85">
+      <line x1="54" y1="112" x2="61" y2="107"/>
+      <line x1="72" y1="88" x2="77" y2="95"/>
+      <line x1="100" y1="76" x2="100" y2="85"/>
+      <line x1="128" y1="88" x2="123" y2="95"/>
+      <line x1="146" y1="112" x2="139" y2="107"/>
+    </g>
+    <path d="M100 124 L134 82 L124 122 Z" fill="#38e0ff" filter="url(#crestGlow)"/>
+    <circle cx="100" cy="124" r="13" fill="url(#crestCore)"/>
+    <circle cx="95" cy="119" r="4.5" fill="#fffdf4" opacity="0.75"/>
+  </symbol>
+</svg>
+
+<div id="app">
+
+  <!-- ============================== BOOT ============================== -->
+  <section class="screen is-active" id="screen-boot" data-screen="boot">
+    <div class="screen__inner boot">
+      <div class="crest" data-art="ui.crest">
+        <svg class="crest__svg" viewBox="0 0 200 200" role="img" aria-label="Kinetics lab crest">
+          <use href="#crest-art"/>
+        </svg>
+      </div>
+
+      <h1 class="boot__title">Physics Riddle Challenge</h1>
+      <p class="boot__sub">Velocity &amp; Speed</p>
+
+      <div class="loadbar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loadbar">
+        <div class="loadbar__track"><div class="loadbar__fill" id="loadbar-fill"></div></div>
+        <p class="loadbar__status" id="loadbar-status">Calibrating instruments…</p>
+      </div>
+
+      <button class="btn btn--hero is-hidden" id="btn-boot-start" type="button">
+        <img class="btn__icon" src="assets/images/ui/emoji/play.png" alt="">
+        <span class="btn__label">Enter the Lab</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================== MENU ============================== -->
+  <section class="screen" id="screen-menu" data-screen="menu">
+    <div class="screen__inner menu">
+      <header class="menu__head">
+        <div class="crest crest--sm" aria-hidden="true">
+          <svg class="crest__svg" viewBox="0 0 200 200"><use href="#crest-art"/></svg>
+        </div>
+        <div class="menu__titles">
+          <h1 class="menu__title">Physics Riddle Challenge</h1>
+          <p class="menu__sub">Velocity &amp; Speed &middot; Kinetics Test Lab</p>
+        </div>
+      </header>
+
+      <div class="menu__body">
+        <nav class="menu__actions" aria-label="Main menu">
+          <button class="btn btn--hero" id="btn-start" type="button">
+            <img class="btn__icon" src="assets/images/ui/emoji/play.png" alt="">
+            <span class="btn__label"><span class="btn__main" id="btn-start-label">Start Run</span><span class="btn__hint" id="btn-start-hint">Three riddles, one lab</span></span>
+          </button>
+          <button class="btn btn--panel" id="btn-trials" type="button">
+            <img class="btn__icon" src="assets/images/ui/emoji/track.png" alt="">
+            <span class="btn__label"><span class="btn__main">Trials</span><span class="btn__hint">Pick a riddle</span></span>
+          </button>
+          <button class="btn btn--panel" id="btn-howto" type="button">
+            <img class="btn__icon" src="assets/images/ui/emoji/briefing.png" alt="">
+            <span class="btn__label"><span class="btn__main">How to Play</span><span class="btn__hint">Controls &amp; objective</span></span>
+          </button>
+          <button class="btn btn--panel" id="btn-settings" type="button">
+            <img class="btn__icon" src="assets/images/ui/emoji/settings.png" alt="">
+            <span class="btn__label"><span class="btn__main">Settings</span><span class="btn__hint">Music, sound, scale</span></span>
+          </button>
+        </nav>
+
+        <aside class="record" aria-label="Saved record">
+          <h2 class="record__head">Lab Record</h2>
+          <div class="record__stars" id="menu-stars"></div>
+          <dl class="record__grid">
+            <div class="record__row"><dt>Trials cleared</dt><dd id="menu-cleared">0 / 3</dd></div>
+            <div class="record__row"><dt>Best score</dt><dd id="menu-best">0 / 3</dd></div>
+            <div class="record__row"><dt>Flawless</dt><dd id="menu-flawless">0</dd></div>
+          </dl>
+          <button class="btn btn--ghost btn--sm" id="btn-reset-progress" type="button">
+            <img class="btn__icon" src="assets/images/ui/emoji/replay.png" alt="">
+            <span class="btn__label">Reset Progress</span>
+          </button>
+        </aside>
+      </div>
+
+      <p class="menu__foot">Runs fully offline &middot; progress saved on this device</p>
+    </div>
+  </section>
+
+  <!-- ============================= TRIALS ============================= -->
+  <section class="screen" id="screen-trials" data-screen="trials">
+    <div class="screen__inner trials">
+      <header class="subhead">
+        <button class="iconbtn" id="btn-trials-back" type="button" aria-label="Back to menu">
+          <img src="assets/images/ui/emoji/back.png" alt="">
+        </button>
+        <h1 class="subhead__title">Select a Trial</h1>
+        <div class="subhead__spacer"></div>
+      </header>
+      <div class="trial-grid" id="trial-grid"></div>
+      <p class="trials__foot" id="trials-foot">Clear a trial to unlock the next one.</p>
+    </div>
+  </section>
+
+  <!-- ============================== GAME ============================== -->
+  <section class="screen" id="screen-game" data-screen="game">
+    <div class="screen__inner game">
+
+      <header class="hud">
+        <button class="iconbtn" id="btn-hud-home" type="button" aria-label="Back to menu">
+          <img src="assets/images/ui/emoji/home.png" alt="">
+        </button>
+
+        <div class="hud__chip">
+          <img class="hud__chipicon" id="hud-icon" src="assets/images/ui/emoji/scalar.png" alt="">
+          <span class="hud__chiptext">
+            <span class="hud__tag" id="hud-tag">Scalar Trial</span>
+            <span class="hud__name" id="hud-name">The Pathless Number</span>
+          </span>
+        </div>
+
+        <div class="hud__score" aria-label="Score">
+          <img class="hud__scoreicon" src="assets/images/ui/emoji/speedometer.png" alt="">
+          <span class="hud__scorenum"><span id="hud-score">0</span><span class="hud__scoreof"> / 3</span></span>
+        </div>
+
+        <button class="iconbtn" id="btn-hud-settings" type="button" aria-label="Settings">
+          <img src="assets/images/ui/emoji/settings.png" alt="">
+        </button>
+      </header>
+
+      <div class="rail" id="rail" aria-hidden="true"></div>
+
+      <div class="stage" id="stage"></div>
+
+      <footer class="gamefoot">
+        <button class="btn btn--ghost btn--sm" id="btn-reset-card" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/close.png" alt="">
+          <span class="btn__label">Reset</span>
+        </button>
+        <button class="btn btn--go" id="btn-next" type="button" disabled>
+          <span class="btn__label">Next</span>
+          <img class="btn__icon" src="assets/images/ui/emoji/next.png" alt="">
+        </button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============================= RESULT ============================= -->
+  <section class="screen" id="screen-result" data-screen="result">
+    <div class="screen__inner result">
+      <div class="result__badge">
+        <img class="result__trophy" id="result-trophy" src="assets/images/ui/emoji/trophy.png" alt="Trophy">
+      </div>
+      <h1 class="result__title" id="result-title">Run Complete</h1>
+      <p class="result__sub" id="result-sub">Great job! You&rsquo;ve solved the physics riddles!</p>
+
+      <div class="result__stars" id="result-stars"></div>
+
+      <div class="result__stats">
+        <div class="stat">
+          <span class="stat__label">Score</span>
+          <span class="stat__value" id="result-score">3 / 3</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Flawless</span>
+          <span class="stat__value" id="result-flawless">0 / 3</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Misfires</span>
+          <span class="stat__value" id="result-misses">0</span>
+        </div>
+      </div>
+
+      <div class="result__actions">
+        <button class="btn btn--hero" id="btn-learn" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/datapad.png" alt="">
+          <span class="btn__label">Learn More</span>
+        </button>
+        <button class="btn btn--panel" id="btn-replay" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/replay.png" alt="">
+          <span class="btn__label">Play Again</span>
+        </button>
+        <button class="btn btn--panel" id="btn-result-trials" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/track.png" alt="">
+          <span class="btn__label">Trials</span>
+        </button>
+        <button class="btn btn--panel" id="btn-result-menu" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/home.png" alt="">
+          <span class="btn__label">Main Menu</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /#app -->
+
+<!-- ============================== MODALS =============================== -->
+<div class="modal-layer" id="modal-layer" hidden>
+
+  <div class="modal" id="modal-howto" role="dialog" aria-modal="true" aria-labelledby="howto-title" hidden>
+    <div class="modal__panel">
+      <header class="modal__head">
+        <img class="modal__icon" src="assets/images/ui/emoji/briefing.png" alt="">
+        <h2 class="modal__title" id="howto-title">How to Play</h2>
+        <button class="iconbtn iconbtn--close" data-close-modal type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <div class="modal__body" id="howto-body"></div>
+      <footer class="modal__foot">
+        <button class="btn btn--go" data-close-modal type="button"><span class="btn__label">Got it</span></button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="modal__panel">
+      <header class="modal__head">
+        <img class="modal__icon" src="assets/images/ui/emoji/settings.png" alt="">
+        <h2 class="modal__title" id="settings-title">Settings</h2>
+        <button class="iconbtn iconbtn--close" data-close-modal type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <div class="modal__body">
+        <div class="setting">
+          <img class="setting__icon" id="icon-music" src="assets/images/ui/emoji/music-on.png" alt="">
+          <span class="setting__text"><span class="setting__name">Music</span><span class="setting__hint" id="music-hint">Ambient lab pad</span></span>
+          <button class="switch is-on" id="toggle-music" type="button" role="switch" aria-checked="true" aria-label="Music">
+            <span class="switch__track"><span class="switch__knob"></span></span>
+          </button>
+        </div>
+        <div class="setting">
+          <img class="setting__icon" id="icon-sfx" src="assets/images/ui/emoji/sfx-on.png" alt="">
+          <span class="setting__text"><span class="setting__name">Sound Effects</span><span class="setting__hint">Clicks and feedback</span></span>
+          <button class="switch is-on" id="toggle-sfx" type="button" role="switch" aria-checked="true" aria-label="Sound effects">
+            <span class="switch__track"><span class="switch__knob"></span></span>
+          </button>
+        </div>
+        <div class="setting setting--slider">
+          <img class="setting__icon" src="assets/images/ui/emoji/scalar.png" alt="">
+          <span class="setting__text"><span class="setting__name">Interface Scale</span><span class="setting__hint" id="scale-hint">100%</span></span>
+          <input class="slider" id="scale" type="range" min="0.8" max="1.35" step="0.01" value="1" aria-label="Interface scale">
+        </div>
+      </div>
+      <footer class="modal__foot">
+        <button class="btn btn--ghost btn--sm" id="btn-settings-reset" type="button">
+          <img class="btn__icon" src="assets/images/ui/emoji/replay.png" alt="">
+          <span class="btn__label">Reset Progress</span>
+        </button>
+        <button class="btn btn--go" data-close-modal type="button"><span class="btn__label">Done</span></button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="modal modal--wide" id="modal-learn" role="dialog" aria-modal="true" aria-labelledby="learn-title" hidden>
+    <div class="modal__panel">
+      <header class="modal__head">
+        <img class="modal__icon" src="assets/images/ui/emoji/datapad.png" alt="">
+        <h2 class="modal__title" id="learn-title">Learn More</h2>
+        <button class="iconbtn iconbtn--close" data-close-modal type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <div class="modal__body" id="learn-body"></div>
+      <footer class="modal__foot">
+        <button class="btn btn--go" data-close-modal type="button"><span class="btn__label">Close</span></button>
+      </footer>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/assets.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/backdrop.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/game.js"></script>
+</body>
+</html>

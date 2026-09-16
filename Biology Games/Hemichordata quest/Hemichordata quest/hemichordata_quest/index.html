@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Hemichordata Quest — descend an acorn worm's U-shaped burrow and solve five riddles on hemichordate anatomy.">
+<meta name="theme-color" content="#efe6d6">
+<meta name="color-scheme" content="light">
+<title>Hemichordata Quest</title>
+<link rel="icon" type="image/png" href="assets/images/ui/emoji/logo.png">
+<link rel="apple-touch-icon" href="assets/images/ui/emoji/logo.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── backdrop: drifting grit, watermark cast, caustics ─────────────────── -->
+<canvas id="ambient-canvas" aria-hidden="true"></canvas>
+<div id="watermark" aria-hidden="true">
+  <svg viewBox="0 0 400 400" width="100%" height="100%">
+    <path d="M208 200L209 202L210 204L211 206L210 209L210 211L208 214L206 217L203 219L200 220L196 222L192 222L188 221L183 220L179 218L175 215L172 211L169 206L167 200L166 194L166 188L168 182L170 176L174 170L179 165L185 160L192 157L199 155L207 154L216 154L224 157L232 160L239 166L246 172L251 180L255 189L258 199L259 209L257 220L254 230L249 240L243 249L234 257L225 263L214 268L202 270L189 271L177 269L164 265L153 259L142 251L133 241L126 229L120 216L117 202L117 188L119 173L123 159L131 145L140 133L152 123L166 114L181 108L197 105L213 104L230 107L247 112L262 121L276 132L288 145L297 160L304 178L308 196L308 215L305 234L299 252L290 269L277 285L262 298L245 309L226 316L205 320L184 321L163 317L143 310L124 300L107 286L92 269L80 250L72 229L68 206L67 183L71 160L78 138L90 117L105 98L123 82L144 69L168 60L192 55L218 55L243 59L267 67L290 79L311 96L328 116L342 139L352 164L357 191L358 218L354 246L345 272L331 297L313 319L292 338L267 353L240 364L211 370L181 370L151 366L123 356L96 342L72 322L52 299L36 273L24 243L18 212L17 180L22 149L32 118L48 89"
+          fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+<div id="fly-layer" aria-hidden="true"></div>
+
+<!-- ── boot ──────────────────────────────────────────────────────────────── -->
+<section class="screen is-active" id="screen-boot">
+  <div class="boot-card panel">
+    <img class="boot-logo" src="assets/images/ui/emoji/logo.png" alt="" width="512" height="512">
+    <h1 class="boot-title">Hemichordata<span>Quest</span></h1>
+    <p class="boot-sub">Low tide over the flats</p>
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <p class="boot-status" id="boot-status">Waiting for the tide to fall&hellip;</p>
+    <button class="btn btn-primary boot-btn is-hidden" id="btn-boot">
+      <img class="btn-icon" src="assets/images/ui/emoji/play.png" alt="">
+      <span>Walk out onto the flat</span>
+    </button>
+  </div>
+</section>
+
+<!-- ── main menu ─────────────────────────────────────────────────────────── -->
+<section class="screen" id="screen-menu">
+  <div class="menu-wrap">
+    <div class="menu-card panel">
+      <div class="menu-head">
+        <img class="menu-logo" src="assets/images/ui/emoji/logo.png" alt="" width="512" height="512">
+        <div>
+          <h1 class="menu-title">Hemichordata<span>Quest</span></h1>
+          <p class="menu-sub">Five chambers down an acorn worm&rsquo;s burrow</p>
+        </div>
+      </div>
+      <p class="menu-blurb">
+        The tide is out. A <b>Balanoglossus</b> has left its coiled cast on the sand,
+        and its U-shaped burrow runs down into the wet mud. Follow it chamber by
+        chamber and answer what each one asks.
+      </p>
+      <div class="menu-specimens">
+        <span class="menu-specimens-label">Specimens on the flat</span>
+        <div class="specimen-strip" id="menu-specimens"></div>
+      </div>
+
+      <div class="menu-btns">
+        <button class="btn btn-primary btn-lg" id="btn-play">
+          <img class="btn-icon" src="assets/images/ui/emoji/play.png" alt="">
+          <span>Begin the descent</span>
+        </button>
+        <button class="btn" id="btn-how">
+          <img class="btn-icon" src="assets/images/ui/emoji/help.png" alt="">
+          <span>How to play</span>
+        </button>
+        <button class="btn" id="btn-menu-settings">
+          <img class="btn-icon" src="assets/images/ui/emoji/settings.png" alt="">
+          <span>Settings</span>
+        </button>
+      </div>
+    </div>
+
+    <aside class="records-card panel" id="records-card">
+      <h2 class="card-title">
+        <img class="title-icon" src="assets/images/ui/emoji/trophy.png" alt="">Cast records
+      </h2>
+      <dl class="records">
+        <div class="rec"><dt>Best grains</dt><dd id="rec-grains">0</dd></div>
+        <div class="rec"><dt>Best rating</dt><dd id="rec-stars" class="rec-stars"></dd></div>
+        <div class="rec"><dt>Best time</dt><dd id="rec-time">&mdash;</dd></div>
+        <div class="rec"><dt>Descents</dt><dd id="rec-runs">0</dd></div>
+      </dl>
+      <p class="records-note" id="records-note"></p>
+    </aside>
+  </div>
+</section>
+
+<!-- ── game ──────────────────────────────────────────────────────────────── -->
+<section class="screen" id="screen-game">
+  <header class="hud panel">
+    <div class="hud-brand">
+      <img class="hud-logo" src="assets/images/ui/emoji/logo.png" alt="" width="512" height="512">
+      <div class="hud-brand-text">
+        <strong>Hemichordata Quest</strong>
+        <span id="hud-chamber">Chamber 1 of 5</span>
+      </div>
+    </div>
+
+    <div class="hud-stats">
+      <div class="stat" id="stat-time" title="Time in the burrow">
+        <img class="stat-icon" src="assets/images/ui/emoji/tide.png" alt="Time">
+        <span id="hud-time">0:00</span>
+      </div>
+      <div class="stat stat-grains" id="stat-grains" title="Sand grains collected">
+        <img class="stat-icon" src="assets/images/ui/emoji/currency.png" alt="Sand grains">
+        <span id="hud-grains">0</span>
+      </div>
+      <div class="stars" id="hud-stars" title="Cast rating" aria-label="Rating"></div>
+    </div>
+
+    <div class="hud-controls">
+      <button class="icon-btn" id="btn-music" aria-pressed="true" title="Music">
+        <img src="assets/images/ui/emoji/music_on.png" alt="Music">
+      </button>
+      <button class="icon-btn" id="btn-sound" aria-pressed="true" title="Sound effects">
+        <img src="assets/images/ui/emoji/sound_on.png" alt="Sound effects">
+      </button>
+      <button class="icon-btn" id="btn-settings" title="Settings">
+        <img src="assets/images/ui/emoji/settings.png" alt="Settings">
+      </button>
+      <button class="icon-btn" id="btn-quit" title="Main menu">
+        <img src="assets/images/ui/emoji/home.png" alt="Main menu">
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- the burrow: the progression track and the primary art -->
+    <div class="burrow-panel panel">
+      <div class="burrow" id="burrow">
+        <svg class="burrow-svg" id="burrow-svg" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#bfe6d8"/>
+              <stop offset="100%" stop-color="#7fc4ae"/>
+            </linearGradient>
+            <linearGradient id="tunnelFill" x1="0" y1="0" x2="0.4" y2="1">
+              <stop offset="0%" stop-color="#fdf6ea"/>
+              <stop offset="55%" stop-color="#e4d3b2"/>
+              <stop offset="100%" stop-color="#c3ac83"/>
+            </linearGradient>
+            <radialGradient id="tunnelGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#f5c073" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#f5c073" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="wormBody" x1="0" y1="0" x2="1" y2="0.6">
+              <stop offset="0%" stop-color="#f2a06a"/>
+              <stop offset="45%" stop-color="#d1663c"/>
+              <stop offset="100%" stop-color="#8a3b22"/>
+            </linearGradient>
+            <clipPath id="fieldClip"><rect x="0" y="0" width="100" height="100"/></clipPath>
+            <!-- keeps the tunnel from breaking out above the sediment surface -->
+            <clipPath id="belowSurface"><rect x="0" y="14.4" width="100" height="85.6"/></clipPath>
+          </defs>
+
+          <g clip-path="url(#fieldClip)">
+            <!-- shallow water above the flat -->
+            <rect x="0" y="0" width="100" height="15" fill="url(#water)" opacity="0.62"/>
+            <ellipse cx="34" cy="3.4" rx="26" ry="3" fill="#ffffff" opacity="0.16"/>
+            <path id="ripple-a" d="M0 12 q6 -2.4 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0"
+                  fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.7"/>
+            <path id="ripple-b" d="M0 8 q8 -2 16 0 t16 0 t16 0 t16 0 t16 0 t16 0"
+                  fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="0.55"/>
+
+            <!-- bedded sediment: laminae, not scan lines -->
+            <rect x="0" y="14.4" width="100" height="86" fill="#39413a"/>
+            <g class="beds">
+              <path d="M0 15.6 q14 -1.4 26 .3 t26 .2 t26 -.6 t26 .4 V19 H0 Z" fill="#c9b590" opacity="0.8"/>
+              <path d="M0 19.2 q16 1.2 30 -.4 t30 .5 t30 -.3 V21 H0 Z" fill="#8e8062" opacity="0.45"/>
+              <path d="M0 29 q18 -2 32 .4 t32 .3 t32 -1.1 V31.4 H0 Z" fill="#5d6455" opacity="0.5"/>
+              <path d="M0 44 q20 2.2 36 -.6 t36 .8 t32 -.6 V47 H0 Z" fill="#4c5449" opacity="0.55"/>
+              <path d="M0 60.5 q22 -2.4 40 .5 t40 .2 V62.6 H0 Z" fill="#5d6455" opacity="0.36"/>
+              <path d="M0 76 q24 2.6 44 -.8 t44 .6 V79 H0 Z" fill="#434b41" opacity="0.55"/>
+              <path d="M0 90.5 q20 -2 38 .4 t38 .3 V92.6 H0 Z" fill="#4c5449" opacity="0.36"/>
+            </g>
+
+            <!-- buried grit, shell fragments and the ghost of an older burrow -->
+            <g class="grit" opacity="0.42">
+              <path d="M60 21 C69 29 64 39 73 45 C79 49 88 47 95 51" fill="none"
+                    stroke="#4d554a" stroke-width="4.6" stroke-linecap="round" opacity="0.55"/>
+              <path d="M60 21 C69 29 64 39 73 45 C79 49 88 47 95 51" fill="none"
+                    stroke="#6b7364" stroke-width="1.2" stroke-linecap="round"
+                    stroke-dasharray="2.4 5" opacity="0.5"/>
+              <path d="M45.4 26.6 a3.4 3.4 0 0 1 6.4 1.8 l-6.4 -0.4 Z" fill="#9c9179" opacity="0.5"/>
+              <path d="M46.6 26.2 l1.4 2.2 M48.4 25.9 l0.6 2.4 M50.2 26.4 l-0.2 2.2"
+                    stroke="#7d7460" stroke-width="0.3" opacity="0.6"/>
+              <path d="M85 63.4 a2.9 2.9 0 0 0 -5.5 1.5 l5.5 0.3 Z" fill="#a2977f" opacity="0.45"/>
+              <ellipse cx="30" cy="91" rx="2.4" ry="1.3" fill="#8d8471" opacity="0.45"/>
+              <circle cx="71" cy="31" r="0.9" fill="#7e8674" opacity="0.6"/>
+              <circle cx="89" cy="35" r="1.3" fill="#7e8674" opacity="0.5"/>
+              <circle cx="12" cy="70" r="1.1" fill="#7e8674" opacity="0.5"/>
+              <circle cx="57" cy="59" r="0.8" fill="#7e8674" opacity="0.5"/>
+              <circle cx="93" cy="90" r="1.5" fill="#7e8674" opacity="0.45"/>
+              <circle cx="47" cy="41" r="0.7" fill="#7e8674" opacity="0.5"/>
+            </g>
+
+            <!-- the burrow itself -->
+            <g clip-path="url(#belowSurface)">
+            <path id="exit-shaft" class="shaft"
+                  d="M85 72 C94 58 92 34 90 16"
+                  fill="none" stroke="url(#tunnelFill)" stroke-width="7.2" stroke-linecap="round"/>
+            <path id="burrow-path" class="tunnel-outer"
+                  d="M17 14 C17 34 13 48 27 58 C39 66 35 77 51 83 C63 87 77 83 85 72"
+                  fill="none" stroke="#1b211e" stroke-width="12.4" stroke-linecap="round"/>
+            <path class="tunnel-inner"
+                  d="M17 14 C17 34 13 48 27 58 C39 66 35 77 51 83 C63 87 77 83 85 72"
+                  fill="none" stroke="url(#tunnelFill)" stroke-width="8.6" stroke-linecap="round"/>
+            <path class="tunnel-sheen"
+                  d="M17 14 C17 34 13 48 27 58 C39 66 35 77 51 83 C63 87 77 83 85 72"
+                  fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1.5"
+                  stroke-linecap="round" stroke-dasharray="6 12"/>
+            </g>
+
+            <!-- the surface hole and the cast mound that grows beside it -->
+            <ellipse cx="17" cy="16.4" rx="9.4" ry="3.6" fill="#c9b590" opacity="0.9"/>
+            <ellipse cx="17" cy="15.6" rx="8.2" ry="3" fill="#20261f" opacity="0.92"/>
+            <ellipse cx="17" cy="15.2" rx="8.2" ry="3" fill="#3d463f" opacity="0.55"/>
+            <path d="M9.6 14.4 a8.2 3 0 0 1 14.8 0" fill="none" stroke="#e6d8ba"
+                  stroke-width="0.8" stroke-linecap="round" opacity="0.7"/>
+            <g id="cast-mound" class="cast-mound">
+              <ellipse cx="90" cy="17" rx="8.6" ry="3" fill="#b9a583"/>
+              <ellipse cx="90" cy="16.2" rx="8.6" ry="3" fill="#d9c9ac"/>
+              <path id="cast-coil" fill="none" stroke="#d98f3c" stroke-width="1.6" stroke-linecap="round"/>
+            </g>
+
+            <!-- the traveller -->
+            <g clip-path="url(#belowSurface)">
+            <g id="worm-token" class="worm-token">
+              <!-- proboscis forward (+x is the direction of travel), then the
+                   collar, then the tapering trunk -->
+              <g class="worm-inner">
+                <path d="M-6 0 C-5.5 -1.1 -3 -1.8 0 -2.1 C1.6 -2.25 2.6 -2.4 3.1 -2.4
+                         C4.7 -2.4 6 -1.4 6 0 C6 1.4 4.7 2.4 3.1 2.4
+                         C2.6 2.4 1.6 2.25 0 2.1 C-3 1.8 -5.5 1.1 -6 0 Z"
+                      fill="url(#wormBody)" stroke="#5e2513" stroke-width="0.34"/>
+                <path d="M2.5 -2.35 L2.5 2.35 M1.4 -2.2 L1.4 2.2"
+                      stroke="#5e2513" stroke-width="0.3" opacity="0.6"/>
+                <path d="M-5.2 -0.85 C-3 -1.5 -0.4 -1.7 1.6 -1.75 C3.2 -1.8 4.7 -1.3 5.3 -0.5"
+                      fill="none" stroke="#ffe3c9" stroke-width="0.5" stroke-linecap="round" opacity="0.8"/>
+                <circle cx="5.1" cy="-0.55" r="0.42" fill="#5e2513" opacity="0.6"/>
+              </g>
+            </g>
+            </g>
+          </g>
+        </svg>
+        <div class="chambers" id="chambers"></div>
+      </div>
+    </div>
+
+    <!-- the riddle console -->
+    <div class="console-panel panel">
+      <div class="console-head">
+        <span class="chip chip-num" id="chip-index">Chamber 1</span>
+        <span class="chip chip-name" id="chip-name">The Collar Vault</span>
+      </div>
+
+      <p class="riddle" id="riddle-text">Analyzing marine specimens...</p>
+
+      <figure class="specimen" id="specimen">
+        <div class="specimen-frame">
+          <img id="specimen-art" src="assets/images/characters/saccoglossus.png" alt="Saccoglossus">
+          <span class="specimen-gloss" aria-hidden="true"></span>
+        </div>
+        <figcaption id="specimen-caption">Collar region &mdash; the seat of the stomochord</figcaption>
+      </figure>
+
+      <div class="answer-block">
+        <label class="answer-label" for="answer-input">Your answer</label>
+        <input type="text" id="answer-input" placeholder="Type answer here"
+               autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+               enterkeyhint="go" maxlength="48">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-check">
+            <img class="btn-icon" src="assets/images/ui/emoji/correct.png" alt="">
+            <span>Check answer</span>
+          </button>
+          <button class="btn btn-ghost" id="btn-hint">
+            <img class="btn-icon" src="assets/images/ui/emoji/hint.png" alt="">
+            <span>Hint</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="feedback" id="feedback" role="status" aria-live="polite">
+        <img class="feedback-icon is-hidden" id="feedback-icon" src="assets/images/ui/emoji/hint.png" alt="">
+        <span id="feedback-text"></span>
+      </div>
+
+      <div class="purse" id="purse">
+        <img class="purse-icon" src="assets/images/ui/emoji/currency.png" alt="">
+        <span>This chamber is worth <b id="chamber-worth">100</b> grains</span>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ── end screen ────────────────────────────────────────────────────────── -->
+<section class="screen" id="screen-end">
+  <div class="end-card panel">
+    <img class="end-trophy" src="assets/images/ui/emoji/trophy.png" alt="" width="192" height="192">
+    <h2 class="end-title">Final report</h2>
+    <p class="end-sub" id="end-sub">The burrow is logged from the surface hole to the gill basket.</p>
+
+    <div class="stars stars-lg" id="end-stars" aria-label="Rating"></div>
+
+    <div class="end-stats">
+      <div class="end-stat">
+        <img src="assets/images/ui/emoji/currency.png" alt="">
+        <b id="end-grains">0</b><span>grains</span>
+      </div>
+      <div class="end-stat">
+        <img src="assets/images/ui/emoji/tide.png" alt="">
+        <b id="end-time">0:00</b><span>on the flat</span>
+      </div>
+      <div class="end-stat">
+        <img src="assets/images/ui/emoji/cast.png" alt="">
+        <b id="end-clean">0/5</b><span>clean casts</span>
+      </div>
+    </div>
+
+    <p class="end-record is-hidden" id="end-record"></p>
+
+    <div class="end-report">
+      <p><b>Phylum:</b> Hemichordata &nbsp;&middot;&nbsp; <b>Status:</b> All riddles solved</p>
+      <p>You have mastered the anatomy of worm-like marine animals, from the
+         <b>stomochord</b> to the <b>proboscis gland</b>.</p>
+    </div>
+
+    <div class="end-btns">
+      <button class="btn btn-primary" id="btn-again">
+        <img class="btn-icon" src="assets/images/ui/emoji/replay.png" alt="">
+        <span>Descend again</span>
+      </button>
+      <button class="btn" id="btn-learn">
+        <img class="btn-icon" src="assets/images/ui/emoji/book.png" alt="">
+        <span>Learn more</span>
+      </button>
+      <button class="btn" id="btn-end-menu">
+        <img class="btn-icon" src="assets/images/ui/emoji/home.png" alt="">
+        <span>Main menu</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ── how to play (controls + objective only) ───────────────────────────── -->
+<div class="modal" id="modal-how" role="dialog" aria-modal="true" aria-labelledby="how-title" hidden>
+  <div class="modal-card panel">
+    <header class="modal-head">
+      <h2 id="how-title"><img class="title-icon" src="assets/images/ui/emoji/help.png" alt="">How to play</h2>
+      <button class="icon-btn modal-close" data-close="modal-how" title="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="Close">
+      </button>
+    </header>
+    <div class="modal-body">
+      <h3>Objective</h3>
+      <p>Work down the burrow from the surface hole to the blind end. Each of the
+         five chambers asks one riddle about hemichordate anatomy. Answer it and
+         the worm crawls on to the next chamber. Clear all five to file your report.</p>
+
+      <h3>Controls</h3>
+      <ul class="how-list">
+        <li><b>Type</b> your answer into the answer field.</li>
+        <li><b>Enter</b> or <b>Check answer</b> submits it.</li>
+        <li><b>Hint</b> reveals a clue for the current chamber &mdash; it costs grains.</li>
+        <li>Everything responds to touch exactly as it does to a mouse.</li>
+      </ul>
+
+      <h3>Grains and rating</h3>
+      <ul class="how-list">
+        <li>A chamber cleared first try pays <b>100 grains</b>.</li>
+        <li>Using the hint drops it to <b>60</b>; each wrong answer costs <b>20</b> more.</li>
+        <li>A chamber never pays less than <b>20</b>.</li>
+        <li>Your grain total sets the cast rating out of three.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── settings ──────────────────────────────────────────────────────────── -->
+<div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="set-title" hidden>
+  <div class="modal-card panel">
+    <header class="modal-head">
+      <h2 id="set-title"><img class="title-icon" src="assets/images/ui/emoji/settings.png" alt="">Settings</h2>
+      <button class="icon-btn modal-close" data-close="modal-settings" title="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="Close">
+      </button>
+    </header>
+    <div class="modal-body">
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <img class="toggle-icon" id="set-music-icon" src="assets/images/ui/emoji/music_on.png" alt="">
+          Music
+        </span>
+        <button class="switch" id="set-music" role="switch" aria-checked="true"><i></i></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <img class="toggle-icon" id="set-sfx-icon" src="assets/images/ui/emoji/sound_on.png" alt="">
+          Sound effects
+        </span>
+        <button class="switch" id="set-sfx" role="switch" aria-checked="true"><i></i></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <img class="toggle-icon" src="assets/images/ui/emoji/tide.png" alt="">
+          Reduced motion
+        </span>
+        <button class="switch" id="set-motion" role="switch" aria-checked="false"><i></i></button>
+      </div>
+
+      <p class="set-note">Reduced motion stops the drifting grit, the particle bursts and the
+         travelling highlights. Everything else keeps working.</p>
+
+      <button class="btn btn-danger" id="btn-reset">
+        <img class="btn-icon" src="assets/images/ui/emoji/wrong.png" alt="">
+        <span>Reset records</span>
+      </button>
+      <p class="set-note" id="reset-note">Clears best grains, rating, time and descent count.
+         Your audio and motion preferences are kept.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── learn more (reference / lore, end screen only) ────────────────────── -->
+<div class="modal" id="modal-learn" role="dialog" aria-modal="true" aria-labelledby="learn-title" hidden>
+  <div class="modal-card panel modal-wide">
+    <header class="modal-head">
+      <h2 id="learn-title"><img class="title-icon" src="assets/images/ui/emoji/book.png" alt="">Learn more</h2>
+      <button class="icon-btn modal-close" data-close="modal-learn" title="Close">
+        <img src="assets/images/ui/emoji/close.png" alt="Close">
+      </button>
+    </header>
+    <div class="modal-body" id="learn-body"></div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

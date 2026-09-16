@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050a14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="DECISION CARDS: Cell Cycle Control - regulate the cell cycle and protect the genome.">
+<title>DECISION CARDS: Cell Cycle Control</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="is-booting">
+
+<!-- Shared SVG gradient definitions (document scoped, referenced by id) -->
+<svg id="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="strandGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="35%" stop-color="#22d3ee" stop-opacity=".85"/>
+      <stop offset="65%" stop-color="#a855f7" stop-opacity=".85"/>
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="emblemCore" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#d9fbff"/>
+      <stop offset="45%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0b4a63"/>
+    </radialGradient>
+    <linearGradient id="emblemRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9beaff"/>
+      <stop offset="50%" stop-color="#2b7f96"/>
+      <stop offset="100%" stop-color="#0a2d3c"/>
+    </linearGradient>
+
+    <!-- cell-cycle dial -->
+    <radialGradient id="dialPlate" cx="50%" cy="34%" r="72%">
+      <stop offset="0%" stop-color="#16273c"/>
+      <stop offset="62%" stop-color="#0b1424"/>
+      <stop offset="100%" stop-color="#050a13"/>
+    </radialGradient>
+    <linearGradient id="dialArcHot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9df3ff"/>
+      <stop offset="52%" stop-color="#38e0ff"/>
+      <stop offset="100%" stop-color="#0d6f8c"/>
+    </linearGradient>
+    <linearGradient id="dialArcAlert" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd0d8"/>
+      <stop offset="52%" stop-color="#fb7185"/>
+      <stop offset="100%" stop-color="#7c1130"/>
+    </linearGradient>
+    <radialGradient id="dialCore" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#e6fdff"/>
+      <stop offset="34%" stop-color="#3fd8f5"/>
+      <stop offset="72%" stop-color="#0d5f7d"/>
+      <stop offset="100%" stop-color="#061726"/>
+    </radialGradient>
+    <radialGradient id="dialCoreAlert" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#ffe9ee"/>
+      <stop offset="34%" stop-color="#fb7185"/>
+      <stop offset="72%" stop-color="#7a1330"/>
+      <stop offset="100%" stop-color="#220711"/>
+    </radialGradient>
+    <linearGradient id="dialSweep" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7ff0ff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#7ff0ff" stop-opacity=".85"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ===================== AMBIENT BACKGROUND ===================== -->
+<div id="bg" aria-hidden="true">
+  <div class="bg-deep"></div>
+  <div class="bg-plasma">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+    <span class="blob blob-d"></span>
+  </div>
+  <div class="bg-hex"></div>
+  <div class="bg-grid"></div>
+  <canvas id="bgfx"></canvas>
+  <div class="bg-strands">
+    <svg class="strand strand-1" viewBox="0 0 200 1400" preserveAspectRatio="none">
+      <g class="strand-g" fill="none" stroke="url(#strandGrad)" stroke-width="3">
+        <path d="M100,0 C160,90 40,180 100,270 C160,360 40,450 100,540 C160,630 40,720 100,810 C160,900 40,990 100,1080 C160,1170 40,1260 100,1350"/>
+        <path d="M100,0 C40,90 160,180 100,270 C40,360 160,450 100,540 C40,630 160,720 100,810 C40,900 160,990 100,1080 C40,1170 160,1260 100,1350"/>
+        <g stroke-width="2" opacity=".55">
+          <path d="M62,45 H138M138,135 H62M62,225 H138M138,315 H62M62,405 H138M138,495 H62M62,585 H138M138,675 H62M62,765 H138M138,855 H62M62,945 H138M138,1035 H62M62,1125 H138M138,1215 H62M62,1305 H138"/>
+        </g>
+      </g>
+    </svg>
+    <svg class="strand strand-2" viewBox="0 0 200 1400" preserveAspectRatio="none">
+      <g class="strand-g" fill="none" stroke="url(#strandGrad)" stroke-width="2.2" opacity=".7">
+        <path d="M100,0 C160,90 40,180 100,270 C160,360 40,450 100,540 C160,630 40,720 100,810 C160,900 40,990 100,1080 C160,1170 40,1260 100,1350"/>
+        <path d="M100,0 C40,90 160,180 100,270 C40,360 160,450 100,540 C40,630 160,720 100,810 C40,900 160,990 100,1080 C40,1170 160,1260 100,1350"/>
+      </g>
+    </svg>
+  </div>
+  <div class="bg-sweep"></div>
+  <div class="bg-scan"></div>
+  <div class="bg-vignette"></div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- ===================== APP ===================== -->
+<main id="app">
+
+  <!-- ---------- BOOT ---------- -->
+  <section class="screen is-active" id="screen-boot">
+    <div class="boot-wrap panel panel--glass">
+      <div class="boot-emblem">
+        <svg viewBox="0 0 120 120" class="emblem-svg">
+          <polygon class="emblem-rim" points="60,6 106,33 106,87 60,114 14,87 14,33" fill="none" stroke="url(#emblemRim)" stroke-width="4"/>
+          <circle cx="60" cy="60" r="29" fill="url(#emblemCore)" opacity=".8"/>
+          <g fill="none" stroke="#eafcff" stroke-linecap="round">
+            <path d="M60,30 C77,39 43,53 60,62 C77,71 43,85 60,94" stroke-width="3"/>
+            <path d="M60,30 C43,39 77,53 60,62 C43,71 77,85 60,94" stroke-width="3"/>
+            <g stroke-width="2" opacity=".65">
+              <path d="M48,40 H72M72,52 H48M48,72 H72M72,84 H48"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="boot-title">TEJA_SYS<span class="boot-caret">_</span></div>
+      <div class="boot-log" id="boot-log"></div>
+      <div class="boot-bar"><span id="boot-fill"></span></div>
+      <button class="btn btn--primary boot-skip" id="boot-skip" type="button" aria-label="Initialise the controller station">
+        <span class="btn-face">INITIALISE</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ---------- MAIN MENU ---------- -->
+  <section class="screen" id="screen-menu">
+    <div class="menu-shell">
+      <header class="title-block">
+        <div class="title-emblem" id="title-emblem">
+          <svg viewBox="0 0 120 120" class="emblem-svg emblem-svg--lg">
+            <polygon class="emblem-rim" points="60,4 108,32 108,88 60,116 12,88 12,32" fill="none" stroke="url(#emblemRim)" stroke-width="3.4"/>
+            <polygon points="60,14 99,37 99,83 60,106 21,83 21,37" fill="none" stroke="rgba(126,224,255,.35)" stroke-width="1.4"/>
+            <circle cx="60" cy="60" r="31" fill="url(#emblemCore)" opacity=".82"/>
+            <g fill="none" stroke="#eafcff" stroke-linecap="round">
+              <path d="M60,28 C79,38 41,53 60,62 C79,71 41,86 60,96" stroke-width="3.4"/>
+              <path d="M60,28 C41,38 79,53 60,62 C41,71 79,86 60,96" stroke-width="3.4"/>
+              <g stroke-width="2.2" opacity=".7">
+                <path d="M46,39 H74M74,52 H46M46,72 H74M74,85 H46"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <h1 class="game-title"><span class="t-1">DECISION</span><span class="t-2">CARDS</span></h1>
+        <p class="game-sub">CELL&nbsp;CYCLE&nbsp;CONTROL&nbsp;&nbsp;/&nbsp;&nbsp;GENOME INTEGRITY DIVISION</p>
+      </header>
+
+      <nav class="menu-nav">
+        <button class="btn btn--primary btn--wide" id="btn-start" type="button" aria-label="Start shift">
+          <span class="btn-face">
+            <img class="ico ico--lg" src="assets/images/ui/emoji/play_tri.png" alt="">
+            <span class="btn-label">START SHIFT<em id="start-sub">Case File 01</em></span>
+          </span>
+        </button>
+        <button class="btn btn--wide" id="btn-levels" type="button" aria-label="Case files">
+          <span class="btn-face">
+            <img class="ico" src="assets/images/ui/emoji/flask.png" alt="">
+            <span class="btn-label">CASE FILES<em>Select &amp; replay</em></span>
+          </span>
+        </button>
+        <button class="btn btn--wide" id="btn-howto" type="button" aria-label="How to play">
+          <span class="btn-face">
+            <img class="ico" src="assets/images/ui/emoji/microscope.png" alt="">
+            <span class="btn-label">HOW TO PLAY<em>Controls &amp; objective</em></span>
+          </span>
+        </button>
+        <button class="btn btn--wide" id="btn-settings" type="button" aria-label="Settings">
+          <span class="btn-face">
+            <img class="ico" src="assets/images/ui/emoji/settings.png" alt="">
+            <span class="btn-label">SETTINGS<em>Audio &amp; effects</em></span>
+          </span>
+        </button>
+      </nav>
+
+      <footer class="menu-foot">
+        <div class="readout readout--mini">
+          <img class="ico ico--sm" src="assets/images/ui/emoji/dna_shield.png" alt="">
+          <span class="readout-k">BEST INTEGRITY</span>
+          <span class="readout-v" id="menu-best">--</span>
+        </div>
+        <div class="readout readout--mini">
+          <img class="ico ico--sm" src="assets/images/ui/emoji/rank_filled.png" alt="">
+          <span class="readout-k">CLEARANCE</span>
+          <span class="readout-v" id="menu-clearance">--</span>
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ---------- LEVEL SELECT ---------- -->
+  <section class="screen" id="screen-levels">
+    <div class="sheet">
+      <header class="sheet-head">
+        <button class="icon-btn" id="levels-back" type="button" aria-label="Back to menu">
+          <img class="ico" src="assets/images/ui/emoji/arrow_left.png" alt="">
+        </button>
+        <h2 class="sheet-title">CASE FILES</h2>
+        <div class="sheet-note">Clear a file to unlock the next</div>
+      </header>
+      <div class="level-grid" id="level-grid"></div>
+      <footer class="sheet-foot">
+        <button class="btn btn--ghost" id="levels-reset" type="button" aria-label="Wipe progress">
+          <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/replay.png" alt="">WIPE PROGRESS</span>
+        </button>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ---------- GAME ---------- -->
+  <section class="screen" id="screen-game">
+    <div class="stage">
+
+      <header class="hud">
+        <div class="hud-block hud-block--vitals">
+          <div class="hud-label">
+            <img class="ico ico--sm" src="assets/images/ui/emoji/dna_shield.png" alt="">
+            GENOME STABILITY
+          </div>
+          <div class="meter" id="meter">
+            <div class="meter-track">
+              <div class="meter-fill" id="health-bar"></div>
+              <div class="meter-ticks"></div>
+            </div>
+            <div class="meter-val" id="health-val">100%</div>
+          </div>
+        </div>
+
+        <div class="hud-block hud-block--case">
+          <div class="hud-label" id="hud-case-name">CASE FILE</div>
+          <div class="case-count"><span id="current-card-num">1</span><i>/</i><span id="total-card-num">5</span></div>
+          <div class="phase-chip" id="phase-chip">INTERPHASE</div>
+        </div>
+
+        <div class="hud-block hud-block--tools">
+          <div class="streak-box" title="Correct decisions in a row">
+            <img class="ico ico--sm" src="assets/images/ui/emoji/streak.png" alt="">
+            <span id="streak-val">0</span>
+          </div>
+          <div class="streak-box" title="Mutations logged">
+            <img class="ico ico--sm" src="assets/images/ui/emoji/mutation.png" alt="">
+            <span id="mut-val">0</span>
+          </div>
+          <button class="icon-btn" id="btn-game-settings" type="button" aria-label="Settings">
+            <img class="ico" src="assets/images/ui/emoji/settings.png" alt="">
+          </button>
+          <button class="icon-btn" id="btn-pause" type="button" aria-label="Pause">
+            <img class="ico" src="assets/images/ui/emoji/pause_bars.png" alt="">
+          </button>
+        </div>
+      </header>
+
+      <div class="stage-body">
+
+        <!-- LEFT: condition readout -->
+        <aside class="readout-panel panel" id="readout-panel">
+          <div class="panel-rivets"></div>
+          <h3 class="readout-title" id="card-title">Loading...</h3>
+          <div class="readout-sub" id="card-phase-note">Awaiting sample</div>
+          <div class="phase-track" id="phase-track">
+            <span data-p="G1"><i>G1</i><b>growth</b></span>
+            <span data-p="S"><i>S</i><b>copy</b></span>
+            <span data-p="G2"><i>G2</i><b>check</b></span>
+            <span data-p="M"><i>M</i><b>divide</b></span>
+          </div>
+          <div class="cond-list" id="card-conditions"></div>
+
+          <!-- Cell-cycle dial: thematic readout of the phase this specimen sits in.
+               Purely a presentation of the card's existing track data. -->
+          <div class="cycle-dial" id="cycle-dial">
+            <svg viewBox="0 0 200 200" class="dial-svg" aria-hidden="true">
+              <circle class="dial-plate" cx="100" cy="100" r="92"/>
+              <g class="dial-arcs" fill="none" stroke-linecap="butt" stroke-width="17">
+                <path class="dial-arc" data-p="G1" d="M100 24 A76 76 0 0 1 176 100"/>
+                <path class="dial-arc" data-p="S"  d="M176 100 A76 76 0 0 1 100 176"/>
+                <path class="dial-arc" data-p="G2" d="M100 176 A76 76 0 0 1 24 100"/>
+                <path class="dial-arc" data-p="M"  d="M24 100 A76 76 0 0 1 100 24"/>
+              </g>
+              <g class="dial-ticks" stroke="rgba(126,214,255,.35)" stroke-width="2">
+                <path d="M100 8V26M192 100H174M100 192V174M8 100H26"/>
+              </g>
+              <g class="dial-sweep">
+                <path d="M100 100 L100 32" stroke="url(#dialSweep)" stroke-width="3" stroke-linecap="round" fill="none"/>
+              </g>
+              <circle class="dial-core" cx="100" cy="100" r="47"/>
+              <g class="dial-helix" fill="none" stroke="#dff7ff" stroke-linecap="round" stroke-width="4">
+                <path d="M100 66 C122 78 78 96 100 108 C122 120 78 138 100 150"/>
+                <path d="M100 66 C78 78 122 96 100 108 C78 120 122 138 100 150"/>
+                <g stroke-width="2.6" opacity=".65">
+                  <path d="M86 76H114M114 94H86M86 122H114M114 140H86"/>
+                </g>
+              </g>
+              <g class="dial-labels" font-size="15" font-weight="700" text-anchor="middle">
+                <text class="dial-label" data-p="G1" x="146" y="60">G1</text>
+                <text class="dial-label" data-p="S"  x="146" y="150">S</text>
+                <text class="dial-label" data-p="G2" x="54"  y="150">G2</text>
+                <text class="dial-label" data-p="M"  x="54"  y="60">M</text>
+              </g>
+            </svg>
+            <div class="dial-caption" id="dial-caption">CYCLE POSITION</div>
+          </div>
+
+          <div class="teja-console" id="teja-overlay">
+            <div class="teja-head">
+              <img class="ico ico--sm teja-avatar" id="teja-avatar" src="assets/images/ui/emoji/teja.png" alt="">
+              <span>TEJA_SYS ADVISORY</span>
+            </div>
+            <p id="teja-msg"></p>
+          </div>
+        </aside>
+
+        <!-- CENTER: card -->
+        <div class="card-area">
+          <div class="card-shell">
+            <div class="card" id="game-card">
+              <div class="card-face card-front">
+                <div class="top-strip" id="card-strip"></div>
+                <div class="card-art">
+                  <img class="card-art-img" id="card-art-img" src="" alt="">
+                  <div class="card-art-fallback" id="card-art-fallback">
+                    <div class="hologram-visual" id="card-visual"></div>
+                    <div class="fallback-title" id="fallback-title"></div>
+                  </div>
+                  <div class="card-sheen"></div>
+                  <div class="card-corner card-corner--tl"></div>
+                  <div class="card-corner card-corner--br"></div>
+                </div>
+                <div class="card-foot">
+                  <span class="card-foot-id" id="card-foot-id">SPECIMEN 01</span>
+                  <span class="card-foot-tag" id="card-foot-tag">AWAIT DECISION</span>
+                </div>
+              </div>
+
+              <div class="card-face card-back">
+                <img class="result-icon" id="result-icon" src="assets/images/ui/emoji/check.png" alt="">
+                <div class="result-title" id="result-title">Result</div>
+                <div class="result-explanation" id="result-desc">Explanation text.</div>
+                <div class="result-teja" id="result-teja">
+                  <img class="ico ico--sm" src="assets/images/ui/emoji/teja.png" alt="">
+                  <span id="result-teja-msg"></span>
+                </div>
+                <button class="btn btn--primary next-btn" id="next-btn" type="button" aria-label="Next card">
+                  <span class="btn-face">NEXT CARD <img class="ico ico--sm" src="assets/images/ui/emoji/arrow_right.png" alt=""></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: controls -->
+        <div class="controls panel" id="controls-panel">
+          <div class="panel-rivets"></div>
+          <div class="controls-head">SELECT REGULATORY ACTION</div>
+          <button class="action-btn btn-allow" data-action="allow" type="button" aria-label="Allow: let the cycle proceed">
+            <span class="act-glyph">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <circle cx="17" cy="24" r="10" class="g-fill"/>
+                <circle cx="17" cy="24" r="4.5" class="g-core"/>
+                <path d="M31 14 L41 24 L31 34" class="g-stroke"/>
+                <path d="M25 17 L32 24 L25 31" class="g-stroke g-thin"/>
+              </svg>
+            </span>
+            <span class="act-text">ALLOW<em>proceed</em></span>
+            <span class="keycap">1</span>
+          </button>
+          <button class="action-btn btn-pause" data-action="pause" type="button" aria-label="Pause: arrest the cycle">
+            <span class="act-glyph">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M6 30 L24 38 L42 30 L42 16 L24 8 L6 16 Z" class="g-fill"/>
+                <rect x="17" y="16" width="5" height="16" rx="2" class="g-core"/>
+                <rect x="26" y="16" width="5" height="16" rx="2" class="g-core"/>
+              </svg>
+            </span>
+            <span class="act-text">PAUSE<em>arrest cycle</em></span>
+            <span class="keycap">2</span>
+          </button>
+          <button class="action-btn btn-repair" data-action="repair" type="button" aria-label="Repair: fix or finish DNA">
+            <span class="act-glyph">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M17 8 C31 16 17 32 31 40" class="g-stroke"/>
+                <path d="M31 8 C17 16 31 32 17 40" class="g-stroke"/>
+                <path d="M20 15 H28 M28 24 H20 M20 33 H28" class="g-stroke g-thin"/>
+                <circle cx="35" cy="15" r="6" class="g-fill"/>
+                <path d="M35 11.5 V18.5 M31.5 15 H38.5" class="g-core-stroke"/>
+              </svg>
+            </span>
+            <span class="act-text">REPAIR<em>fix / finish DNA</em></span>
+            <span class="keycap">3</span>
+          </button>
+          <button class="action-btn btn-destroy" data-action="destroy" type="button" aria-label="Destroy: trigger apoptosis">
+            <span class="act-glyph">
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path d="M24 6 A18 18 0 0 1 40 18" class="g-stroke"/>
+                <path d="M42 28 A18 18 0 0 1 28 42" class="g-stroke"/>
+                <path d="M18 41 A18 18 0 0 1 7 27" class="g-stroke"/>
+                <circle cx="19" cy="20" r="6" class="g-fill"/>
+                <circle cx="30" cy="25" r="4.5" class="g-fill"/>
+                <circle cx="22" cy="31" r="3.5" class="g-fill"/>
+              </svg>
+            </span>
+            <span class="act-text">DESTROY<em>apoptosis</em></span>
+            <span class="keycap">4</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- RESULTS ---------- -->
+  <section class="screen" id="screen-results">
+    <div class="sheet sheet--result">
+      <div class="result-crest" id="result-crest">
+        <img class="crest-img" id="crest-img" src="assets/images/ui/emoji/flask.png" alt="">
+      </div>
+      <h2 class="end-title" id="end-title">SIMULATION COMPLETE</h2>
+      <p class="end-msg" id="end-msg">Excellent work, Controller.</p>
+
+      <div class="score-grid">
+        <div class="score-cell">
+          <img class="ico" src="assets/images/ui/emoji/dna_shield.png" alt="">
+          <span class="score-k">GENOME INTEGRITY</span>
+          <span class="score-v" id="end-score">100%</span>
+        </div>
+        <div class="score-cell">
+          <img class="ico" src="assets/images/ui/emoji/target.png" alt="">
+          <span class="score-k">CORRECT CALLS</span>
+          <span class="score-v" id="end-correct">0/0</span>
+        </div>
+        <div class="score-cell">
+          <img class="ico" src="assets/images/ui/emoji/streak.png" alt="">
+          <span class="score-k">BEST STREAK</span>
+          <span class="score-v" id="end-streak">0</span>
+        </div>
+      </div>
+
+      <div class="rank-row" id="rank-row"></div>
+      <div class="review-list" id="review-list"></div>
+
+      <div class="result-actions">
+        <button class="btn btn--primary" id="btn-retry" type="button" aria-label="Retry this case file">
+          <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/replay.png" alt="">RETRY</span>
+        </button>
+        <button class="btn" id="btn-next-level" type="button" aria-label="Next case file">
+          <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/arrow_right.png" alt="">NEXT FILE</span>
+        </button>
+        <button class="btn btn--learn" id="btn-learn" type="button" aria-label="Learn more">
+          <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/codex.png" alt="">LEARN MORE</span>
+        </button>
+        <button class="btn btn--ghost" id="btn-home" type="button" aria-label="Main menu">
+          <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/home.png" alt="">MAIN MENU</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal" id="modal-howto" role="dialog" aria-modal="true" aria-label="How to play">
+  <div class="modal-box panel panel--parchment">
+    <button class="icon-btn modal-x" data-close type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title">
+      <img class="ico" src="assets/images/ui/emoji/microscope.png" alt="">HOW TO PLAY
+    </h2>
+    <div class="modal-scroll">
+      <p class="lede">You are the <strong>Cell Cycle Controller</strong>. Each card is a live cell awaiting your ruling. Read its conditions, pick one regulatory action, and keep the genome stable to the end of the shift.</p>
+
+      <h3 class="mh">OBJECTIVE</h3>
+      <ul class="bullets">
+        <li>Judge every card in the case file correctly.</li>
+        <li>A wrong ruling costs <strong>25%</strong> Genome Stability.</li>
+        <li>If stability hits <strong>0%</strong> the shift ends in apoptosis.</li>
+        <li>Finish above <strong>50%</strong> for a clean cycle.</li>
+      </ul>
+
+      <h3 class="mh">THE FOUR ACTIONS</h3>
+      <div class="howto-actions">
+        <div class="howto-act ha-allow"><span class="ha-k">ALLOW</span><span>Let the cycle proceed untouched.</span></div>
+        <div class="howto-act ha-pause"><span class="ha-k">PAUSE</span><span>Arrest progression so slow processes catch up.</span></div>
+        <div class="howto-act ha-repair"><span class="ha-k">REPAIR</span><span>Trigger corrective machinery to fix or finish DNA.</span></div>
+        <div class="howto-act ha-destroy"><span class="ha-k">DESTROY</span><span>Order apoptosis when damage is beyond saving.</span></div>
+      </div>
+
+      <h3 class="mh">CONTROLS</h3>
+      <ul class="bullets">
+        <li><strong>Tap or click</strong> an action button.</li>
+        <li>Keyboard: <span class="kbd">1</span> Allow &nbsp; <span class="kbd">2</span> Pause &nbsp; <span class="kbd">3</span> Repair &nbsp; <span class="kbd">4</span> Destroy</li>
+        <li><span class="kbd">Enter</span> or <span class="kbd">Space</span> advances to the next card.</li>
+        <li><span class="kbd">Esc</span> pauses the shift or closes a panel.</li>
+      </ul>
+      <p class="foot-note">Reference biology, definitions and case notes live behind <strong>LEARN MORE</strong> on the debrief screen.</p>
+    </div>
+    <button class="btn btn--primary modal-ok" data-close type="button"><span class="btn-face">GOT IT</span></button>
+  </div>
+</div>
+
+<div class="modal" id="modal-settings" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="modal-box modal-box--sm panel panel--glass">
+    <button class="icon-btn modal-x" data-close type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title"><img class="ico" src="assets/images/ui/emoji/settings.png" alt="">SETTINGS</h2>
+    <div class="toggle-row">
+      <button class="toggle" id="toggle-sfx" type="button" aria-pressed="true">
+        <img class="ico ico--lg" id="sfx-icon" src="assets/images/ui/emoji/sound_on.png" alt="">
+        <span class="toggle-k">SOUND FX</span>
+        <span class="toggle-v" id="sfx-state">ON</span>
+      </button>
+      <button class="toggle" id="toggle-music" type="button" aria-pressed="true">
+        <img class="ico ico--lg" id="music-icon" src="assets/images/ui/emoji/music_on.png" alt="">
+        <span class="toggle-k">MUSIC</span>
+        <span class="toggle-v" id="music-state">ON</span>
+      </button>
+      <button class="toggle" id="toggle-fx" type="button" aria-pressed="true">
+        <img class="ico ico--lg" id="fx-icon" src="assets/images/ui/emoji/fx_on.png" alt="">
+        <span class="toggle-k">AMBIENT FX</span>
+        <span class="toggle-v" id="fx-state">ON</span>
+      </button>
+    </div>
+    <div class="settings-note" id="music-src-note">Music: procedural synth</div>
+    <button class="btn btn--primary modal-ok" data-close type="button"><span class="btn-face">CLOSE</span></button>
+  </div>
+</div>
+
+<div class="modal" id="modal-pause" role="dialog" aria-modal="true" aria-label="Paused">
+  <div class="modal-box modal-box--sm panel panel--glass">
+    <h2 class="modal-title"><img class="ico" src="assets/images/ui/emoji/pause_bars.png" alt="">SHIFT PAUSED</h2>
+    <p class="lede center">The cycle is held. Nothing progresses while you are away.</p>
+    <div class="pause-actions">
+      <button class="btn btn--primary" id="pause-resume" type="button" aria-label="Resume shift">
+        <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/play_tri.png" alt="">RESUME</span>
+      </button>
+      <button class="btn" id="pause-howto" type="button" aria-label="How to play">
+        <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/microscope.png" alt="">HOW TO PLAY</span>
+      </button>
+      <button class="btn btn--ghost" id="pause-quit" type="button" aria-label="Abandon shift">
+        <span class="btn-face"><img class="ico ico--sm" src="assets/images/ui/emoji/home.png" alt="">ABANDON SHIFT</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-codex" role="dialog" aria-modal="true" aria-label="Learn more">
+  <div class="modal-box modal-box--lg panel panel--parchment">
+    <button class="icon-btn modal-x" data-close type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title"><img class="ico" src="assets/images/ui/emoji/codex.png" alt="">LEARN MORE</h2>
+    <div class="codex-tabs" id="codex-tabs"></div>
+    <div class="modal-scroll codex-body" id="codex-body"></div>
+    <button class="btn btn--primary modal-ok" data-close type="button"><span class="btn-face">CLOSE ARCHIVE</span></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

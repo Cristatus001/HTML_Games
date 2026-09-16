@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1a21">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Identify the morphological features of Rana tigrina across three field stations.">
+<title>Morphology Master: Rana tigrina</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ==================== AMBIENT BACKDROP ==================== -->
+  <div id="backdrop" aria-hidden="true">
+    <div id="bg-lamp"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Three parallax bands. Each shows its inline SVG unless a drop-in PNG
+         is found in assets/images/background/, in which case the PNG wins. -->
+    <div class="bg-layer" id="bg-far">
+      <svg viewBox="0 0 1400 300" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="farG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1c4f4a"/><stop offset="100%" stop-color="#0a2229"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,300 L0,190 Q90,120 175,185 Q250,110 340,175 Q430,95 520,170
+                 Q610,120 700,185 Q790,110 880,175 Q975,105 1060,180
+                 Q1150,120 1240,185 Q1320,130 1400,190 L1400,300 Z" fill="url(#farG)"/>
+      </svg>
+    </div>
+
+    <div class="bg-layer" id="bg-mid">
+      <svg viewBox="0 0 1800 240" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="midG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2c6b34"/><stop offset="100%" stop-color="#0c2418"/>
+          </linearGradient>
+        </defs>
+        <!-- Reed stems -->
+        <g stroke="url(#midG)" stroke-width="9" stroke-linecap="round" fill="none" opacity="0.95">
+          <path d="M70,240 C60,170 82,120 66,60"/>
+          <path d="M110,240 C122,180 100,130 118,72"/>
+          <path d="M340,240 C330,175 352,125 336,66"/>
+          <path d="M390,240 C402,180 380,128 398,70"/>
+          <path d="M700,240 C690,172 712,122 696,58"/>
+          <path d="M745,240 C757,178 735,126 753,68"/>
+          <path d="M1050,240 C1040,175 1062,125 1046,64"/>
+          <path d="M1096,240 C1108,180 1086,128 1104,72"/>
+          <path d="M1420,240 C1410,172 1432,122 1416,60"/>
+          <path d="M1466,240 C1478,178 1456,126 1474,70"/>
+        </g>
+        <!-- Seed heads -->
+        <g fill="#4a3a17">
+          <ellipse cx="66" cy="56" rx="7" ry="17"/><ellipse cx="336" cy="62" rx="7" ry="17"/>
+          <ellipse cx="696" cy="54" rx="7" ry="17"/><ellipse cx="1046" cy="60" rx="7" ry="17"/>
+          <ellipse cx="1416" cy="56" rx="7" ry="17"/>
+        </g>
+        <path d="M0,240 L0,205 Q160,175 300,205 Q460,168 620,204 Q790,172 950,206
+                 Q1110,174 1270,206 Q1440,176 1600,206 Q1710,192 1800,208 L1800,240 Z"
+              fill="url(#midG)"/>
+      </svg>
+    </div>
+
+    <div class="bg-layer" id="bg-near">
+      <svg viewBox="0 0 2200 180" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="nearG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#123a26"/><stop offset="100%" stop-color="#04120c"/>
+          </linearGradient>
+        </defs>
+        <!-- Lily pads riding the silt line -->
+        <g fill="#1c5230">
+          <path d="M180,120 a54,20 0 1 0 108,0 a54,20 0 1 0 -108,0 z"/>
+          <path d="M760,132 a44,17 0 1 0 88,0 a44,17 0 1 0 -88,0 z"/>
+          <path d="M1480,124 a60,22 0 1 0 120,0 a60,22 0 1 0 -120,0 z"/>
+        </g>
+        <path d="M0,180 L0,150 Q120,126 250,150 Q380,120 510,148 Q650,118 780,150
+                 Q920,122 1050,150 Q1190,120 1320,150 Q1460,124 1590,152
+                 Q1730,122 1860,150 Q2000,126 2120,152 Q2170,146 2200,154 L2200,180 Z"
+              fill="url(#nearG)"/>
+      </svg>
+    </div>
+
+    <div id="bg-vignette"></div>
+  </div>
+
+  <div id="flash" aria-hidden="true"></div>
+  <div id="fx" aria-hidden="true"></div>
+
+  <!-- ==================== BOOT ==================== -->
+  <section id="screen-boot" class="screen is-on">
+    <span id="ico-boot-mark" class="boot-mark" data-alt="Morphology Master"></span>
+    <div class="boot-bar"><i id="boot-fill"></i></div>
+    <div class="boot-note" id="boot-note">Preparing the bench</div>
+  </section>
+
+  <!-- ==================== MAIN MENU ==================== -->
+  <section id="screen-menu" class="screen">
+    <div class="menu-corner">
+      <button type="button" class="icon-btn" id="btn-menu-settings" aria-label="Settings">
+        <span id="ico-menu-dial" data-alt=""></span>
+      </button>
+    </div>
+
+    <div class="screen-inner">
+      <div class="title-block">
+        <h1><span>Morphology</span><span>Master</span></h1>
+        <div class="title-rule"></div>
+        <div class="sub">Field Study &middot; <em>Rana tigrina</em> &middot; Indian Bullfrog</div>
+      </div>
+
+      <div class="jar"><span id="ico-menu-jar" data-alt="Specimen"></span></div>
+
+      <div class="seals" id="menu-seals" aria-label="Seals earned"></div>
+
+      <div class="menu-actions">
+        <button type="button" class="btn btn--go btn--wide" id="btn-play">
+          <span id="ico-play" class="btn-ico" data-alt=""></span>
+          <span class="btn-txt" id="btn-play-txt">Start Examination</span>
+        </button>
+        <button type="button" class="btn btn--wide" id="btn-stations">
+          <span id="ico-stations" class="btn-ico" data-alt=""></span>
+          <span class="btn-txt">Field Stations</span>
+        </button>
+        <button type="button" class="btn btn--ghost btn--wide" id="btn-howto">
+          <span id="ico-howto" class="btn-ico" data-alt=""></span>
+          <span class="btn-txt">How to Play</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FIELD STATIONS ==================== -->
+  <section id="screen-stations" class="screen">
+    <div class="screen-inner">
+      <div class="topbar">
+        <button type="button" class="icon-btn" id="btn-stations-back" aria-label="Back to menu">
+          <span id="ico-stations-back" data-alt=""></span>
+        </button>
+        <div class="bar-title disp">Field <b>Stations</b></div>
+      </div>
+      <div class="eyebrow">Select a station</div>
+      <div class="scroll" style="flex:1; min-height:0;">
+        <div class="station-grid" id="station-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== LAB (level play) ==================== -->
+  <section id="screen-lab" class="screen">
+    <div class="screen-inner">
+      <div class="topbar">
+        <button type="button" class="icon-btn" id="btn-lab-back" aria-label="Back to stations">
+          <span id="ico-lab-back" data-alt=""></span>
+        </button>
+        <div class="bar-title disp" id="lab-title">Station</div>
+        <div class="pips" id="lab-pips" aria-hidden="true"></div>
+        <button type="button" class="icon-btn" id="btn-lab-settings" aria-label="Settings">
+          <span id="ico-lab-dial" data-alt=""></span>
+        </button>
+      </div>
+
+      <div class="lab-grid scroll">
+        <section class="panel riveted vitrine">
+          <div class="eyebrow" style="width:100%">Specimen case</div>
+          <div class="stage" id="vitrine-stage"></div>
+          <div class="readout warn" id="vitrine-readout">Awaiting observations</div>
+        </section>
+
+        <section class="panel riveted worksheet" id="lab-worksheet">
+          <div class="eyebrow">Task</div>
+          <p class="brief" id="lab-brief"></p>
+          <div id="lab-questions"></div>
+          <button type="button" class="btn btn--go btn--wide" id="btn-submit">
+            <span class="btn-txt">Submit Observations</span>
+          </button>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VICTORY ==================== -->
+  <section id="screen-win" class="screen">
+    <div class="screen-inner">
+      <div class="panel riveted win-card">
+        <div class="medal-wrap"><span id="ico-medal" data-alt="Award"></span></div>
+        <h2 class="disp engraved" style="margin:0; font-size:clamp(22px,5.4vw,34px); color:var(--brass-lt);">
+          Morphology Master
+        </h2>
+        <p class="muted" style="margin:6px 0 0;">
+          You have successfully identified <em>Rana tigrina</em>.
+        </p>
+
+        <div class="seals" id="win-seals" style="margin:14px 0 4px;" aria-label="Seals earned"></div>
+        <div class="muted disp" style="font-size:12px; letter-spacing:.2em;">
+          Seals <span id="win-seal-count">0 / 9</span>
+        </div>
+
+        <ul class="summary" id="win-summary"></ul>
+
+        <div class="dlg-foot row2" style="margin-top:16px;">
+          <button type="button" class="btn btn--brass" id="btn-learn">
+            <span id="ico-learn" class="btn-ico" data-alt=""></span>
+            <span class="btn-txt">Learn More</span>
+          </button>
+          <button type="button" class="btn btn--go" id="btn-win-replay">
+            <span id="ico-win-replay" class="btn-ico" data-alt=""></span>
+            <span class="btn-txt">Run Again</span>
+          </button>
+          <button type="button" class="btn btn--ghost" id="btn-win-stations">
+            <span id="ico-win-stations" class="btn-ico" data-alt=""></span>
+            <span class="btn-txt">Stations</span>
+          </button>
+          <button type="button" class="btn btn--ghost" id="btn-win-home">
+            <span id="ico-win-home" class="btn-ico" data-alt=""></span>
+            <span class="btn-txt">Main Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VERDICT DIALOG ==================== -->
+  <div class="dlg" id="dlg-verdict" role="dialog" aria-modal="true" aria-labelledby="verdict-title">
+    <div class="dlg-card panel riveted" style="text-align:center;">
+      <span id="verdict-ico" class="verdict-ico" data-alt=""></span>
+      <h2 id="verdict-title" class="engraved">Result</h2>
+      <div class="seals hidden" id="verdict-seals" style="margin:8px 0 2px;"></div>
+      <div class="dlg-body scroll">
+        <p id="verdict-text"></p>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn btn--go btn--wide" id="btn-verdict">
+          <span class="btn-txt">Continue</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HOW TO PLAY (menu only) ==================== -->
+  <div class="dlg" id="dlg-howto" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+    <div class="dlg-card panel riveted">
+      <button type="button" class="icon-btn dlg-close" id="btn-howto-close" aria-label="Close">
+        <span id="ico-howto-close" data-alt=""></span>
+      </button>
+      <h2 id="howto-title" class="engraved" style="color:var(--spec-lt);">How to Play</h2>
+      <div class="eyebrow">Controls and objective</div>
+      <div class="dlg-body scroll">
+        <ul class="howto" id="howto-list"></ul>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn btn--go btn--wide" id="btn-howto-ok">
+          <span class="btn-txt">Got it</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LEARN MORE (result screen only) ==================== -->
+  <div class="dlg" id="dlg-learn" role="dialog" aria-modal="true" aria-labelledby="learn-title">
+    <div class="dlg-card panel riveted">
+      <button type="button" class="icon-btn dlg-close" id="btn-learn-close" aria-label="Close">
+        <span id="ico-learn-close" data-alt=""></span>
+      </button>
+      <h2 id="learn-title" class="engraved" style="color:var(--brass-lt);">Learn More</h2>
+      <div class="eyebrow">Reference &middot; Rana tigrina</div>
+      <div class="dlg-body scroll">
+        <div class="paper sheet" id="learn-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SETTINGS ==================== -->
+  <div class="dlg" id="dlg-settings" role="dialog" aria-modal="true" aria-labelledby="set-title">
+    <div class="dlg-card panel riveted">
+      <button type="button" class="icon-btn dlg-close" id="btn-set-close" aria-label="Close">
+        <span id="ico-set-close" data-alt=""></span>
+      </button>
+      <h2 id="set-title" class="engraved" style="color:var(--spec-lt);">Settings</h2>
+      <div class="dlg-body">
+        <div class="set-row">
+          <span id="ico-sfx" class="set-ico" data-alt="Sound effects"></span>
+          <span class="set-name">Sound effects
+            <span class="set-hint">Clicks, verdict chimes and fanfare.</span>
+          </span>
+          <button type="button" class="tgl" id="tgl-sfx" role="switch"
+                  aria-checked="true" aria-label="Sound effects"></button>
+        </div>
+        <div class="set-row">
+          <span id="ico-music" class="set-ico" data-alt="Music"></span>
+          <span class="set-name">Music
+            <span class="set-hint">Ambient pad generated in the browser.</span>
+          </span>
+          <button type="button" class="tgl" id="tgl-music" role="switch"
+                  aria-checked="true" aria-label="Music"></button>
+        </div>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" class="btn btn--ghost btn--wide" id="btn-reset" data-armed="0">
+          <span class="btn-txt">Reset progress</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ambient.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

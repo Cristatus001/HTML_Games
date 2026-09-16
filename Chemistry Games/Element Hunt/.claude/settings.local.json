@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:/Users/Admin/Desktop/HTML Games\" && ls -la 2>/dev/null | head -30; echo \"=== chemistry ===\"; ls -la \"Chemistry Games\" 2>/dev/null | head -30)",
+      "Bash(cd \"C:/Users/Admin/Desktop/HTML Games\" && find . -maxdepth 3 -iname \"*prompt*\" -o -maxdepth 3 -iname \"*spec*.md\" -o -maxdepth 3 -iname \"*instruction*\" 2>/dev/null | head -20; echo \"--- done ---\")",
+      "Bash(ls -la \"C:/Users/Admin/.claude/projects/C--Users-Admin-Desktop-HTML-Games-Chemistry-Games-Element-Hunt/memory/\" 2>/dev/null; echo \"--- MEMORY.md ---\"; cat \"C:/Users/Admin/.claude/projects/C--Users-Admin-Desktop-HTML-Games-Chemistry-Games-Element-Hunt/memory/MEMORY.md\" 2>/dev/null || echo \"\\(none\\)\")"
+    ]
+  }
+}

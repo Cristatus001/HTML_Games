@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1b13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Leaf Sorter — sort botanical specimens into simple and compound leaves.">
+<title>Leaf Sorter — Field Guide to Leaf Morphology</title>
+<link rel="icon" href="assets/images/ui/emoji/leaf.png">
+<link rel="apple-touch-icon" href="assets/images/ui/emoji/leaf.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ambient background ---------------------------------------------------- -->
+<div id="bgWrap" aria-hidden="true">
+  <div class="bg-sky"></div>
+  <canvas id="bgCanvas"></canvas>
+  <div class="bg-vignette"></div>
+  <div class="bg-grain"></div>
+</div>
+
+<!-- shared gradients for every vector fallback leaf ----------------------- -->
+<svg id="svgAtlas" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="lfBody" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#b6f8d0"/>
+      <stop offset="0.24" stop-color="#5adb92"/>
+      <stop offset="0.64" stop-color="#1d9d5a"/>
+      <stop offset="1" stop-color="#08512d"/>
+    </linearGradient>
+    <linearGradient id="lfStem" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3d6b33"/>
+      <stop offset="0.42" stop-color="#96c771"/>
+      <stop offset="1" stop-color="#2b4d24"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="app">
+
+  <!-- ============================================================= BOOT -->
+  <section class="screen is-mounted is-active" id="scr-boot" data-screen="boot">
+    <div class="boot">
+      <div class="boot-emblem">
+        <svg viewBox="0 0 200 200" class="emblem-svg" aria-hidden="true">
+          <defs>
+            <radialGradient id="embGlow" cx="0.5" cy="0.45" r="0.6">
+              <stop offset="0" stop-color="#8affc4" stop-opacity="0.55"/>
+              <stop offset="1" stop-color="#8affc4" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="embRing" x1="0" y1="0" x2="0.4" y2="1">
+              <stop offset="0" stop-color="#fdf3cf"/>
+              <stop offset="0.35" stop-color="#e2c073"/>
+              <stop offset="0.75" stop-color="#a37f2c"/>
+              <stop offset="1" stop-color="#5d4415"/>
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r="92" fill="url(#embGlow)"/>
+          <circle cx="100" cy="100" r="74" fill="none" stroke="url(#embRing)" stroke-width="7"/>
+          <circle cx="100" cy="100" r="63" fill="none" stroke="#0d2c1e" stroke-width="3" opacity="0.6"/>
+          <g transform="translate(100 100) scale(0.86) translate(-64 -64)">
+            <path d="M64 12 C 28 32, 20 76, 64 120 C 108 76, 100 32, 64 12 Z" fill="url(#lfBody)"/>
+            <path d="M64 14 L64 118" stroke="#0b3f24" stroke-width="3" opacity="0.7"/>
+            <g stroke="#0b3f24" stroke-width="2" fill="none" opacity="0.45">
+              <path d="M64 40 Q 48 45, 40 56"/><path d="M64 40 Q 80 45, 88 56"/>
+              <path d="M64 66 Q 46 71, 37 83"/><path d="M64 66 Q 82 71, 91 83"/>
+              <path d="M64 90 Q 51 94, 45 102"/><path d="M64 90 Q 77 94, 83 102"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <h1 class="boot-word">LEAF SORTER</h1>
+      <p class="boot-sub">Field Guide to Leaf Morphology</p>
+      <div class="vine-track" role="progressbar" aria-label="Loading">
+        <div class="vine-fill" id="bootFill"></div>
+      </div>
+      <p class="boot-hint" id="bootHint">Pressing leaves&hellip;</p>
+    </div>
+  </section>
+
+  <!-- ============================================================= MENU -->
+  <section class="screen" id="scr-menu" data-screen="menu">
+    <div class="menu-wrap">
+      <header class="title-block">
+        <div class="title-crest">
+          <img class="crest-ico" src="assets/images/ui/emoji/leaf_simple.png" alt="">
+          <img class="crest-ico crest-mid" src="assets/images/ui/emoji/wreath.png" alt="">
+          <img class="crest-ico" src="assets/images/ui/emoji/leaf_compound.png" alt="">
+        </div>
+        <h1 class="game-title">Leaf Sorter</h1>
+        <p class="game-tagline">Simple or compound? Sort the specimen shelf.</p>
+      </header>
+
+      <nav class="menu-actions">
+        <button class="btn btn-primary btn-xl" id="btnPlay" type="button">
+          <img class="ico" src="assets/images/ui/emoji/play.png" alt="">
+          <span class="btn-label">Play</span>
+          <span class="btn-note" id="playNote">Start the field study</span>
+        </button>
+        <div class="menu-row">
+          <button class="btn btn-wood" id="btnHowTo" type="button">
+            <img class="ico" src="assets/images/ui/emoji/help.png" alt="">
+            <span class="btn-label">How to Play</span>
+          </button>
+          <button class="btn btn-wood" id="btnSettings" type="button">
+            <img class="ico" src="assets/images/ui/emoji/settings.png" alt="">
+            <span class="btn-label">Settings</span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="progress-plaque">
+        <div class="plaque-stat">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/star_filled.png" alt="Stars">
+          <span class="plaque-val" id="statStars">0<span class="plaque-of">/15</span></span>
+          <span class="plaque-key">Stars</span>
+        </div>
+        <div class="plaque-div"></div>
+        <div class="plaque-stat">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/lens.png" alt="Best accuracy">
+          <span class="plaque-val" id="statAcc">&ndash;</span>
+          <span class="plaque-key">Best Accuracy</span>
+        </div>
+        <div class="plaque-div"></div>
+        <div class="plaque-stat">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/journal.png" alt="Specimens">
+          <span class="plaque-val" id="statSpec">0<span class="plaque-of">/20</span></span>
+          <span class="plaque-key">Specimens Seen</span>
+        </div>
+      </div>
+
+      <p class="menu-foot">Botanical specimen set &mdash; 10 simple &middot; 10 compound</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== LEVEL SELECT -->
+  <section class="screen" id="scr-levels" data-screen="levels">
+    <div class="levels-wrap">
+      <header class="sub-head">
+        <button class="icon-btn" id="btnLevelsBack" type="button" aria-label="Back to menu">
+          <img class="ico" src="assets/images/ui/emoji/back.png" alt="">
+        </button>
+        <h2 class="sub-title">Specimen Cabinet</h2>
+        <div class="head-stars">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/star_filled.png" alt="Stars">
+          <span id="levelsStars">0</span>
+        </div>
+      </header>
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================= GAME -->
+  <section class="screen" id="scr-game" data-screen="game">
+
+    <header class="hud">
+      <button class="icon-btn hud-back" id="btnGameBack" type="button" aria-label="Back to cabinet">
+        <img class="ico" src="assets/images/ui/emoji/back.png" alt="">
+      </button>
+
+      <div class="hud-plate">
+        <span class="hud-level" id="hudLevel">Seedling Survey</span>
+        <span class="hud-round" id="hudRound">Specimen 1 / 6</span>
+      </div>
+
+      <div class="hud-chips">
+        <div class="chip chip-score" id="chipScore">
+          <span class="chip-orb"><img class="ico ico-sm" src="assets/images/ui/emoji/leaf.png" alt="Score"></span>
+          <span class="chip-val" id="hudScore">0</span>
+        </div>
+        <div class="chip chip-streak" id="chipStreak">
+          <span class="chip-orb"><img class="ico ico-sm" src="assets/images/ui/emoji/streak.png" alt="Streak"></span>
+          <span class="chip-val" id="hudStreak">0</span>
+        </div>
+      </div>
+
+      <div class="hud-toggles">
+        <button class="icon-btn icon-btn-sm" id="btnMusicQuick" type="button" aria-label="Toggle music">
+          <img class="ico" id="icoMusic" src="assets/images/ui/emoji/music_on.png" alt="">
+        </button>
+        <button class="icon-btn icon-btn-sm" id="btnSfxQuick" type="button" aria-label="Toggle sound effects">
+          <img class="ico" id="icoSfx" src="assets/images/ui/emoji/sound_on.png" alt="">
+        </button>
+      </div>
+    </header>
+
+    <div class="round-track" id="roundTrack" aria-hidden="true"></div>
+
+    <main class="arena" id="arena">
+      <!-- SIMPLE tray -->
+      <div class="bin bin-simple" id="bin-simple" data-type="simple">
+        <div class="bin-inner">
+          <div class="bin-glow"></div>
+          <svg class="bin-watermark" viewBox="0 0 128 128" aria-hidden="true"><path d="M64 8 C 26 30, 18 76, 64 122 C 110 76, 102 30, 64 8 Z"/><path d="M64 12 L64 118"/><path d="M64 40 Q 46 45, 37 57"/><path d="M64 40 Q 82 45, 91 57"/><path d="M64 66 Q 44 71, 34 84"/><path d="M64 66 Q 84 71, 94 84"/><path d="M64 92 Q 50 96, 43 105"/><path d="M64 92 Q 78 96, 85 105"/></svg>
+          <img class="bin-ico" src="assets/images/ui/emoji/leaf_simple.png" alt="">
+          <div class="nameplate"><span>Simple Leaf</span></div>
+          <p class="bin-hint">One undivided blade</p>
+          <div class="bin-tally" id="tally-simple" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- specimen stage -->
+      <div class="stage" id="stage">
+        <div class="stage-plinth" aria-hidden="true"></div>
+        <div class="stack" id="stack" aria-hidden="true"></div>
+        <div class="card-slot" id="cardSlot"></div>
+        <p class="stage-tip" id="stageTip">Drag the specimen to a tray &mdash; or just tap a tray</p>
+      </div>
+
+      <!-- COMPOUND tray -->
+      <div class="bin bin-compound" id="bin-compound" data-type="compound">
+        <div class="bin-inner">
+          <div class="bin-glow"></div>
+          <svg class="bin-watermark" viewBox="0 0 128 128" aria-hidden="true"><path d="M64 124 L64 8"/><path d="M64 34 C 44 22, 30 26, 30 40 C 40 50, 58 46, 64 34 Z"/><path d="M64 34 C 84 22, 98 26, 98 40 C 88 50, 70 46, 64 34 Z"/><path d="M64 62 C 42 50, 26 54, 26 68 C 38 78, 58 74, 64 62 Z"/><path d="M64 62 C 86 50, 102 54, 102 68 C 90 78, 70 74, 64 62 Z"/><path d="M64 90 C 46 80, 32 84, 32 96 C 42 104, 58 100, 64 90 Z"/><path d="M64 90 C 82 80, 96 84, 96 96 C 86 104, 70 100, 64 90 Z"/></svg>
+          <img class="bin-ico" src="assets/images/ui/emoji/leaf_compound.png" alt="">
+          <div class="nameplate"><span>Compound Leaf</span></div>
+          <p class="bin-hint">Separate leaflets on a rachis</p>
+          <div class="bin-tally" id="tally-compound" aria-hidden="true"></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+    <div class="combo-banner" id="comboBanner" aria-hidden="true"></div>
+  </section>
+
+  <!-- =========================================================== RESULT -->
+  <section class="screen" id="scr-result" data-screen="result">
+    <div class="scroll-panel">
+      <div class="scroll-rod scroll-rod-top" aria-hidden="true"></div>
+      <div class="scroll-body">
+        <img class="result-seal" id="resultSeal" src="assets/images/ui/emoji/seal.png" alt="">
+        <p class="result-kicker" id="resultKicker">Field study complete</p>
+        <h2 class="result-title" id="resultTitle">Seedling Survey</h2>
+
+        <div class="star-row" id="starRow" aria-label="Stars earned">
+          <img class="star" src="assets/images/ui/emoji/star_empty.png" alt="">
+          <img class="star star-mid" src="assets/images/ui/emoji/star_empty.png" alt="">
+          <img class="star" src="assets/images/ui/emoji/star_empty.png" alt="">
+        </div>
+
+        <div class="result-stats">
+          <div class="rstat">
+            <span class="rstat-val" id="resScore">0/6</span>
+            <span class="rstat-key">Correct</span>
+          </div>
+          <div class="rstat">
+            <span class="rstat-val" id="resAcc">0%</span>
+            <span class="rstat-key">Accuracy</span>
+          </div>
+          <div class="rstat">
+            <span class="rstat-val" id="resStreak">0</span>
+            <span class="rstat-key">Best Streak</span>
+          </div>
+        </div>
+
+        <p class="result-msg" id="resultMsg"></p>
+
+        <div class="miss-block" id="missBlock" hidden>
+          <h3 class="miss-head">Review these specimens</h3>
+          <ul class="miss-list" id="missList"></ul>
+        </div>
+
+        <div class="result-actions" id="resultActions">
+          <button class="btn btn-primary" id="btnNextLevel" type="button">
+            <img class="ico" src="assets/images/ui/emoji/next.png" alt="">
+            <span class="btn-label">Next Level</span>
+          </button>
+          <button class="btn btn-wood" id="btnReplay" type="button">
+            <img class="ico" src="assets/images/ui/emoji/restart.png" alt="">
+            <span class="btn-label">Replay</span>
+          </button>
+          <button class="btn btn-parch" id="btnLearnMore" type="button">
+            <img class="ico" src="assets/images/ui/emoji/journal.png" alt="">
+            <span class="btn-label">Learn More</span>
+          </button>
+          <button class="btn btn-wood" id="btnResultHome" type="button">
+            <img class="ico" src="assets/images/ui/emoji/home.png" alt="">
+            <span class="btn-label">Cabinet</span>
+          </button>
+        </div>
+      </div>
+      <div class="scroll-rod scroll-rod-bot" aria-hidden="true"></div>
+    </div>
+  </section>
+</div>
+
+<!-- particle overlay ------------------------------------------------------ -->
+<canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+<!-- ================================================================ MODALS -->
+<div id="modalLayer" hidden>
+  <div class="modal-scrim" id="modalScrim"></div>
+
+  <!-- How to Play : controls + objective only ---------------------------- -->
+  <div class="modal modal-parch" id="modalHowTo" role="dialog" aria-modal="true" aria-labelledby="howToTitle" hidden>
+    <button class="modal-x" data-close="1" type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title" id="howToTitle">How to Play</h2>
+    <div class="modal-scroll">
+      <section class="howto-block">
+        <h3 class="howto-head">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/lens.png" alt="">Objective
+        </h3>
+        <p>A specimen card is mounted on the stand. Decide whether its leaf is
+           <strong>simple</strong> or <strong>compound</strong> and file it in the
+           matching tray. Every level is a run of specimens &mdash; the more you
+           file correctly, the more stars you earn.</p>
+      </section>
+
+      <section class="howto-block">
+        <h3 class="howto-head">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/leaf.png" alt="">Controls
+        </h3>
+        <ul class="howto-list">
+          <li><b>Drag</b> the card onto a tray and release &mdash; works with finger, stylus or mouse.</li>
+          <li><b>Tap</b> a tray to file the current card without dragging.</li>
+          <li><b>Keyboard:</b> <kbd>&larr;</kbd> or <kbd>S</kbd> files as simple,
+              <kbd>&rarr;</kbd> or <kbd>C</kbd> files as compound, <kbd>Esc</kbd> goes back.</li>
+        </ul>
+      </section>
+
+      <section class="howto-block">
+        <h3 class="howto-head">
+          <img class="ico ico-sm" src="assets/images/ui/emoji/streak.png" alt="">Scoring
+        </h3>
+        <ul class="howto-list">
+          <li>One point per correctly filed specimen.</li>
+          <li>Consecutive correct files build a <b>streak</b>; a mistake resets it.</li>
+          <li>Stars per level: <b>3</b> at 100%, <b>2</b> from 80%, <b>1</b> from 60%.</li>
+          <li>Earning at least one star unlocks the next drawer of the cabinet.</li>
+        </ul>
+      </section>
+
+      <p class="howto-foot">Curious about the botany itself? A full
+         <b>Learn More</b> reference waits on the results screen.</p>
+    </div>
+    <button class="btn btn-primary modal-cta" data-close="1" type="button">
+      <span class="btn-label">Got it</span>
+    </button>
+  </div>
+
+  <!-- Learn More : reference / concepts only ----------------------------- -->
+  <div class="modal modal-parch modal-wide" id="modalLearn" role="dialog" aria-modal="true" aria-labelledby="learnTitle" hidden>
+    <button class="modal-x" data-close="1" type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title" id="learnTitle">Learn More</h2>
+    <p class="modal-kicker">Leaf morphology reference</p>
+    <div class="modal-scroll" id="learnBody"></div>
+    <button class="btn btn-primary modal-cta" data-close="1" type="button">
+      <span class="btn-label">Close the journal</span>
+    </button>
+  </div>
+
+  <!-- Settings ----------------------------------------------------------- -->
+  <div class="modal modal-brass" id="modalSettings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+    <button class="modal-x" data-close="1" type="button" aria-label="Close">
+      <img class="ico" src="assets/images/ui/emoji/close.png" alt="">
+    </button>
+    <h2 class="modal-title" id="setTitle">Settings</h2>
+    <div class="modal-scroll">
+      <div class="setting-row">
+        <img class="ico setting-ico" id="setMusicIco" src="assets/images/ui/emoji/music_on.png" alt="">
+        <div class="setting-text">
+          <span class="setting-name">Background Music</span>
+          <span class="setting-sub">Procedural forest ambience</span>
+        </div>
+        <button class="switch is-on" id="swMusic" type="button" role="switch" aria-checked="true" aria-label="Background music">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="setting-row">
+        <img class="ico setting-ico" id="setSfxIco" src="assets/images/ui/emoji/sound_on.png" alt="">
+        <div class="setting-text">
+          <span class="setting-name">Sound Effects</span>
+          <span class="setting-sub">Filing, sorting and chimes</span>
+        </div>
+        <button class="switch is-on" id="swSfx" type="button" role="switch" aria-checked="true" aria-label="Sound effects">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="setting-row">
+        <img class="ico setting-ico" src="assets/images/ui/emoji/dew.png" alt="">
+        <div class="setting-text">
+          <span class="setting-name">Reduced Motion</span>
+          <span class="setting-sub">Calmer particles and drift</span>
+        </div>
+        <button class="switch" id="swMotion" type="button" role="switch" aria-checked="false" aria-label="Reduced motion">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="setting-row setting-danger">
+        <img class="ico setting-ico" src="assets/images/ui/emoji/restart.png" alt="">
+        <div class="setting-text">
+          <span class="setting-name">Reset Progress</span>
+          <span class="setting-sub">Clears stars and unlocked drawers</span>
+        </div>
+        <button class="btn btn-danger btn-sm" id="btnReset" type="button">
+          <span class="btn-label">Reset</span>
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-primary modal-cta" data-close="1" type="button">
+      <span class="btn-label">Done</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast" aria-live="polite"></div>
+
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Hunt: Drag & Strike</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the Neon Alchemist theme */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            background-image: radial-gradient(#ffffff11 1px, transparent 1px);
+            background-size: 16px 16px;
+            overflow-x: hidden;
+        }
+
+        .font-cinzel {
+            font-family: 'Cinzel Decorative', cursive;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            gap: 2px;
+            aspect-ratio: 1 / 1;
+            user-select: none;
+            border: 2px solid #0f3460;
+            background: rgba(16, 47, 70, 0.5);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+            border-radius: 12px;
+        }
+
+        .grid-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(0.7rem, 2vw, 1.25rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #c0c0c0;
+            text-shadow: 0 0 3px #00bfff;
+        }
+
+        .grid-cell.selected {
+            background-color: rgba(0, 191, 255, 0.5);
+            color: #ffffff;
+            transform: scale(1.1);
+        }
+        
+        .grid-cell.found {
+            background-color: rgba(23, 227, 128, 0.4);
+            color: #fff;
+        }
+
+        .line-through {
+            position: absolute;
+            background-color: #17e380;
+            height: 4px;
+            border-radius: 2px;
+            transform-origin: left center;
+            box-shadow: 0 0 10px #17e380;
+            pointer-events: none;
+        }
+        
+        .ui-card {
+            background: rgba(16, 47, 70, 0.7);
+            border: 2px solid #0f3460;
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        
+        .flash-red {
+            animation: flash-red 0.5s ease;
+        }
+
+        .flash-green {
+            animation: flash-green 0.5s ease;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        @keyframes flash-red {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 191, 255, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); }
+        }
+
+        @keyframes flash-green {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 191, 255, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(23, 227, 128, 0.8); }
+        }
+        
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #1e90ff, #00bfff);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.8);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #00bfff;
+            color: #00bfff;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #00bfff;
+            color: #1a1a2e;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.7);
+        }
+         .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+         }
+
+
+        .star {
+            color: #4a4a4a;
+            transition: color 0.5s ease;
+        }
+        .star.filled {
+            color: #ffd700;
+            text-shadow: 0 0 5px #ffd700;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="game-content" class="w-full max-w-7xl mx-auto hidden">
+        <header class="text-center mb-6">
+            <h1 class="font-cinzel text-4xl md:text-6xl font-bold text-cyan-300" style="text-shadow: 0 0 10px #00bfff;">Element Hunt</h1>
+            <p class="text-lg text-gray-300">Drag & Strike Edition</p>
+        </header>
+
+        <main class="flex flex-col lg:flex-row gap-6">
+            <!-- Game Grid Section -->
+            <div id="game-container" class="w-full lg:w-2/3 relative">
+                <div id="game-grid" class="game-grid mx-auto"></div>
+                <div id="line-container" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+            </div>
+
+            <!-- UI Section -->
+            <div class="w-full lg:w-1/3 flex flex-col gap-4">
+                <!-- Scoreboard -->
+                <div class="ui-card p-4 text-center">
+                    <h2 class="font-cinzel text-xl text-cyan-400 mb-3">Dashboard</h2>
+                    <div class="flex justify-around">
+                        <div>
+                            <p class="text-sm text-gray-400">SCORE</p>
+                            <p id="score" class="text-3xl font-bold text-green-400">0</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">LEVEL</p>
+                            <p id="level-display" class="text-3xl font-bold text-white">1</p>
+                        </div>
+                         <div>
+                            <p class="text-sm text-gray-400">ATTEMPTS</p>
+                            <p id="attempts" class="text-3xl font-bold text-yellow-400">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clue Box -->
+                <div class="ui-card p-4 flex-grow">
+                    <h2 class="font-cinzel text-xl text-cyan-400 mb-2 text-center">Find Element <span id="element-progress">1/10</span></h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="font-bold text-cyan-200">Hint:</p>
+                            <p id="clue-hint" class="text-lg min-h-[3em]">Lightest element, fuel for stars</p>
+                        </div>
+                        <div class="flex justify-between text-center">
+                            <div>
+                                <p class="font-bold text-cyan-200">Period</p>
+                                <p id="clue-period" class="text-2xl font-bold">1</p>
+                            </div>
+                            <div>
+                                <p class="font-bold text-cyan-200">Group</p>
+                                <p id="clue-group" class="text-2xl font-bold">1</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="hint-btn" class="w-full mt-4 py-2 rounded-full font-bold btn-secondary">Get a Hint (-5 pts)</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructions-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
+        <div class="ui-card p-8 rounded-lg text-center max-w-md w-full mx-4">
+            <h1 class="font-cinzel text-4xl font-bold text-cyan-300 mb-2" style="text-shadow: 0 0 10px #00bfff;">Element Hunt</h1>
+            <h2 class="font-cinzel text-2xl font-bold text-cyan-400 mb-6">How to Play</h2>
+            <ul class="text-left space-y-2 mb-6 text-gray-300 list-disc list-inside">
+                <li>Read the clue to identify the element.</li>
+                <li>Find the element's symbol in the letter grid.</li>
+                <li>Click and drag from the first to the last letter of the symbol.</li>
+                <li>Correct answers strike through the word and earn points.</li>
+                <li>Stuck? Use a hint, but it will cost you points!</li>
+            </ul>
+            <button id="start-game-btn" class="btn-primary font-bold py-2 px-6 rounded-full mt-6 text-lg">Start Game</button>
+        </div>
+    </div>
+
+
+    <!-- Level Complete Modal -->
+    <div id="level-complete-modal" class="fixed inset-0 z-50 items-center justify-center modal-backdrop hidden">
+        <div class="ui-card p-8 rounded-lg text-center max-w-sm w-full mx-4">
+            <h2 id="modal-title" class="font-cinzel text-3xl font-bold text-cyan-300 mb-2">Level 1 Complete!</h2>
+            
+            <div id="star-rating" class="flex justify-center text-5xl my-4">
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+                <span class="star">&#9733;</span>
+            </div>
+
+            <div id="final-reward" class="hidden my-4">
+                 <svg class="mx-auto h-24 w-24 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-1 1v1.618a4.997 4.997 0 00-2.33.92l-1.358-.566a1 1 0 00-1.212.822l-.47 1.882a1 1 0 00.566 1.212l1.358.566A4.997 4.997 0 005 10c0 .995.292 1.925.808 2.708l-1.358.566a1 1 0 00-.566 1.212l.47 1.882a1 1 0 001.212.822l1.358-.566A4.997 4.997 0 008 17.382V19a1 1 0 102 0v-1.618a4.997 4.997 0 002.33-.92l1.358.566a1 1 0 001.212-.822l.47-1.882a1 1 0 00-.566-1.212l-1.358-.566A4.997 4.997 0 0015 10c0-.995-.292-1.925-.808-2.708l1.358-.566a1 1 0 00.566-1.212l-.47-1.882a1 1 0 00-1.212-.822l-1.358.566A4.997 4.997 0 0012 4.618V3a1 1 0 00-2 0v1.618A4.997 4.997 0 009 4.618V3a1 1 0 00-1-1zm1 11a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>
+                <p class="text-lg mt-2 text-yellow-200">You've mastered the periodic table! An outstanding achievement!</p>
+            </div>
+
+            <p class="text-lg">Your Final Score: <span id="final-score" class="font-bold"></span></p>
+            <button id="next-level-btn" class="btn-primary font-bold py-2 px-6 rounded-full mt-6 text-lg">Next Level</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const GRID_SIZE = 15;
+            
+            const levels = [
+                // Level 1
+                {
+                    elements: [
+                        { name: 'Hydrogen', symbol: 'H', period: 1, group: 1, clue: 'Lightest element, fuel for stars' },
+                        { name: 'Oxygen', symbol: 'O', period: 2, group: 16, clue: 'Essential for breathing, water component' },
+                        { name: 'Sodium', symbol: 'Na', period: 3, group: 1, clue: 'Found in table salt' },
+                        { name: 'Chlorine', symbol: 'Cl', period: 3, group: 17, clue: 'Disinfectant, green gas' },
+                        { name: 'Calcium', symbol: 'Ca', period: 4, group: 2, clue: 'Builds strong bones' },
+                        { name: 'Iron', symbol: 'Fe', period: 4, group: 8, clue: 'Magnetic, rusts easily' },
+                        { name: 'Carbon', symbol: 'C', period: 2, group: 14, clue: 'Basis of organic life' },
+                        { name: 'Nitrogen', symbol: 'N', period: 2, group: 15, clue: 'Makes up most of the atmosphere' },
+                        { name: 'Sulfur', symbol: 'S', period: 3, group: 16, clue: 'Yellow solid, used in matches' },
+                        { name: 'Aluminium', symbol: 'Al', period: 3, group: 13, clue: 'Lightweight metal, in foils' },
+                    ]
+                },
+                // Level 2
+                {
+                    elements: [
+                        { name: 'Copper', symbol: 'Cu', period: 4, group: 11, clue: 'Reddish metal, conducts electricity' },
+                        { name: 'Zinc', symbol: 'Zn', period: 4, group: 12, clue: 'Used in galvanization' },
+                        { name: 'Silver', symbol: 'Ag', period: 5, group: 11, clue: 'Precious metal, shiny' },
+                        { name: 'Gold', symbol: 'Au', period: 6, group: 11, clue: 'Expensive, used in jewelry' },
+                        { name: 'Lead', symbol: 'Pb', period: 6, group: 14, clue: 'Toxic metal, used in batteries' },
+                        { name: 'Mercury', symbol: 'Hg', period: 6, group: 12, clue: 'Liquid metal at room temperature' },
+                        { name: 'Potassium', symbol: 'K', period: 4, group: 1, clue: 'Reacts explosively with water' },
+                        { name: 'Fluorine', symbol: 'F', period: 2, group: 17, clue: 'Most reactive halogen' },
+                        { name: 'Phosphorus', symbol: 'P', period: 3, group: 15, clue: 'Used in fertilizers' },
+                        { name: 'Magnesium', symbol: 'Mg', period: 3, group: 2, clue: 'Lightweight metal, used in fireworks' },
+                    ]
+                }
+            ];
+
+            // Game state
+            let currentLevel = 0;
+            let currentElementIndex = 0;
+            let score = 0;
+            let totalAttempts = 0;
+            let currentElementAttempts = 0;
+            let gridData = [];
+            let placedElements = [];
+            let startTime;
+
+            // DOM elements
+            const gameContent = document.getElementById('game-content');
+            const gridElement = document.getElementById('game-grid');
+            const lineContainer = document.getElementById('line-container');
+            const scoreDisplay = document.getElementById('score');
+            const levelDisplay = document.getElementById('level-display');
+            const attemptsDisplay = document.getElementById('attempts');
+            const elementProgressDisplay = document.getElementById('element-progress');
+            const hintDisplay = document.getElementById('clue-hint');
+            const periodDisplay = document.getElementById('clue-period');
+            const groupDisplay = document.getElementById('clue-group');
+            const modal = document.getElementById('level-complete-modal');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            const instructionsModal = document.getElementById('instructions-modal');
+            const startGameBtn = document.getElementById('start-game-btn');
+            const starRatingContainer = document.getElementById('star-rating');
+            const finalRewardContainer = document.getElementById('final-reward');
+            
+            let isDragging = false;
+            let startCell = null;
+            let selectedCells = [];
+            
+            function generateGrid() {
+                gridData = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+                placedElements = [];
+                const elementsToPlace = levels[currentLevel].elements;
+
+                const orientations = [
+                    { dr: 0, dc: 1 },  // Horizontal
+                    { dr: 1, dc: 0 },  // Vertical
+                    { dr: 1, dc: 1 },  // Diagonal down-right
+                    { dr: 1, dc: -1}, // Diagonal down-left
+                ];
+
+                elementsToPlace.forEach(el => {
+                    let placed = false;
+                    while (!placed) {
+                        const orientation = orientations[Math.floor(Math.random() * orientations.length)];
+                        const word = el.symbol; // Use correct casing
+                        const len = word.length;
+                        const startRow = Math.floor(Math.random() * GRID_SIZE);
+                        const startCol = Math.floor(Math.random() * GRID_SIZE);
+
+                        const endRow = startRow + (len - 1) * orientation.dr;
+                        const endCol = startCol + (len - 1) * orientation.dc;
+
+                        if (endRow >= 0 && endRow < GRID_SIZE && endCol >= 0 && endCol < GRID_SIZE) {
+                            let canPlace = true;
+                            for (let i = 0; i < len; i++) {
+                                const row = startRow + i * orientation.dr;
+                                const col = startCol + i * orientation.dc;
+                                if (gridData[row][col] !== null) {
+                                    canPlace = false;
+                                    break;
+                                }
+                            }
+
+                            if (canPlace) {
+                                const elementInfo = { symbol: word, cells: [] };
+                                for (let i = 0; i < len; i++) {
+                                    const row = startRow + i * orientation.dr;
+                                    const col = startCol + i * orientation.dc;
+                                    gridData[row][col] = word[i];
+                                    elementInfo.cells.push({ row, col });
+                                }
+                                placedElements.push(elementInfo);
+                                placed = true;
+                            }
+                        }
+                    }
+                });
+
+                // Fill remaining cells with random letters
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (gridData[r][c] === null) {
+                            gridData[r][c] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                        }
+                    }
+                }
+            }
+
+            function renderGrid() {
+                gridElement.innerHTML = '';
+                lineContainer.innerHTML = '';
+                gridElement.style.animation = '';
+
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('grid-cell');
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        cell.textContent = gridData[r][c];
+                        gridElement.appendChild(cell);
+                    }
+                }
+            }
+
+            function updateUI() {
+                scoreDisplay.textContent = score;
+                levelDisplay.textContent = currentLevel + 1;
+                attemptsDisplay.textContent = totalAttempts;
+                elementProgressDisplay.textContent = `${currentElementIndex + 1}/${levels[currentLevel].elements.length}`;
+
+                const currentElement = levels[currentLevel].elements[currentElementIndex];
+                hintDisplay.textContent = currentElement.clue;
+                periodDisplay.textContent = currentElement.period;
+                groupDisplay.textContent = currentElement.group;
+                hintBtn.disabled = false;
+            }
+
+            function startLevel() {
+                currentElementIndex = 0;
+                totalAttempts = 0;
+                currentElementAttempts = 0;
+                if (currentLevel === 0) score = 0;
+                
+                generateGrid();
+                renderGrid();
+                updateUI();
+                startTime = new Date();
+            }
+
+            function checkAnswer(selectedWord) {
+                totalAttempts++;
+                currentElementAttempts++;
+                attemptsDisplay.textContent = totalAttempts;
+                const currentElement = levels[currentLevel].elements[currentElementIndex];
+                
+                if (selectedWord.toUpperCase() === currentElement.symbol.toUpperCase()) {
+                    // Correct answer
+                    gridElement.classList.remove('flash-red');
+                    gridElement.classList.add('flash-green');
+                    setTimeout(() => gridElement.classList.remove('flash-green'), 500);
+
+                    // Award points
+                    let pointsEarned = currentElementAttempts === 1 ? 10 : 5;
+                    
+                    // Time bonus
+                    const timeTaken = (new Date() - startTime) / 1000;
+                    const timeBonus = Math.max(0, 5 - Math.floor(timeTaken / 5));
+                    pointsEarned += timeBonus;
+                    score += pointsEarned;
+                    
+                    // Mark as found and draw line
+                    const foundElement = placedElements.find(el => el.symbol.toUpperCase() === selectedWord.toUpperCase());
+                    if (foundElement) {
+                        drawStrikeThrough(foundElement.cells);
+                        foundElement.cells.forEach(({row, col}) => {
+                           const cell = gridElement.querySelector(`[data-row='${row}'][data-col='${col}']`);
+                           if(cell) cell.classList.add('found');
+                        });
+                    }
+
+                    currentElementIndex++;
+                    if (currentElementIndex >= levels[currentLevel].elements.length) {
+                        setTimeout(showLevelComplete, 500);
+                    } else {
+                        currentElementAttempts = 0;
+                        startTime = new Date();
+                        updateUI();
+                    }
+                } else {
+                    // Incorrect answer
+                    score -= 2;
+                    gridElement.classList.add('shake', 'flash-red');
+                    setTimeout(() => gridElement.classList.remove('shake', 'flash-red'), 500);
+                }
+                scoreDisplay.textContent = score;
+            }
+
+            function getSelectedWord() {
+                if (selectedCells.length < 1) return '';
+                let word = '';
+                selectedCells.forEach(cell => {
+                    word += gridData[cell.dataset.row][cell.dataset.col];
+                });
+                return word;
+            }
+
+            function showLevelComplete() {
+                modal.style.display = 'flex';
+                document.getElementById('final-score').textContent = score;
+                const isGameOver = currentLevel + 1 >= levels.length;
+
+                if (isGameOver) {
+                    document.getElementById('modal-title').textContent = 'Congratulations, Alchemist!';
+                    starRatingContainer.style.display = 'none';
+                    finalRewardContainer.classList.remove('hidden');
+                    nextLevelBtn.textContent = 'Play Again';
+                } else {
+                    document.getElementById('modal-title').textContent = `Level ${currentLevel + 1} Complete!`;
+                    starRatingContainer.style.display = 'flex';
+                    finalRewardContainer.classList.add('hidden');
+                    nextLevelBtn.textContent = 'Next Level';
+
+                    const stars = starRatingContainer.querySelectorAll('.star');
+                    const elementsCount = levels[currentLevel].elements.length;
+                    const maxPoints = elementsCount * 15; // Approx max possible score
+                    const scoreThreshold = currentLevel > 0 ? levels[currentLevel - 1].scoreThreshold || 0 : 0;
+                    const scorePercentage = (score - scoreThreshold) / maxPoints;
+
+                    let starsEarned = 0;
+                    if (scorePercentage > 0.8) starsEarned = 3;
+                    else if (scorePercentage > 0.5) starsEarned = 2;
+                    else if (scorePercentage > 0.2) starsEarned = 1;
+                    
+                    stars.forEach((star, i) => {
+                        setTimeout(() => {
+                            if (i < starsEarned) star.classList.add('filled');
+                        }, (i + 1) * 300);
+                    });
+                     levels[currentLevel].scoreThreshold = score;
+                }
+            }
+            
+            nextLevelBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                 starRatingContainer.querySelectorAll('.star').forEach(s => s.classList.remove('filled'));
+                
+                if (nextLevelBtn.textContent === 'Play Again') {
+                    currentLevel = 0;
+                    score = 0;
+                } else {
+                    currentLevel++;
+                }
+                startLevel();
+            });
+            
+            hintBtn.addEventListener('click', () => {
+                score -= 5;
+                scoreDisplay.textContent = score;
+                
+                const currentElement = levels[currentLevel].elements[currentElementIndex];
+                const symbol = currentElement.symbol;
+                let partialHint = '';
+
+                if (symbol.length > 1) {
+                    partialHint = symbol[0].toUpperCase() + '_'.repeat(symbol.length - 1);
+                } else {
+                    partialHint = `The symbol is '${symbol.toUpperCase()}'`;
+                }
+
+                hintDisplay.innerHTML = `<span class="text-yellow-400">The element is: ${partialHint}</span>`;
+                hintBtn.disabled = true;
+            });
+            
+            startGameBtn.addEventListener('click', () => {
+                instructionsModal.style.display = 'none';
+                gameContent.classList.remove('hidden');
+                startLevel();
+            });
+
+
+            // --- Drag Logic ---
+
+            function getCellsOnLine(start, end) {
+                const cells = [];
+                const dr = Math.sign(end.row - start.row);
+                const dc = Math.sign(end.col - start.col);
+
+                // Check for straight or diagonal lines
+                const isDiagonal = Math.abs(end.row - start.row) === Math.abs(end.col - start.col);
+                const isStraight = (start.row === end.row || start.col === end.col);
+
+                if (!isDiagonal && !isStraight) return [startCell];
+
+                let r = start.row;
+                let c = start.col;
+                
+                while(true) {
+                    const cellEl = gridElement.querySelector(`[data-row='${r}'][data-col='${c}']`);
+                    if(cellEl) cells.push(cellEl);
+                    if (r === end.row && c === end.col) break;
+                    r += dr;
+                    c += dc;
+                }
+                return cells;
+            }
+
+            function drawStrikeThrough(cells) {
+                const firstCell = gridElement.querySelector(`[data-row='${cells[0].row}'][data-col='${cells[0].col}']`);
+                const lastCell = gridElement.querySelector(`[data-row='${cells[cells.length - 1].row}'][data-col='${cells[cells.length - 1].col}']`);
+
+                if (!firstCell || !lastCell) return;
+
+                const rect1 = firstCell.getBoundingClientRect();
+                const rect2 = lastCell.getBoundingClientRect();
+                const containerRect = lineContainer.getBoundingClientRect();
+                
+                const x1 = rect1.left + rect1.width / 2 - containerRect.left;
+                const y1 = rect1.top + rect1.height / 2 - containerRect.top;
+                const x2 = rect2.left + rect2.width / 2 - containerRect.left;
+                const y2 = rect2.top + rect2.height / 2 - containerRect.top;
+
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+                const line = document.createElement('div');
+                line.className = 'line-through';
+                line.style.width = `${length}px`;
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.top = `${y1}px`;
+                line.style.left = `${x1}px`;
+                lineContainer.appendChild(line);
+            }
+
+            gridElement.addEventListener('mousedown', (e) => {
+                const cell = e.target.closest('.grid-cell');
+                if (cell) {
+                    isDragging = true;
+                    startCell = cell;
+                    selectedCells = [cell];
+                    cell.classList.add('selected');
+                }
+            });
+
+            gridElement.addEventListener('mouseover', (e) => {
+                if (isDragging) {
+                    const cell = e.target.closest('.grid-cell');
+                    if (cell && startCell) {
+                        const startCoords = { row: parseInt(startCell.dataset.row), col: parseInt(startCell.dataset.col) };
+                        const endCoords = { row: parseInt(cell.dataset.row), col: parseInt(cell.dataset.col) };
+                        
+                        // Clear previous selection
+                        selectedCells.forEach(c => c.classList.remove('selected'));
+                        
+                        selectedCells = getCellsOnLine(startCoords, endCoords);
+                        selectedCells.forEach(c => c.classList.add('selected'));
+                    }
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    const word = getSelectedWord();
+                    if (word) {
+                        checkAnswer(word);
+                    }
+                    selectedCells.forEach(c => c.classList.remove('selected'));
+                    startCell = null;
+                    selectedCells = [];
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
+
+
+

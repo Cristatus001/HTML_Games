@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"/c/Users/Admin/Downloads/Leaf sorting game-20260820T082851Z-1-001.zip\")",
+      "mcp__claude-in-chrome__tabs_context_mcp"
+    ]
+  }
+}

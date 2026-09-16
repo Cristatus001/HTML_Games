@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1b1410">
+    <title>Siege Artillery — Break the Walls</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+
+    <!-- ===================== AMBIENT BACKDROP (whole app) ===================== -->
+    <div id="sky-backdrop" aria-hidden="true">
+        <div class="sky-sun"></div>
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
+        <div class="hills hills-far"></div>
+        <div class="hills hills-mid"></div>
+        <div id="ember-field"></div>
+    </div>
+
+    <!-- ===================== BOOT SPLASH ===================== -->
+    <section id="boot-screen" class="screen active">
+        <div class="boot-inner">
+            <img class="boot-emblem" src="assets/images/ui/emoji/cannon.png" alt="Cannon">
+            <h1 class="game-title">Siege Artillery</h1>
+            <p class="game-tagline">Load. Aim. Break Their Walls.</p>
+            <button id="boot-btn" class="btn btn-gold btn-big">
+                <img class="btn-ico" src="assets/images/ui/emoji/play.png" alt="">
+                <span>Man the Cannon</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ===================== MAIN MENU ===================== -->
+    <section id="menu-screen" class="screen">
+        <button id="menu-settings-btn" class="icon-btn corner-tr" title="War Room" aria-label="War Room">
+            <img src="assets/images/ui/emoji/gear.png" alt="War Room">
+        </button>
+
+        <div class="menu-scroll scroll-panel">
+            <header class="menu-head">
+                <img class="menu-emblem" src="assets/images/ui/emoji/cannon.png" alt="">
+                <h1 class="game-title small">Siege Artillery</h1>
+                <p class="game-subtitle">Gravity Never Misses a Battle</p>
+            </header>
+
+            <div class="howto">
+                <h2 class="panel-heading">
+                    <img class="head-ico" src="assets/images/ui/emoji/target.png" alt=""> Battle Orders
+                </h2>
+                <ul class="howto-list">
+                    <li><b>Your orders:</b> sight the target, adjust your aim, and put a ball through it.</li>
+                    <li><b>Load &amp; aim:</b> drag the two sliders to set your muzzle velocity (v&#8320;) and barrel angle (&theta;&#8320;).</li>
+                    <li><b>Give the order:</b> press <b>FIRE</b> and watch the arc, height and range update as she flies.</li>
+                    <li><b>Move the mark:</b> drag the target left or right — no two sieges play the same.</li>
+                    <li><b>Battle instruments:</b> toggle the velocity vectors (v&#8339;, v&#7527;) and the trajectory trail for a clearer read on the shot.</li>
+                </ul>
+            </div>
+
+            <div class="menu-btns">
+                <button id="campaign-btn" class="btn btn-gold btn-big">
+                    <img class="btn-ico" src="assets/images/ui/emoji/target.png" alt="">
+                    <span>Begin the Siege</span>
+                </button>
+                <button id="freeplay-btn" class="btn btn-wood btn-big">
+                    <img class="btn-ico" src="assets/images/ui/emoji/flame.png" alt="">
+                    <span>Drill Grounds</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== LEVEL SELECT ===================== -->
+    <section id="levels-screen" class="screen">
+        <div class="levels-panel scroll-panel">
+            <div class="panel-topbar">
+                <button class="icon-btn back-btn" data-nav="menu" aria-label="Back">
+                    <img src="assets/images/ui/emoji/back.png" alt="Back">
+                </button>
+                <h2 class="panel-heading center">Choose Your Battlefield</h2>
+                <span class="spacer"></span>
+            </div>
+            <div id="level-grid" class="level-grid"><!-- filled by JS --></div>
+        </div>
+    </section>
+
+    <!-- ===================== GAME ===================== -->
+    <section id="game-screen" class="screen">
+        <!-- Top HUD -->
+        <div id="hud">
+            <button class="icon-btn" data-nav="back-to-menu" aria-label="Retreat to camp">
+                <img src="assets/images/ui/emoji/back.png" alt="Retreat to camp">
+            </button>
+            <div id="hud-title">
+                <span id="hud-level-name">Drill Grounds</span>
+                <span id="hud-goal">Drag the target. Put one through it.</span>
+            </div>
+            <div class="hud-toggles">
+                <button id="music-toggle" class="icon-btn small" aria-label="Toggle battle music">
+                    <img src="assets/images/ui/emoji/music-on.png" alt="Music">
+                </button>
+                <button id="sfx-toggle" class="icon-btn small" aria-label="Toggle battlefield sounds">
+                    <img src="assets/images/ui/emoji/sound-on.png" alt="Sound">
+                </button>
+                <button id="game-settings-btn" class="icon-btn small" aria-label="War Room">
+                    <img src="assets/images/ui/emoji/gear.png" alt="War Room">
+                </button>
+            </div>
+        </div>
+
+        <!-- Battlefield + Controls -->
+        <div id="play-area">
+            <div id="battlefield">
+                <div id="field-ambient" aria-hidden="true">
+                    <div class="banner-pole">
+                        <div class="banner-flag"></div>
+                    </div>
+                </div>
+                <canvas id="simCanvas"></canvas>
+                <div id="hint-bubble" role="status"></div>
+            </div>
+
+            <aside id="control-panel">
+                <div class="ctrl-section">
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Muzzle Velocity (v&#8320;)</span>
+                            <span id="v0-val" class="lit-chip">36 m/s</span>
+                        </div>
+                        <input type="range" id="v0-slider" min="10" max="100" value="36">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Barrel Angle (&theta;&#8320;)</span>
+                            <span id="angle-val" class="lit-chip">45&deg;</span>
+                        </div>
+                        <input type="range" id="angle-slider" min="0" max="90" value="45">
+                    </div>
+                    <div class="btn-row">
+                        <button id="fire-btn" class="btn btn-fire">
+                            <img class="btn-ico" src="assets/images/ui/emoji/flame.png" alt="">
+                            <span>FIRE</span>
+                        </button>
+                        <button id="reset-btn" class="btn btn-iron" title="Clear the field" aria-label="Clear the field">
+                            <img class="btn-ico" src="assets/images/ui/emoji/reset.png" alt="">
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ctrl-section">
+                    <label class="toggle-row">
+                        <input type="checkbox" id="show-vectors" checked>
+                        <span class="toggle-box"></span>
+                        <span>Track velocity vectors (v&#8339;, v&#7527;)</span>
+                    </label>
+                    <label class="toggle-row">
+                        <input type="checkbox" id="show-path" checked>
+                        <span class="toggle-box"></span>
+                        <span>Trace the cannonball's arc</span>
+                    </label>
+                </div>
+
+                <div class="ctrl-section">
+                    <div class="section-title">Gunner's Log</div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Flight Time</div>
+                            <div class="stat-val" id="time-stat">0.0s</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Height (y)</div>
+                            <div class="stat-val" id="y-stat">0m</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">v&#8339; (steady)</div>
+                            <div class="stat-val" id="vx-stat">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">v&#7527; (falling)</div>
+                            <div class="stat-val" id="vy-stat">0</div>
+                        </div>
+                    </div>
+                    <div class="predict-row">
+                        <div class="predict"><span>Peak Height (H)</span><strong id="pred-h">-</strong></div>
+                        <div class="predict"><span>Strike Range (R)</span><strong id="pred-r">-</strong></div>
+                    </div>
+                </div>
+
+                <button id="hint-btn" class="btn btn-wood">
+                    <img class="btn-ico" src="assets/images/ui/emoji/torch.png" alt="">
+                    <span>Ask the Gunner</span>
+                </button>
+            </aside>
+        </div>
+    </section>
+
+    <!-- ===================== SETTINGS MODAL ===================== -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal scroll-panel">
+            <h2 class="panel-heading center">
+                <img class="head-ico" src="assets/images/ui/emoji/gear.png" alt=""> War Room
+            </h2>
+            <div class="setting-row">
+                <span>Battle Music</span>
+                <button class="switch" id="set-music" aria-pressed="true">
+                    <img class="switch-ico" src="assets/images/ui/emoji/music-on.png" alt="">
+                    <span class="switch-state">On</span>
+                </button>
+            </div>
+            <div class="setting-row">
+                <span>Battlefield Sounds</span>
+                <button class="switch" id="set-sfx" aria-pressed="true">
+                    <img class="switch-ico" src="assets/images/ui/emoji/sound-on.png" alt="">
+                    <span class="switch-state">On</span>
+                </button>
+            </div>
+            <div class="setting-row">
+                <span>Wipe the War Record</span>
+                <button class="btn btn-iron slim" id="wipe-progress">Erase</button>
+            </div>
+            <button class="btn btn-gold" id="settings-close">Shut the War Room</button>
+        </div>
+    </div>
+
+    <!-- ===================== VICTORY MODAL ===================== -->
+    <div id="victory-modal" class="modal-overlay">
+        <div class="modal scroll-panel victory">
+            <img class="victory-trophy" src="assets/images/ui/emoji/trophy.png" alt="">
+            <h2 class="victory-title">Direct Hit!</h2>
+            <p id="victory-sub" class="victory-sub"></p>
+            <div class="victory-stats" id="victory-stats"></div>
+            <div class="victory-btns">
+                <button class="btn btn-wood" id="learn-btn">
+                    <img class="btn-ico" src="assets/images/ui/emoji/book.png" alt="">
+                    <span>War College</span>
+                </button>
+                <button class="btn btn-iron" id="replay-btn">
+                    <img class="btn-ico" src="assets/images/ui/emoji/reset.png" alt="">
+                    <span>Fire Again</span>
+                </button>
+                <button class="btn btn-gold" id="next-btn">
+                    <span>March On</span>
+                </button>
+            </div>
+            <button class="text-link" id="victory-menu">Retreat to Camp</button>
+        </div>
+    </div>
+
+    <!-- ===================== LEARN MORE MODAL ===================== -->
+    <div id="learn-modal" class="modal-overlay">
+        <div class="modal scroll-panel learn">
+            <div class="panel-topbar">
+                <h2 class="panel-heading">
+                    <img class="head-ico" src="assets/images/ui/emoji/book.png" alt=""> The War College
+                </h2>
+                <button class="icon-btn small" id="learn-close" aria-label="Close">
+                    <img src="assets/images/ui/emoji/back.png" alt="Close">
+                </button>
+            </div>
+            <div class="learn-body">
+                <p>Every cannonball obeys the same law: once it leaves the barrel, gravity owns it. The flight splits cleanly in two &mdash; sideways motion and vertical motion never interfere with each other.</p>
+                <p><b>Horizontal speed (v&#8339;)</b> never changes &mdash; nothing is pushing the ball sideways once she's in the air. &nbsp; <span class="formula">v&#8339; = v&#8320; cos&thinsp;&theta;&#8320;</span></p>
+                <p><b>Vertical speed (v&#7527;)</b> is a different story &mdash; gravity fights it the whole way up, stalls it dead at the peak, then hurls it back down. <i>g</i> = 9.8&nbsp;m/s&sup2;. &nbsp; <span class="formula">v&#7527; = v&#8320; sin&thinsp;&theta;&#8320; &minus; g&thinsp;t</span></p>
+                <p><b>The Peak</b> &mdash; how high she climbs before gravity wins: &nbsp; <span class="formula">H = (v&#8320; sin&thinsp;&theta;&#8320;)&sup2; &divide; (2g)</span></p>
+                <p><b>The Strike</b> &mdash; how far she flies before she lands: &nbsp; <span class="formula">R = v&#8320;&sup2; sin(2&theta;&#8320;) &divide; g</span></p>
+                <p><b>The Gunner's Rule:</b> at any given power, 45&deg; sends the ball farthest on level ground. Every siege engineer since antiquity has known this.</p>
+                <p><b>Twin Shots:</b> angles that add up to 90&deg; (say, 30&deg; and 60&deg;) land in the exact same spot &mdash; one arcs high and lazy, the other screams in flat and fast. Choose your poison.</p>
+                <p class="learn-note">Old-world gunners learned these arcs by instinct and years of missed shots. This range ignores air resistance, so the numbers you see match the equations above exactly &mdash; no wind, no guesswork, no excuses.</p>
+            </div>
+            <button class="btn btn-gold" id="learn-done">Back to the Siege</button>
+        </div>
+    </div>
+
+</div>
+<script src="js/game.js"></script>
+</body>
+</html>

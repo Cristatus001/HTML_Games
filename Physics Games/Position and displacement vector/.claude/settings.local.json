@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npm view *)",
+      "Read(//c/Users/Admin/Desktop/HTML Games/Physics Games/**)",
+      "Bash(mkdir -p equal_vectors/css equal_vectors/js equal_vectors/tools equal_vectors/assets/audio equal_vectors/assets/fonts equal_vectors/assets/images/ui/emoji equal_vectors/assets/images/characters equal_vectors/assets/images/background)"
+    ]
+  }
+}

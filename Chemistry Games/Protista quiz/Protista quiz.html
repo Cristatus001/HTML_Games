@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protist Detective: Extended Lab</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #0d0d0d;
+            color: #00ff00; /* Hacker Green */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* The Microscope View */
+        .microscope-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            border: 10px solid #333;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #000);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .lens-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        /* The Creature inside the scope */
+        .specimen {
+            font-size: 80px;
+            animation: float 3s ease-in-out infinite;
+            z-index: 1;
+            filter: drop-shadow(0 0 10px #00ff00);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        /* UI Elements */
+        .mission-log {
+            width: 90%;
+            max-width: 650px;
+            background: #111;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        h2 { margin: 0; font-size: 1.2rem; color: #fff; text-transform: uppercase; }
+
+        .clue-box {
+            font-size: 1.1rem;
+            margin: 10px 0;
+            color: #fff;
+            background: #222;
+            padding: 15px;
+            border-left: 5px solid #00ff00;
+            text-align: left;
+            min-height: 60px;
+        }
+
+        .keyword { color: yellow; font-weight: bold; text-decoration: underline; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+            border-radius: 4px;
+        }
+
+        button:hover:not(:disabled) {
+            background: #00ff00;
+            color: black;
+            font-weight: bold;
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Feedback overlays */
+        .feedback-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            font-weight: bold;
+            z-index: 10;
+            background: rgba(0,0,0,0.7);
+            display: none; 
+        }
+        .correct { color: #00ff00; }
+        .wrong { color: #ff0000; }
+
+        .explanation {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 15px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            display: none;
+            border: 1px dashed #666;
+        }
+
+        #next-btn {
+            background: yellow;
+            color: black;
+            display: none; /* Hidden until answer given */
+            width: 100%;
+            margin-top: 15px;
+            font-weight: bold;
+            border: none;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #333;
+            height: 5px;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #00ff00;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="mission-log">
+        <div class="header-bar">
+            <span id="q-counter">SAMPLE: 1/15</span>
+            <span id="score">SCORE: 0</span>
+        </div>
+
+        <div style="display: flex; justify-content: center;">
+            <div class="microscope-container" id="scope-border">
+                <div class="lens-overlay"></div>
+                <div class="specimen" id="specimen-display">🦠</div>
+                <div class="feedback-overlay" id="feedback-anim"></div>
+            </div>
+        </div>
+
+        <div id="game-interface">
+            <div class="clue-box" id="clue-text">
+                Initializing Lab...
+            </div>
+
+            <div class="options-grid" id="options-area">
+                </div>
+            
+            <div class="explanation" id="explanation-text"></div>
+            <button id="next-btn" onclick="nextQuestion()">ANALYZE NEXT SAMPLE >></button>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        // EXPANDED Database of Questions based on NCERT Text
+        const database = [
+            // --- Chrysophytes ---
+            {
+                emoji: "💎",
+                clue: "My cell walls are embedded with <span class='keyword'>SILICA</span> and fit together like a soap box. I am indestructible.",
+                options: ["Dinoflagellate", "Chrysophyte", "Slime Mould", "Protozoan"],
+                correct: 1,
+                fact: "Correct! The accumulation of these walls over billions of years forms 'Diatomaceous Earth'."
+            },
+            {
+                emoji: "🌊",
+                clue: "We are the <span class='keyword'>CHIEF PRODUCERS</span> in the oceans and float passively in water currents.",
+                options: ["Plankton (Chrysophytes)", "Amoeba", "Slime Moulds", "Sporozoans"],
+                correct: 0,
+                fact: "Correct! Being 'plankton' means we drift with the current rather than swim actively."
+            },
+            {
+                emoji: "🏭",
+                clue: "The gritty soil left behind by my cell walls is used for <span class='keyword'>FILTRATION</span> of oils and syrups.",
+                options: ["Diatomaceous Earth", "Red Tide toxin", "Plasmodium spores", "Pellicle"],
+                correct: 0,
+                fact: "Correct! The gritty nature of diatom cell walls makes them excellent for polishing and filtration."
+            },
+
+            // --- Dinoflagellates ---
+            {
+                emoji: "🌪️",
+                clue: "I have two flagella: one lies longitudinally and the other <span class='keyword'>TRANSVERSELY</span> in a furrow between wall plates.",
+                options: ["Euglenoids", "Dinoflagellates", "Chrysophytes", "Ciliated Protozoans"],
+                correct: 1,
+                fact: "Correct! This unique flagella arrangement causes us to spin like a top."
+            },
+            {
+                emoji: "🛡️",
+                clue: "I am mostly marine and photosynthetic. My cell wall has <span class='keyword'>STIFF CELLULOSE PLATES</span> on the outer surface.",
+                options: ["Slime Mould", "Amoeba", "Dinoflagellate", "Euglenoid"],
+                correct: 2,
+                fact: "Correct! Unlike Euglenoids (who are flexible), we have stiff armor plates."
+            },
+            {
+                emoji: "🔴",
+                clue: "I am a red dinoflagellate (e.g., <span class='keyword'>GONYAULAX</span>). I multiply so fast I make the sea appear red.",
+                options: ["Red Tide", "Rust Disease", "Red Algae", "Red Mold"],
+                correct: 0,
+                fact: "Correct! These 'Red Tides' release toxins that can kill marine animals like fish."
+            },
+
+            // --- Euglenoids ---
+            {
+                emoji: "🐛",
+                clue: "I have no cell wall. Instead, I have a protein-rich layer called a <span class='keyword'>PELLICLE</span> which makes my body flexible.",
+                options: ["Diatom", "Dinoflagellate", "Euglenoid", "Amoeba"],
+                correct: 2,
+                fact: "Correct! The pellicle allows us to expand and contract our bodies."
+            },
+            {
+                emoji: "☀️",
+                clue: "I am a 'Mixotroph'. I am photosynthetic in sunlight, but I become a <span class='keyword'>HETEROTROPH (PREDATOR)</span> when deprived of sunlight.",
+                options: ["Euglena", "Paramoecium", "Trypanosoma", "Gonyaulax"],
+                correct: 0,
+                fact: "Correct! My pigments are identical to those present in higher plants."
+            },
+
+            // --- Slime Moulds ---
+            {
+                emoji: "🍂",
+                clue: "I am a saprophyte. Under suitable conditions, I form an aggregation called <span class='keyword'>PLASMODIUM</span> which may spread over several feet.",
+                options: ["Slime Mould", "Malarial Parasite", "Amoeba", "Chrysophyte"],
+                correct: 0,
+                fact: "Correct! Do not confuse this 'Plasmodium' (the aggregation) with the malaria parasite Plasmodium!"
+            },
+            {
+                emoji: "🌬️",
+                clue: "During unfavourable conditions, I form fruiting bodies bearing <span class='keyword'>SPORES</span>. These spores are dispersed by...",
+                options: ["Water currents", "Air currents", "Insects", "Active swimming"],
+                correct: 1,
+                fact: "Correct! The spores have true walls and are extremely resistant to harsh conditions."
+            },
+
+            // --- Protozoans ---
+            {
+                emoji: "🌫️",
+                clue: "I am an Amoeboid Protozoan. I capture prey using false feet called <span class='keyword'>PSEUDOPODIA</span>. Marine forms of me have silica shells.",
+                options: ["Paramoecium", "Entamoeba", "Trypanosoma", "Plasmodium"],
+                correct: 1,
+                fact: "Correct! Entamoeba is a parasitic example of this group."
+            },
+            {
+                emoji: "😴",
+                clue: "I am a Flagellated Protozoan. I am parasitic and cause diseases such as <span class='keyword'>SLEEPING SICKNESS</span>.",
+                options: ["Trypanosoma", "Paramoecium", "Gonyaulax", "Amoeba"],
+                correct: 0,
+                fact: "Correct! Trypanosoma is the flagellated parasite responsible for this disease."
+            },
+            {
+                emoji: "👞",
+                clue: "I am a Ciliated Protozoan (e.g., Paramoecium). I have a cavity called a <span class='keyword'>GULLET</span> that opens to the outside.",
+                options: ["True", "False"], // Simplified option
+                correct: 0,
+                fact: "Correct! The coordinated movement of thousands of cilia steers food into the gullet."
+            },
+            {
+                emoji: "🦟",
+                clue: "I am a Sporozoan. I have an infectious spore-like stage. The most notorious member is <span class='keyword'>PLASMODIUM</span> (Malarial Parasite).",
+                options: ["Sporozoan", "Ciliated Protozoan", "Slime Mould", "Chrysophyte"],
+                correct: 0,
+                fact: "Correct! This causes malaria, which has a staggering effect on human population."
+            },
+            {
+                emoji: "🦁",
+                clue: "All Protozoans are...",
+                options: ["Autotrophs", "Heterotrophs (Predators/Parasites)", "Producers", "Saprophytes only"],
+                correct: 1,
+                fact: "Correct! Protozoans are believed to be primitive relatives of animals."
+            }
+        ];
+
+        let currentQ = 0;
+        let score = 0;
+        
+        // DOM Elements
+        const headerCounter = document.getElementById('q-counter');
+        const scoreDisplay = document.getElementById('score');
+        const clueText = document.getElementById('clue-text');
+        const specimen = document.getElementById('specimen-display');
+        const optionsArea = document.getElementById('options-area');
+        const feedbackAnim = document.getElementById('feedback-anim');
+        const nextBtn = document.getElementById('next-btn');
+        const explanationText = document.getElementById('explanation-text');
+        const scopeBorder = document.getElementById('scope-border');
+        const progressBar = document.getElementById('progress-bar');
+
+        function loadQuestion() {
+            if (currentQ >= database.length) {
+                endGame();
+                return;
+            }
+
+            const data = database[currentQ];
+            
+            // Update Headers
+            headerCounter.textContent = `SAMPLE: ${currentQ + 1}/${database.length}`;
+            const progress = ((currentQ) / database.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Reset UI
+            feedbackAnim.style.display = 'none';
+            nextBtn.style.display = 'none';
+            explanationText.style.display = 'none';
+            scopeBorder.style.borderColor = "#333";
+            optionsArea.innerHTML = ''; 
+            
+            // Set Content
+            specimen.textContent = data.emoji;
+            clueText.innerHTML = data.clue;
+
+            // Generate Buttons
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.onclick = () => checkAnswer(index, data.correct, data.fact);
+                optionsArea.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct, fact) {
+            const buttons = optionsArea.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (selected === correct) {
+                score += 10;
+                scoreDisplay.textContent = "SCORE: " + score;
+                
+                // Visual Feedback
+                feedbackAnim.textContent = "✔";
+                feedbackAnim.className = "feedback-overlay correct";
+                scopeBorder.style.borderColor = "#00ff00";
+                buttons[selected].style.background = "#00ff00";
+                buttons[selected].style.color = "black";
+            } else {
+                // Wrong Answer
+                feedbackAnim.textContent = "✖";
+                feedbackAnim.className = "feedback-overlay wrong";
+                scopeBorder.style.borderColor = "red";
+                buttons[selected].style.background = "red";
+                buttons[selected].style.color = "white";
+                
+                // Highlight correct one
+                buttons[correct].style.border = "2px solid #fff";
+                buttons[correct].style.fontWeight = "bold";
+            }
+
+            feedbackAnim.style.display = 'flex';
+            setTimeout(() => { feedbackAnim.style.display = 'none'; }, 1000);
+            
+            explanationText.innerHTML = fact;
+            explanationText.style.display = 'block';
+            nextBtn.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            loadQuestion();
+        }
+
+        function endGame() {
+            const percentage = (score / (database.length * 10)) * 100;
+            let title = "INTERN";
+            if(percentage > 80) title = "CHIEF SCIENTIST";
+            else if(percentage > 50) title = "LAB ASSISTANT";
+
+            document.querySelector('.mission-log').innerHTML = `
+                <h1 style="color:white; font-size: 3rem;">MISSION COMPLETE</h1>
+                <div style="font-size: 5rem; margin: 20px;">🏆</div>
+                <h2 style="color: #00ff00;">RANK: ${title}</h2>
+                <h3 style="color: white;">FINAL SCORE: ${score} / ${database.length * 10}</h3>
+                <p style="color: #ccc;">You have analyzed all Protista samples.</p>
+                <button onclick="location.reload()" style="margin-top:20px; width: 100%;">RESTART MISSION</button>
+            `;
+        }
+
+        // Start Game
+        loadQuestion();
+
+    </script>
+</body>
+</html>

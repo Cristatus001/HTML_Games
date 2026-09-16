@@ -1,0 +1,59 @@
+/* ============================================================================
+   Locally bundled webfonts - zero network requests.
+
+   Orbitron        display / headings   (SIL Open Font License 1.1)
+   Rajdhani        UI body / labels     (SIL Open Font License 1.1)
+   Share Tech Mono instrument readouts  (SIL Open Font License 1.1)
+
+   Latin subsets taken from the @fontsource packages. woff2 only: every
+   engine that ships in a modern Android/iOS WebView supports it, and the
+   font-family stacks below fall back to system faces if it ever fails.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('orbitron-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url('orbitron-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('rajdhani-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('rajdhani-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('rajdhani-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Share Tech Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('share-tech-mono-400.woff2') format('woff2');
+}

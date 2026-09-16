@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1d18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Moss Sporefall - drift down through a damp forest as a moss spore and learn the biology of bryophytes.">
+<title>Moss Sporefall</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <div id="stage">
+
+    <canvas id="game-canvas"></canvas>
+
+    <!-- ================= HUD ================= -->
+    <div id="hud" class="hidden" aria-hidden="true">
+      <div class="hud-top">
+        <div class="hud-cluster hud-left">
+          <div id="moisture-row" class="moisture-row" title="Moisture"></div>
+        </div>
+
+        <div class="hud-cluster hud-center">
+          <div id="zone-chip" class="zone-chip"><span id="zone-name">Canopy Drift</span></div>
+          <div id="fact-pips" class="fact-pips"></div>
+        </div>
+
+        <div class="hud-cluster hud-right">
+          <div class="score-plate">
+            <span class="res res-amber">
+              <img class="icon" src="assets/images/ui/emoji/capsule.png" alt="">
+            </span>
+            <span id="score-value">0</span>
+          </div>
+          <button id="btn-pause" class="icon-btn" type="button" aria-label="Pause">
+            <img class="icon" src="assets/images/ui/emoji/pause.png" alt="Pause">
+          </button>
+        </div>
+      </div>
+
+      <div id="depth-gauge" class="depth-gauge">
+        <img class="icon depth-icon" src="assets/images/ui/emoji/depth.png" alt="">
+        <div class="gauge-track">
+          <div id="gauge-fill" class="gauge-fill"></div>
+          <div id="gauge-marker" class="gauge-marker"></div>
+        </div>
+        <div id="depth-value" class="depth-value">0</div>
+      </div>
+    </div>
+
+    <!-- ================= TOAST (fact / warning) ================= -->
+    <div id="toast" class="toast" aria-live="polite">
+      <div class="toast-inner">
+        <img id="toast-icon" class="toast-icon" src="assets/images/ui/emoji/moss-leaf.png" alt="">
+        <div class="toast-body">
+          <div id="toast-title" class="toast-title">Moss Fact 1</div>
+          <div id="toast-text" class="toast-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TOUCH CONTROLS ================= -->
+    <div id="touch-controls" class="touch-controls hidden" aria-hidden="true">
+      <button class="pad pad-left" id="pad-left" type="button" aria-label="Drift left">
+        <img class="icon" src="assets/images/ui/emoji/arrow-left.png" alt="">
+      </button>
+      <button class="pad pad-right" id="pad-right" type="button" aria-label="Drift right">
+        <img class="icon" src="assets/images/ui/emoji/arrow-right.png" alt="">
+      </button>
+      <button class="pad pad-dive" id="pad-dive" type="button" aria-label="Dive faster">
+        <img class="icon" src="assets/images/ui/emoji/depth.png" alt="">
+        <span class="pad-label">DIVE</span>
+      </button>
+    </div>
+
+    <!-- ================= SCREENS ================= -->
+
+    <!-- Boot -->
+    <section id="screen-boot" class="screen active">
+      <div class="boot-wrap">
+        <div class="boot-spore"><span class="boot-core"></span></div>
+        <h1 class="game-title">
+          <span class="title-top">MOSS</span>
+          <span class="title-main">SPOREFALL</span>
+        </h1>
+        <p class="tagline">A Bryophyte Journey</p>
+        <div class="boot-bar"><div id="boot-fill"></div></div>
+        <p id="boot-status" class="boot-status">Warming the mist...</p>
+      </div>
+    </section>
+
+    <!-- Main menu -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-wrap">
+        <h1 class="game-title">
+          <span class="title-top">MOSS</span>
+          <span class="title-main">SPOREFALL</span>
+        </h1>
+        <p class="tagline">A Bryophyte Journey</p>
+
+        <div class="menu-buttons">
+          <button class="btn btn-primary btn-wide" id="btn-play" type="button">
+            <img class="icon" src="assets/images/ui/emoji/play.png" alt="">
+            <span>PLAY</span>
+          </button>
+          <button class="btn btn-wide" id="btn-howto" type="button">
+            <img class="icon" src="assets/images/ui/emoji/guide.png" alt="">
+            <span>HOW TO PLAY</span>
+          </button>
+          <button class="btn btn-wide" id="btn-settings" type="button">
+            <img class="icon" src="assets/images/ui/emoji/settings.png" alt="">
+            <span>SETTINGS</span>
+          </button>
+        </div>
+
+        <p class="menu-foot">Collect all 15 moss facts across 3 zones</p>
+      </div>
+    </section>
+
+    <!-- Zone select -->
+    <section id="screen-zones" class="screen">
+      <div class="panel panel-wide screen-panel">
+        <header class="panel-head">
+          <button class="icon-btn back-btn" data-back="screen-menu" type="button" aria-label="Back">
+            <img class="icon" src="assets/images/ui/emoji/back.png" alt="">
+          </button>
+          <h2>CHOOSE YOUR DESCENT</h2>
+        </header>
+        <div id="zone-list" class="zone-list"></div>
+        <div class="panel-foot">
+          <div class="total-progress">
+            <span class="res res-green">
+              <img class="icon" src="assets/images/ui/emoji/spore.png" alt="">
+            </span>
+            <span>FACTS FOUND <b id="total-facts">0</b> / 15</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to play (gameplay only) -->
+    <section id="screen-howto" class="screen">
+      <div class="panel panel-wide screen-panel">
+        <header class="panel-head">
+          <button class="icon-btn back-btn" data-back="screen-menu" type="button" aria-label="Back">
+            <img class="icon" src="assets/images/ui/emoji/back.png" alt="">
+          </button>
+          <h2>HOW TO PLAY</h2>
+        </header>
+
+        <div class="scroll-body">
+          <div class="howto-goal">
+            <span class="res res-green big">
+              <img class="icon" src="assets/images/ui/emoji/spore.png" alt="">
+            </span>
+            <p><b>You are a moss spore.</b> Drift down through the forest and land on damp ground. Gather every glowing <b>Dew Orb</b> on the way down &mdash; each one carries a fact about mosses.</p>
+          </div>
+
+          <h3 class="sub-head">CONTROLS</h3>
+          <ul class="control-list">
+            <li>
+              <span class="keycap">DRAG</span>
+              <span>Touch and drag anywhere on the screen to steer the spore.</span>
+            </li>
+            <li>
+              <span class="keycap"><img class="icon tiny" src="assets/images/ui/emoji/arrow-left.png" alt=""></span>
+              <span class="keycap"><img class="icon tiny" src="assets/images/ui/emoji/arrow-right.png" alt=""></span>
+              <span>On-screen pads, or the arrow keys / <b>A</b> and <b>D</b>, drift left and right.</span>
+            </li>
+            <li>
+              <span class="keycap">DIVE</span>
+              <span>Hold the dive pad or press <b>Down</b> / <b>S</b> to fall faster.</span>
+            </li>
+            <li>
+              <span class="keycap">P</span>
+              <span>Pause the descent. <b>Esc</b> also works.</span>
+            </li>
+          </ul>
+
+          <h3 class="sub-head">WHAT TO CHASE, WHAT TO DODGE</h3>
+          <div class="legend">
+            <div class="legend-row good">
+              <span class="swatch swatch-orb"></span>
+              <div><b>Dew Orb</b><br>Collect it. Scores points and reveals a moss fact. Collect them in a row for a bonus.</div>
+            </div>
+            <div class="legend-row good">
+              <span class="swatch swatch-drop"></span>
+              <div><b>Moisture Drop</b><br>Restores one point of moisture. One hides in every zone.</div>
+            </div>
+            <div class="legend-row bad">
+              <span class="swatch swatch-fern"></span>
+              <div><b>Impostors</b><br>Ferns, cones and flowers are <i>not</i> mosses. Touching one costs moisture.</div>
+            </div>
+            <div class="legend-row bad">
+              <span class="swatch swatch-spur"></span>
+              <div><b>Rock Spurs</b><br>Dry stone jutting from the canyon wall. Squeeze past them.</div>
+            </div>
+          </div>
+
+          <h3 class="sub-head">MOISTURE</h3>
+          <p class="body-text">
+            You start each descent with three
+            <img class="icon inline-icon" src="assets/images/ui/emoji/dew-drop.png" alt="moisture">.
+            Lose them all and the spore dries out before it can germinate. Brushing the canyon walls is safe.
+          </p>
+
+          <h3 class="sub-head">STARS</h3>
+          <div class="star-rules">
+            <div><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt="1 star"> Reach the ground</div>
+            <div><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt=""><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt="2 stars"> Collect all 5 facts</div>
+            <div><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt=""><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt=""><img class="icon" src="assets/images/ui/emoji/star-filled.png" alt="3 stars"> All 5 facts, no moisture lost</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="screen-settings" class="screen">
+      <div class="panel screen-panel">
+        <header class="panel-head">
+          <button class="icon-btn back-btn" data-back="screen-menu" type="button" aria-label="Back">
+            <img class="icon" src="assets/images/ui/emoji/back.png" alt="">
+          </button>
+          <h2>SETTINGS</h2>
+        </header>
+
+        <div class="settings-body">
+          <button class="toggle-row" id="toggle-music" type="button" aria-pressed="true">
+            <img id="music-icon" class="icon" src="assets/images/ui/emoji/music-on.png" alt="">
+            <span class="toggle-label">MUSIC</span>
+            <span class="toggle-switch"><span class="knob"></span></span>
+          </button>
+
+          <button class="toggle-row" id="toggle-sfx" type="button" aria-pressed="true">
+            <img id="sfx-icon" class="icon" src="assets/images/ui/emoji/sound-on.png" alt="">
+            <span class="toggle-label">SOUND FX</span>
+            <span class="toggle-switch"><span class="knob"></span></span>
+          </button>
+
+          <div class="settings-note" id="music-source">Music: generated live in your browser.</div>
+
+          <button class="btn btn-danger btn-wide" id="btn-reset" type="button">
+            <img class="icon" src="assets/images/ui/emoji/restart.png" alt="">
+            <span>RESET PROGRESS</span>
+          </button>
+          <div class="settings-note small">Clears your stars, best scores and collected facts.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section id="screen-pause" class="screen">
+      <div class="panel screen-panel">
+        <header class="panel-head center">
+          <h2>PAUSED</h2>
+        </header>
+        <div class="menu-buttons tight">
+          <button class="btn btn-primary btn-wide" id="btn-resume" type="button">
+            <img class="icon" src="assets/images/ui/emoji/play.png" alt="">
+            <span>RESUME</span>
+          </button>
+          <button class="btn btn-wide" id="btn-restart-zone" type="button">
+            <img class="icon" src="assets/images/ui/emoji/restart.png" alt="">
+            <span>RESTART ZONE</span>
+          </button>
+          <button class="btn btn-wide" id="btn-quit" type="button">
+            <img class="icon" src="assets/images/ui/emoji/home.png" alt="">
+            <span>MAIN MENU</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="screen-result" class="screen">
+      <div class="panel panel-wide screen-panel">
+        <div class="result-crest">
+          <img id="result-crest-img" class="crest-img" src="assets/images/ui/emoji/award.png" alt="">
+        </div>
+        <h2 id="result-title" class="result-title">ZONE COMPLETE</h2>
+        <p id="result-sub" class="result-sub"></p>
+
+        <div id="result-stars" class="result-stars"></div>
+
+        <div class="result-grid">
+          <div class="stat">
+            <span class="res res-amber"><img class="icon" src="assets/images/ui/emoji/capsule.png" alt=""></span>
+            <b id="result-score">0</b><small>SCORE</small>
+          </div>
+          <div class="stat">
+            <span class="res res-green"><img class="icon" src="assets/images/ui/emoji/spore.png" alt=""></span>
+            <b id="result-facts">0/5</b><small>FACTS</small>
+          </div>
+          <div class="stat">
+            <span class="res res-dew"><img class="icon" src="assets/images/ui/emoji/dew-drop.png" alt=""></span>
+            <b id="result-moisture">3</b><small>MOISTURE</small>
+          </div>
+          <div class="stat">
+            <span class="res res-dew"><img class="icon" src="assets/images/ui/emoji/depth.png" alt=""></span>
+            <b id="result-depth">0</b><small>DEPTH</small>
+          </div>
+        </div>
+
+        <div id="result-facts-list" class="result-facts"></div>
+
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btn-next" type="button">
+            <img class="icon" src="assets/images/ui/emoji/play.png" alt="">
+            <span>NEXT ZONE</span>
+          </button>
+          <button class="btn" id="btn-retry" type="button">
+            <img class="icon" src="assets/images/ui/emoji/restart.png" alt="">
+            <span>RETRY</span>
+          </button>
+          <button class="btn btn-journal" id="btn-learn" type="button">
+            <img class="icon" src="assets/images/ui/emoji/journal.png" alt="">
+            <span>LEARN MORE</span>
+          </button>
+          <button class="btn" id="btn-result-menu" type="button">
+            <img class="icon" src="assets/images/ui/emoji/home.png" alt="">
+            <span>MENU</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Learn More (reference material, kept apart from How to Play) -->
+    <section id="screen-learn" class="screen">
+      <div class="journal screen-panel">
+        <header class="panel-head journal-head">
+          <button class="icon-btn back-btn" id="btn-learn-back" type="button" aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+          </button>
+          <h2>THE MOSS FIELD JOURNAL</h2>
+        </header>
+
+        <div class="scroll-body journal-body">
+          <p class="journal-intro">
+            Mosses are <b>bryophytes</b>: small, non-vascular land plants with no true roots, no flowers and no seeds.
+            They were the first plants to leave the water, and they still need a film of it to reproduce.
+          </p>
+
+          <h3 class="journal-head-2">THE MOSS PLANT</h3>
+          <div class="diagram-wrap">
+            <svg viewBox="0 0 320 240" class="moss-diagram" role="img" aria-label="Labelled diagram of a moss plant showing rhizoids, leafy gametophyte, seta and capsule">
+              <defs>
+                <linearGradient id="stemG" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0" stop-color="#1f6b40"/><stop offset="1" stop-color="#5fd98a"/>
+                </linearGradient>
+                <linearGradient id="leafG" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stop-color="#1f8a52"/><stop offset="1" stop-color="#c9ffdd"/>
+                </linearGradient>
+                <radialGradient id="capG" cx="0.35" cy="0.3" r="0.8">
+                  <stop offset="0" stop-color="#ffeecb"/><stop offset="0.45" stop-color="#ffc46b"/><stop offset="1" stop-color="#8a4f10"/>
+                </radialGradient>
+                <linearGradient id="soilG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#4d3a1c"/><stop offset="1" stop-color="#2a1d10"/>
+                </linearGradient>
+              </defs>
+
+              <rect x="0" y="196" width="320" height="44" fill="url(#soilG)"/>
+              <rect x="0" y="196" width="320" height="6" fill="#5c4724"/>
+
+              <!-- rhizoids -->
+              <g stroke="#a98a4e" stroke-width="2" fill="none" stroke-linecap="round">
+                <path d="M112 198 L96 224"/><path d="M112 198 L110 228"/><path d="M112 198 L128 222"/>
+                <path d="M112 198 L84 214"/><path d="M112 198 L138 212"/>
+              </g>
+
+              <!-- leafy gametophyte -->
+              <path d="M112 200 L112 128" stroke="url(#stemG)" stroke-width="7" stroke-linecap="round" fill="none"/>
+              <g fill="url(#leafG)">
+                <path d="M112 190 q-26 -16 -34 -2 q16 12 34 2z"/>
+                <path d="M112 176 q26 -18 36 -3 q-18 13 -36 3z"/>
+                <path d="M112 162 q-28 -18 -37 -3 q17 13 37 3z"/>
+                <path d="M112 148 q27 -19 37 -3 q-18 14 -37 3z"/>
+                <path d="M112 134 q-24 -17 -32 -2 q15 12 32 2z"/>
+              </g>
+
+              <!-- sporophyte: foot, seta, capsule -->
+              <path d="M112 138 q6 -44 22 -66" stroke="#b7e6a0" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <ellipse cx="139" cy="62" rx="15" ry="21" fill="url(#capG)"/>
+              <ellipse cx="139" cy="43" rx="9" ry="5" fill="#ffe6b4"/>
+              <circle cx="112" cy="138" r="5" fill="#7fd9a4"/>
+
+              <!-- labels -->
+              <g font-size="11" font-family="Nunito, sans-serif" fill="#5b4620">
+                <line x1="154" y1="62" x2="214" y2="52" stroke="#8a6f3a" stroke-width="1.4"/>
+                <text x="218" y="56">Capsule (spores)</text>
+
+                <line x1="130" y1="104" x2="214" y2="100" stroke="#8a6f3a" stroke-width="1.4"/>
+                <text x="218" y="104">Seta (stalk)</text>
+
+                <line x1="117" y1="138" x2="214" y2="146" stroke="#8a6f3a" stroke-width="1.4"/>
+                <text x="218" y="150">Foot</text>
+
+                <line x1="80" y1="160" x2="22" y2="140" stroke="#8a6f3a" stroke-width="1.4"/>
+                <text x="4" y="134">Leafy</text>
+                <text x="4" y="146">gametophyte</text>
+
+                <line x1="92" y1="216" x2="40" y2="222" stroke="#8a6f3a" stroke-width="1.4"/>
+                <text x="4" y="226">Rhizoids</text>
+              </g>
+            </svg>
+          </div>
+
+          <h3 class="journal-head-2">LIFE CYCLE</h3>
+          <ol id="lifecycle-list" class="lifecycle"></ol>
+
+          <h3 class="journal-head-2">GLOSSARY</h3>
+          <dl id="glossary-list" class="glossary"></dl>
+
+          <h3 class="journal-head-2">WHY MOSSES MATTER</h3>
+          <ul id="ecology-list" class="ecology"></ul>
+
+          <h3 class="journal-head-2">ALL FIFTEEN FACTS</h3>
+          <ol id="all-facts" class="all-facts"></ol>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

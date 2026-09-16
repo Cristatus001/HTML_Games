@@ -1,0 +1,33 @@
+/* Local, offline copies of Rajdhani + Share Tech Mono (originally from Google Fonts). */
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('rajdhani-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('rajdhani-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('rajdhani-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Share Tech Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('share-tech-mono-latin-400-normal.woff2') format('woff2');
+}

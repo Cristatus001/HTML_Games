@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0202">
+<title>ISRO Mission: Kolar Deep Dive</title>
+
+<style>
+    @font-face {
+        font-family: 'Rajdhani';
+        src: url('fonts/Rajdhani-Medium.woff2') format('woff2'),
+             url('fonts/Rajdhani-Medium.woff') format('woff');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Rajdhani';
+        src: url('fonts/Rajdhani-Bold.woff2') format('woff2'),
+             url('fonts/Rajdhani-Bold.woff') format('woff');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Share Tech Mono';
+        src: url('fonts/ShareTechMono-Regular.woff2') format('woff2'),
+             url('fonts/ShareTechMono-Regular.woff') format('woff');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    :root {
+        --bg-color: #0d0202;
+        --isro-orange: #ff9933;
+        --isro-orange-soft: #ffcc80;
+        --isro-blue: #00aaff;
+        --magma: #ff3300;
+        --hud-bg: rgba(20, 5, 5, 0.88);
+        --success: #00ff88;
+        --fail: #ff3333;
+        --panel-border: rgba(255, 153, 51, 0.35);
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        overflow: hidden;
+        background-color: var(--bg-color);
+        color: white;
+        font-family: 'Share Tech Mono', monospace;
+        -webkit-user-select: none; -moz-user-select: none; user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: none;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    canvas { display: block; touch-action: none; }
+    /* Deliberately static/unpositioned: an unpositioned element always paints
+       BELOW positioned (fixed/absolute) siblings regardless of DOM order, so
+       this keeps the canvas behind #app's menus/HUD without needing z-index
+       gymnastics against a sibling stacking context. */
+    #game-canvas { position: static; }
+
+    #app { position: fixed; inset: 0; }
+
+    .menu-logo-img { background-size: contain; background-repeat: no-repeat; background-position: center; }
+
+    h1, h2, h3, .font-display { font-family: 'Rajdhani', sans-serif; }
+
+    /* ---------------- SCREEN LAYER SYSTEM ---------------- */
+    .screen {
+        position: fixed; inset: 0; z-index: 50;
+        display: flex; align-items: center; justify-content: center;
+        padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left));
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.45s ease;
+    }
+    .screen.active { opacity: 1; pointer-events: auto; }
+    .screen-bg-tint {
+        position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 20%, rgba(80,10,0,0.35), rgba(5,0,0,0.88) 75%);
+        z-index: 49; opacity: 0; pointer-events: none; transition: opacity 0.45s ease;
+    }
+    .screen-bg-tint.active { opacity: 1; }
+
+    /* ---------------- BOOT ---------------- */
+    #boot-screen { z-index: 200; background: #050000; flex-direction: column; }
+    #boot-screen.active { opacity: 1; pointer-events: auto; }
+    .boot-logo {
+        font-size: clamp(2rem, 8vw, 3.6rem); font-weight: 700; letter-spacing: 6px;
+        color: var(--isro-orange); text-shadow: 0 0 25px rgba(255,153,51,0.6);
+        animation: bootPulse 1.6s ease-in-out infinite;
+    }
+    .boot-sub { color: #88ccff; letter-spacing: 3px; margin-top: 8px; font-size: 0.9rem; }
+    .boot-bar-track { width: min(320px, 70vw); height: 4px; background: rgba(255,255,255,0.1); margin-top: 30px; overflow: hidden; }
+    .boot-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--magma), var(--isro-orange)); animation: bootFill 1.8s ease forwards; }
+    .boot-tap { position: absolute; bottom: calc(30px + var(--safe-bottom)); font-size: 0.75rem; color: #666; letter-spacing: 2px; opacity: 0; animation: fadeIn 0.4s ease 1.9s forwards; }
+    @keyframes bootPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes bootFill { from { width: 0%; } to { width: 100%; } }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    /* ---------------- MENU ---------------- */
+    #menu-screen { flex-direction: column; gap: 4px; }
+    .menu-panel { width: min(480px, 92vw); text-align: center; }
+    .title-block { margin-bottom: clamp(16px, 4vh, 34px); }
+    .title-main {
+        font-size: clamp(1.9rem, 7vw, 3rem); font-weight: 700; color: var(--isro-orange);
+        text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 20px rgba(255,60,0,0.5);
+        line-height: 1.05;
+    }
+    .title-sub { color: var(--isro-blue); letter-spacing: 4px; font-size: clamp(0.7rem, 2.4vw, 0.9rem); margin-top: 6px; }
+    .menu-logo-img { max-width: 70%; max-height: 120px; margin-bottom: 10px; filter: drop-shadow(0 0 18px rgba(255,120,0,0.4)); }
+
+    .menu-btn {
+        display: block; width: 100%; background: rgba(255,153,51,0.08);
+        border: 1px solid var(--panel-border); color: var(--isro-orange-soft);
+        font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: clamp(1rem, 3.6vw, 1.2rem);
+        letter-spacing: 2px; text-transform: uppercase; padding: 13px 20px; margin-top: 12px;
+        cursor: pointer; transition: 0.18s; text-align: left; position: relative; overflow: hidden;
+    }
+    .menu-btn::before { content: '▸'; margin-right: 10px; color: var(--magma); }
+    .menu-btn:hover, .menu-btn:active { background: rgba(255,153,51,0.22); border-color: var(--isro-orange); box-shadow: 0 0 18px rgba(255,153,51,0.25); transform: translateY(-1px); }
+    .menu-btn.primary { background: var(--isro-orange); color: #1a0500; border-color: var(--isro-orange); }
+    .menu-btn.primary::before { color: #1a0500; }
+    .menu-btn.primary:hover { background: var(--isro-orange-soft); }
+    .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.6); }
+    .menu-btn:disabled:hover { background: rgba(255,153,51,0.08); box-shadow: none; transform: none; }
+    .menu-btn small { display: block; font-family: 'Share Tech Mono', monospace; font-weight: 400; font-size: 0.65rem; letter-spacing: 1px; color: #999; text-transform: none; margin-top: 2px; }
+
+    .menu-footer { margin-top: 18px; font-size: 0.65rem; color: #665; letter-spacing: 1px; }
+
+    /* ---------------- PANELS (LOG / LAYER SELECT / BRIEFING) ---------------- */
+    #mission-card, #log-card, #layer-card {
+        width: min(620px, 94vw); max-height: 88vh; overflow-y: auto;
+        background: #170606; border: 2px solid var(--isro-orange);
+        box-shadow: 0 0 40px rgba(255, 50, 0, 0.2); padding: clamp(20px, 4vw, 38px); position: relative;
+    }
+    .card-h1 { font-size: clamp(1.4rem, 5vw, 2.2rem); color: var(--isro-orange); margin: 0 0 14px 0; border-bottom: 1px solid #333; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .briefing-text { font-size: clamp(0.85rem, 2.6vw, 1.05rem); line-height: 1.6; color: #ccc; margin-bottom: 16px; }
+    .core-concept {
+        background: rgba(255, 153, 51, 0.15); color: var(--isro-orange); padding: 14px;
+        font-weight: bold; font-style: italic; text-align: center; margin-bottom: 14px;
+        border: 1px dashed var(--isro-orange); font-size: clamp(0.85rem, 2.6vw, 1.05rem); line-height: 1.4;
+    }
+    .instruction-box { background: rgba(255, 50, 0, 0.1); border-left: 4px solid var(--magma); padding: 14px; margin: 16px 0; color: #fff; font-size: clamp(0.8rem, 2.4vw, 0.95rem); }
+    .btn-launch {
+        background: var(--isro-orange); color: black; border: none; padding: 15px 40px;
+        font-family: 'Rajdhani', sans-serif; font-size: clamp(1.1rem, 3.6vw, 1.4rem); font-weight: bold;
+        cursor: pointer; text-transform: uppercase; width: 100%; transition: 0.2s;
+    }
+    .btn-launch:hover { background: var(--isro-orange-soft); box-shadow: 0 0 20px var(--isro-orange); }
+    .btn-ghost { background: transparent; border: 1px solid #555; color: #aaa; padding: 10px 20px; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-ghost:hover { border-color: var(--isro-orange); color: var(--isro-orange); }
+
+    .log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .log-stat { background: rgba(255,255,255,0.04); border: 1px solid #333; padding: 12px; text-align: center; }
+    .log-stat .num { font-family: 'Rajdhani', sans-serif; font-size: clamp(1.3rem, 4vw, 1.8rem); color: var(--isro-blue); font-weight: 700; }
+    .log-stat .lbl { font-size: 0.65rem; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+    .layer-option {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 12px 16px; margin-bottom: 8px;
+        cursor: pointer; transition: 0.15s;
+    }
+    .layer-option.selected { border-color: var(--isro-orange); background: rgba(255,153,51,0.1); }
+    .layer-option.locked { opacity: 0.4; cursor: not-allowed; }
+    .layer-option .lname { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem; }
+    .layer-option .ldepth { font-size: 0.75rem; color: #888; }
+    .layer-option .llock { font-size: 0.75rem; color: var(--magma); }
+
+    /* ---------------- HUD ---------------- */
+    #hud-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; }
+    #hud-layer.active { opacity: 1; }
+
+    #hud-top { position: absolute; top: calc(14px + var(--safe-top)); left: calc(14px + var(--safe-left)); right: calc(14px + var(--safe-right)); display: flex; justify-content: space-between; gap: 10px; }
+
+    .panel {
+        background: var(--hud-bg); border-left: 3px solid var(--magma); padding: 10px 14px;
+        width: clamp(140px, 42vw, 260px); backdrop-filter: blur(6px); box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        font-size: clamp(0.65rem, 2.2vw, 0.85rem);
+    }
+    .panel.right-align { border-left: none; border-right: 3px solid var(--isro-blue); text-align: right; }
+    .panel h2 { margin: 0 0 4px 0; color: var(--isro-orange); text-transform: uppercase; font-size: clamp(0.85rem, 3vw, 1.15rem); letter-spacing: 1px; }
+    .data-row { display: flex; justify-content: space-between; margin-top: 4px; }
+    .val { color: var(--isro-blue); font-weight: bold; }
+    .mini-note { margin-top: 6px; font-size: 0.68em; color: #888; }
+    .layer-tag { color: var(--isro-orange); }
+
+    #depth-gauge { position: absolute; top: calc(14px + var(--safe-top)); left: 50%; transform: translateX(-50%); width: min(50vw, 320px); }
+    #depth-gauge-track { position: relative; height: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
+    #depth-gauge-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: linear-gradient(90deg, #664, var(--magma), #fff); }
+    #depth-gauge-label { text-align: center; font-size: 0.6rem; color: #aaa; margin-top: 3px; letter-spacing: 1px; }
+
+    #center-alert {
+        position: absolute; top: 38%; width: 100%; text-align: center;
+        font-family: 'Rajdhani', sans-serif; font-size: clamp(1.1rem, 5vw, 2rem);
+        color: var(--isro-orange); text-shadow: 0 0 10px var(--magma);
+        display: none; pointer-events: none;
+    }
+
+    #hud-bottom-right { position: absolute; bottom: calc(14px + var(--safe-bottom)); right: calc(14px + var(--safe-right)); display: flex; gap: 8px; pointer-events: auto; }
+    .icon-btn {
+        width: 38px; height: 38px; border-radius: 50%; background: rgba(20,5,5,0.8); border: 1px solid var(--panel-border);
+        color: var(--isro-orange-soft); display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer;
+    }
+
+    /* ---------------- TOUCH CONTROLS ---------------- */
+    #touch-controls { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: none; }
+    #touch-controls.active { display: block; }
+    .touch-btn {
+        position: absolute; pointer-events: auto; border-radius: 50%;
+        background: rgba(255,153,51,0.12); border: 2px solid rgba(255,153,51,0.5);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--isro-orange-soft);
+        -webkit-user-select: none; user-select: none; touch-action: none;
+    }
+    .touch-btn.pressed { background: rgba(255,153,51,0.4); box-shadow: 0 0 24px rgba(255,153,51,0.6); transform: scale(0.95); }
+    #btn-left { left: calc(18px + var(--safe-left)); bottom: calc(28px + var(--safe-bottom)); width: 72px; height: 72px; font-size: 1.8rem; }
+    #btn-right { left: calc(98px + var(--safe-left)); bottom: calc(28px + var(--safe-bottom)); width: 72px; height: 72px; font-size: 1.8rem; }
+    #btn-thrust { right: calc(18px + var(--safe-right)); bottom: calc(28px + var(--safe-bottom)); width: 92px; height: 92px; font-size: 0.85rem; border-color: rgba(0,170,255,0.6); background: rgba(0,170,255,0.14); color: #bde8ff; flex-direction: column; }
+    .touch-btn.pressed#btn-thrust { background: rgba(0,170,255,0.4); box-shadow: 0 0 24px rgba(0,170,255,0.6); }
+
+    /* ---------------- RESULT MODAL ---------------- */
+    #result-modal {
+        display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(15, 0, 0, 0.96); border: 2px solid white; padding: clamp(20px,4vw,32px);
+        text-align: center; width: min(420px, 90vw); z-index: 110;
+        box-shadow: 0 0 60px rgba(0,0,0,0.6);
+    }
+    #result-modal .num-row { display: flex; justify-content: space-around; margin: 14px 0; }
+    #result-modal .num-row div .num { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--isro-blue); }
+    #result-modal .num-row div .lbl { font-size: 0.6rem; color: #888; letter-spacing: 1px; }
+    #result-modal .newbest { color: var(--success); font-size: 0.75rem; letter-spacing: 1px; margin-top: 4px; display: none; }
+
+    /* ---------------- OPTIONAL ICON OVERLAYS ---------------- */
+    /* When a real icon image loads, .has-icon hides the text/emoji glyph that
+       still sits underneath as the guaranteed fallback if the image is missing. */
+    .has-icon { color: transparent; }
+    .icon-btn.has-icon, .touch-btn.has-icon { text-indent: -9999px; }
+    .touch-btn.has-icon span { display: none; }
+    .btn-icon-chip {
+        display: inline-block; width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px;
+        background-size: contain; background-repeat: no-repeat; background-position: center;
+    }
+
+    /* ---------------- ACHIEVEMENT BADGES ---------------- */
+    .badges-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 12px; margin: 10px 0 16px 0; }
+    .badge { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .badge-art {
+        position: relative; width: 64px; height: 64px; border-radius: 50%;
+        background: rgba(255,255,255,0.05); border: 2px solid #444;
+        display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .badge-art img { width: 100%; height: 100%; object-fit: contain; }
+    .badge-emoji { width: 100%; height: 100%; display: none; align-items: center; justify-content: center; font-size: 1.8rem; }
+    .badge.locked .badge-art { filter: grayscale(1) brightness(0.5); border-color: #333; opacity: 0.55; }
+    .badge.unlocked .badge-art { border-color: var(--isro-orange); box-shadow: 0 0 14px rgba(255,153,51,0.4); }
+    .badge-label { font-size: 0.62rem; letter-spacing: 0.5px; color: #999; text-transform: uppercase; text-align: center; }
+    .badge.unlocked .badge-label { color: var(--isro-orange-soft); }
+
+    /* ---------------- ACHIEVEMENT TOAST ---------------- */
+    #achievement-toast {
+        position: fixed; top: calc(16px + var(--safe-top)); left: 50%; transform: translate(-50%, -140%);
+        z-index: 150; display: flex; align-items: center; gap: 12px;
+        background: rgba(15, 5, 0, 0.95); border: 2px solid var(--isro-orange);
+        box-shadow: 0 0 30px rgba(255,153,51,0.4); padding: 10px 20px 10px 10px;
+        transition: transform 0.4s ease; pointer-events: none; max-width: min(90vw, 360px);
+    }
+    #achievement-toast.show { transform: translate(-50%, 0); }
+    #achievement-toast .toast-icon { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--isro-orange); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    #achievement-toast .toast-icon img { width: 100%; height: 100%; object-fit: contain; }
+    #achievement-toast .toast-icon-emoji { display: none; align-items: center; justify-content: center; font-size: 1.4rem; width: 100%; height: 100%; }
+    #achievement-toast .toast-text { text-align: left; }
+    #achievement-toast .toast-eyebrow { font-size: 0.6rem; color: var(--isro-blue); letter-spacing: 1px; text-transform: uppercase; }
+    #achievement-toast .toast-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--isro-orange); }
+    #achievement-toast .toast-desc { font-size: 0.65rem; color: #ccc; }
+
+    @media (max-width: 480px) {
+        .panel { padding: 8px 10px; }
+        #depth-gauge { width: 40vw; }
+    }
+    @media (max-height: 420px) {
+        .touch-btn { transform: scale(0.82); }
+        #btn-left, #btn-right { bottom: calc(10px + var(--safe-bottom)); }
+        #btn-thrust { bottom: calc(10px + var(--safe-bottom)); }
+    }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- BOOT SCREEN -->
+    <div id="boot-screen" class="screen active">
+        <div class="boot-logo font-display">ISRO&nbsp;⋄&nbsp;GEO-DIV</div>
+        <div class="boot-sub">KOLAR DEEP DIVE // SEISMIC PROBE PROGRAM</div>
+        <div class="boot-bar-track"><div class="boot-bar-fill"></div></div>
+        <div class="boot-tap">TAP TO CONTINUE</div>
+    </div>
+
+    <div class="screen-bg-tint" id="bg-tint"></div>
+
+    <!-- MAIN MENU -->
+    <div id="menu-screen" class="screen">
+        <div class="menu-panel">
+            <div class="title-block">
+                <div id="menu-logo-img" class="menu-logo-img" style="display:none; width:100%; height:110px;"></div>
+                <div class="title-main">KOLAR<br>DEEP DIVE</div>
+                <div class="title-sub">GRAVITY RESEARCH PROBE // v1.0</div>
+            </div>
+            <button class="menu-btn primary" id="btn-menu-launch">Initiate Mission</button>
+            <button class="menu-btn" id="btn-menu-layers">Layer Select<small>Start deeper once unlocked</small></button>
+            <button class="menu-btn" id="btn-menu-log">Mission Log<small>Best depth &amp; records</small></button>
+            <button class="menu-btn" id="btn-menu-sound"><span id="sound-icon" class="btn-icon-chip"></span>Sound: <span id="sound-state">ON</span></button>
+            <div class="menu-footer">ISRO GEOPHYSICS DIVISION — TRAINING SIMULATION</div>
+        </div>
+    </div>
+
+    <!-- MISSION BRIEFING (also used as "how to play") -->
+    <div id="briefing-screen" class="screen">
+        <div id="mission-card">
+            <h1 class="card-h1">Mission: Kolar Deep Dive</h1>
+            <div class="briefing-text">
+                <p><strong>GEOLOGIST,</strong></p>
+                <p>We are dropping a seismic probe to the Earth's Core. Unlike space, gravity here <strong>decreases linearly</strong> (<i>g</i> &propto; <i>r</i>) as you go deeper because the mass above you cancels out.</p>
+            </div>
+            <div class="core-concept">
+                "As I go deeper, I weigh less. At the center, gravity becomes ZERO, and I will stop falling naturally."
+            </div>
+            <div class="instruction-box">
+                <strong>HOW TO PLAY:</strong><br>
+                1. <strong>LEFT / RIGHT</strong> — arrow keys, on-screen buttons, or just <strong>swipe/drag</strong> anywhere — to dodge rocks.<br>
+                2. Watch the <strong>Gravity (g)</strong> drop on the HUD.<br>
+                3. At the Core, gravity fails. Use <strong>DOWN / THRUST</strong> to reach the finish.
+            </div>
+            <button class="btn-launch" id="btn-briefing-launch">INITIATE DROP</button>
+            <button class="btn-ghost" id="btn-briefing-back">BACK</button>
+        </div>
+    </div>
+
+    <!-- LAYER SELECT -->
+    <div id="layer-screen" class="screen">
+        <div id="layer-card">
+            <h1 class="card-h1">Layer Select</h1>
+            <div class="briefing-text">Begin your descent from any layer you've already reached in a previous mission.</div>
+            <div id="layer-list"></div>
+            <button class="btn-launch" id="btn-layer-launch">LAUNCH FROM SELECTED LAYER</button>
+            <button class="btn-ghost" id="btn-layer-back">BACK</button>
+        </div>
+    </div>
+
+    <!-- MISSION LOG -->
+    <div id="log-screen" class="screen">
+        <div id="log-card">
+            <h1 class="card-h1">Mission Log</h1>
+            <div class="log-grid">
+                <div class="log-stat"><div class="num" id="log-best-depth">0 km</div><div class="lbl">Best Depth</div></div>
+                <div class="log-stat"><div class="num" id="log-attempts">0</div><div class="lbl">Attempts</div></div>
+                <div class="log-stat"><div class="num" id="log-wins">0</div><div class="lbl">Core Reached</div></div>
+                <div class="log-stat"><div class="num" id="log-besttime">--</div><div class="lbl">Best Mission Time</div></div>
+            </div>
+            <h2 style="font-size:0.95rem; color:var(--isro-orange); text-transform:uppercase; letter-spacing:1px; margin:6px 0;">Badges</h2>
+            <div class="badges-grid" id="badges-grid"></div>
+            <div class="briefing-text" style="font-size:0.85rem; color:#999;">Reach the Mantle (35km), Outer Core (2900km) and Inner Core (5100km) to unlock Layer Select starting points.</div>
+            <button class="btn-ghost" id="btn-log-back">BACK</button>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud-layer">
+        <div id="hud-top">
+            <div class="panel">
+                <h2>Probe Status</h2>
+                <div class="data-row"><span>Depth:</span> <span class="val" id="hud-depth">0 km</span></div>
+                <div class="data-row"><span>Gravity (g):</span> <span class="val" id="hud-g">9.8 m/s²</span></div>
+                <div class="mini-note">Layer: <span class="layer-tag" id="layer-text">CRUST</span></div>
+            </div>
+            <div class="panel right-align">
+                <h2>Physics</h2>
+                <div class="data-row"><span>Velocity:</span> <span class="val" id="hud-vel">0 m/s</span></div>
+                <div class="data-row"><span>Best:</span> <span class="val" id="hud-best">0 km</span></div>
+                <div class="mini-note">g = g₀(1 − d/R)</div>
+            </div>
+        </div>
+
+        <div id="depth-gauge">
+            <div id="depth-gauge-track"><div id="depth-gauge-fill"></div></div>
+            <div id="depth-gauge-label">0 / 6400 KM TO CORE</div>
+        </div>
+
+        <div id="center-alert">⚠️ ZERO GRAVITY DETECTED ⚠️<br><span style="font-size:0.6em; color:white">ENGAGE THRUSTERS</span></div>
+
+        <div id="hud-bottom-right">
+            <div class="icon-btn" id="btn-pause">⏸</div>
+        </div>
+    </div>
+
+    <!-- ACHIEVEMENT TOAST -->
+    <div id="achievement-toast">
+        <div class="toast-icon">
+            <img id="toast-icon-img" alt="">
+            <div id="toast-icon-emoji" class="toast-icon-emoji"></div>
+        </div>
+        <div class="toast-text">
+            <div class="toast-eyebrow">Achievement Unlocked</div>
+            <div class="toast-name" id="toast-name">—</div>
+            <div class="toast-desc" id="toast-desc">—</div>
+        </div>
+    </div>
+
+    <!-- TOUCH CONTROLS -->
+    <div id="touch-controls">
+        <div class="touch-btn" id="btn-left">◀</div>
+        <div class="touch-btn" id="btn-right">▶</div>
+        <div class="touch-btn" id="btn-thrust">▼<span style="font-size:0.65rem;">THRUST</span></div>
+    </div>
+
+    <!-- PAUSE OVERLAY -->
+    <div id="pause-overlay" class="screen" style="z-index:120;">
+        <div id="mission-card" style="width:min(360px,90vw); text-align:center;">
+            <h1 class="card-h1">Mission Paused</h1>
+            <button class="btn-launch" id="btn-pause-resume">RESUME</button>
+            <button class="btn-ghost" id="btn-pause-restart">RESTART DROP</button>
+            <button class="btn-ghost" id="btn-pause-menu">MAIN MENU</button>
+        </div>
+    </div>
+
+    <!-- RESULT MODAL -->
+    <div id="result-modal">
+        <h2 id="res-title">SENSORS DESTROYED</h2>
+        <p id="res-desc">Impact with lithosphere debris.</p>
+        <div class="num-row">
+            <div><div class="num" id="res-depth">0 km</div><div class="lbl">Depth Reached</div></div>
+            <div><div class="num" id="res-time">0s</div><div class="lbl">Mission Time</div></div>
+        </div>
+        <div class="newbest" id="res-newbest">★ NEW BEST DEPTH ★</div>
+        <button class="btn-launch" id="res-btn" style="padding:12px; font-size:1rem; margin-top:10px;">RETRY</button>
+        <button class="btn-ghost" id="res-menu-btn">MAIN MENU</button>
+    </div>
+
+</div>
+
+<script src="js/lib/p5.min.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#04201d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Frog Anatomy Dash</title>
+<link rel="icon" href="assets/images/ui/emoji/orb.png">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ============================================================== HUD -->
+  <header id="hud" class="hud" aria-hidden="true">
+    <div class="hud-panel hud-zone">
+      <img class="hud-crest" id="hudCrest" src="assets/images/ui/emoji/zone-1.png" alt="">
+      <span class="hud-zone-text">
+        <b id="hudZoneName">Swamp Tower</b>
+        <i id="hudZoneSub">Zone 1</i>
+      </span>
+    </div>
+
+    <div class="hud-panel hud-orbs">
+      <img class="hud-orb-icon" id="hudOrbIcon" src="assets/images/ui/emoji/orb.png" alt="Knowledge Orbs">
+      <span class="hud-count"><b id="hudOrbCount">0</b><i>/ 10</i></span>
+      <span class="orb-track" id="orbTrack"></span>
+    </div>
+
+    <div class="hud-panel hud-timer">
+      <img src="assets/images/ui/emoji/timer.png" alt="Elapsed time">
+      <b id="hudTime">0:00</b>
+    </div>
+
+    <div class="hud-tools">
+      <button class="icon-btn" id="btnPause" type="button" aria-label="Pause">
+        <img src="assets/images/ui/emoji/pause.png" alt="">
+      </button>
+      <button class="icon-btn" id="btnHudSettings" type="button" aria-label="Settings">
+        <img src="assets/images/ui/emoji/settings.png" alt="">
+      </button>
+    </div>
+  </header>
+
+  <!-- =================================================== touch controls -->
+  <div id="touchControls" class="touch" aria-hidden="true">
+    <div class="touch-cluster">
+      <button class="pad" id="padLeft" type="button" aria-label="Hop left">
+        <img src="assets/images/ui/emoji/arrow-left.png" alt="">
+      </button>
+      <button class="pad" id="padRight" type="button" aria-label="Hop right">
+        <img src="assets/images/ui/emoji/arrow-right.png" alt="">
+      </button>
+    </div>
+    <button class="pad pad-jump" id="padJump" type="button" aria-label="Jump">
+      <img src="assets/images/ui/emoji/arrow-up.png" alt="">
+      <span>JUMP</span>
+    </button>
+  </div>
+
+  <!-- ============================================================= BOOT -->
+  <section class="screen is-active" id="screenBoot">
+    <div class="boot">
+      <div class="boot-orb"><span></span></div>
+      <h1 class="boot-title">Frog Anatomy Dash</h1>
+      <p class="boot-sub">Preparing the marsh</p>
+      <div class="boot-bar"><i id="bootBar"></i></div>
+      <p class="boot-pct" id="bootPct">0%</p>
+    </div>
+  </section>
+
+  <!-- ============================================================= MENU -->
+  <section class="screen" id="screenMenu">
+    <div class="menu">
+      <div class="title-plate">
+        <img class="title-frog" src="assets/images/characters/frog-idle.png" alt="">
+        <h1><span>Frog Anatomy</span><em>Dash</em></h1>
+        <p class="tagline">Climb the marsh &middot; master <i>Rana tigrina</i></p>
+      </div>
+
+      <div class="menu-actions">
+        <button class="btn btn-primary btn-xl" id="btnPlay" type="button">
+          <img src="assets/images/ui/emoji/play.png" alt="">
+          <span id="btnPlayLabel">START ADVENTURE</span>
+        </button>
+        <div class="menu-row">
+          <button class="btn" id="btnLevels" type="button">
+            <img src="assets/images/ui/emoji/zone-2.png" alt="">
+            <span>ZONES</span>
+          </button>
+          <button class="btn" id="btnHow" type="button">
+            <img src="assets/images/ui/emoji/clipboard.png" alt="">
+            <span>HOW TO PLAY</span>
+          </button>
+          <button class="btn" id="btnMenuSettings" type="button">
+            <img src="assets/images/ui/emoji/settings.png" alt="">
+            <span>SETTINGS</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="menu-progress">
+        <span class="seal-count">
+          <img src="assets/images/ui/emoji/star-filled.png" alt="Lotus seals earned">
+          <b id="menuSeals">0</b><i>/ 9</i>
+        </span>
+        <span class="seal-count">
+          <img src="assets/images/ui/emoji/trophy.png" alt="Zones cleared">
+          <b id="menuCleared">0</b><i>/ 3</i>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== ZONE  SELECT -->
+  <section class="screen" id="screenLevels">
+    <div class="panel panel-wide">
+      <header class="panel-head">
+        <h2>Choose a Zone</h2>
+        <button class="icon-btn" id="btnLevelsBack" type="button" aria-label="Back to menu">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <div class="zone-grid" id="zoneGrid"></div>
+      <p class="panel-foot">
+        <img class="foot-icon" src="assets/images/ui/emoji/info.png" alt="">
+        Clear a zone to unlock the next one. Progress is saved on this device.
+      </p>
+    </div>
+  </section>
+
+  <!-- ====================================================== HOW TO PLAY -->
+  <section class="screen modal" id="modalHow">
+    <div class="panel panel-parchment">
+      <header class="panel-head">
+        <h2>How to Play</h2>
+        <button class="icon-btn" id="btnHowClose" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <p class="objective">
+        <img class="objective-icon" src="assets/images/ui/emoji/objective.png" alt="">
+        <span id="howObjective"></span>
+      </p>
+      <ul class="control-list" id="howControls"></ul>
+      <ul class="tip-list" id="howTips"></ul>
+    </div>
+  </section>
+
+  <!-- ========================================================= SETTINGS -->
+  <section class="screen modal" id="modalSettings">
+    <div class="panel">
+      <header class="panel-head">
+        <h2>Settings</h2>
+        <button class="icon-btn" id="btnSettingsClose" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+
+      <button class="toggle-row" id="toggleMusic" type="button" aria-pressed="true">
+        <img class="toggle-icon" id="toggleMusicIcon" src="assets/images/ui/emoji/music-on.png" alt="">
+        <span class="toggle-text"><b>Music</b><i>Ambient marsh synth</i></span>
+        <span class="switch"><i></i></span>
+      </button>
+
+      <button class="toggle-row" id="toggleSfx" type="button" aria-pressed="true">
+        <img class="toggle-icon" id="toggleSfxIcon" src="assets/images/ui/emoji/sound-on.png" alt="">
+        <span class="toggle-text"><b>Sound Effects</b><i>Hops, orbs, answers</i></span>
+        <span class="switch"><i></i></span>
+      </button>
+
+      <div class="danger-row">
+        <button class="btn btn-quiet" id="btnResetSave" type="button">
+          <img src="assets/images/ui/emoji/replay.png" alt="">
+          <span>RESET PROGRESS</span>
+        </button>
+        <p class="danger-note" id="resetNote">Clears saved zones and seals.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PAUSE -->
+  <section class="screen modal" id="modalPause">
+    <div class="panel panel-narrow">
+      <header class="panel-head"><h2>Paused</h2></header>
+      <button class="btn btn-primary" id="btnResume" type="button">
+        <img src="assets/images/ui/emoji/play.png" alt=""><span>RESUME</span>
+      </button>
+      <button class="btn" id="btnRestartZone" type="button">
+        <img src="assets/images/ui/emoji/replay.png" alt=""><span>RESTART ZONE</span>
+      </button>
+      <button class="btn" id="btnPauseHow" type="button">
+        <img src="assets/images/ui/emoji/clipboard.png" alt=""><span>HOW TO PLAY</span>
+      </button>
+      <button class="btn btn-quiet" id="btnPauseMenu" type="button">
+        <img src="assets/images/ui/emoji/home.png" alt=""><span>MAIN MENU</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================= QUIZ -->
+  <section class="screen modal" id="modalQuiz">
+    <div class="panel panel-quiz">
+      <div class="quiz-badge" id="quizBadge">
+        <img id="quizBadgeIcon" src="assets/images/ui/emoji/orb.png" alt="">
+        <span id="quizBadgeText">Anatomy Check</span>
+      </div>
+      <div class="quiz-body">
+        <div class="quiz-figure">
+          <div class="figure-frame">
+            <img id="quizImg" src="assets/images/questions/heart.png" alt="">
+            <canvas id="quizFallback" width="180" height="180" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="quiz-main">
+          <p class="quiz-question" id="quizText"></p>
+          <div class="quiz-options" id="quizOptions"></div>
+          <p class="quiz-feedback" id="quizFeedback">
+            <img id="quizFeedbackIcon" src="assets/images/ui/emoji/frog-happy.png" alt="">
+            <span id="quizFeedbackText"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================== RESULT -->
+  <section class="screen" id="screenResult">
+    <div class="panel panel-result">
+      <img class="result-trophy" src="assets/images/ui/emoji/trophy.png" alt="">
+      <h2 id="resultTitle">Zone Cleared</h2>
+      <p class="result-sub" id="resultSub"></p>
+
+      <div class="seal-row" id="resultSeals"></div>
+
+      <div class="stat-row">
+        <div class="stat">
+          <img src="assets/images/ui/emoji/timer.png" alt="Time">
+          <b id="resultTime">0:00</b><i>time</i>
+        </div>
+        <div class="stat">
+          <img src="assets/images/ui/emoji/orb.png" alt="Orbs">
+          <b id="resultOrbs">10</b><i>orbs</i>
+        </div>
+        <div class="stat">
+          <img src="assets/images/ui/emoji/cross.png" alt="Wrong answers">
+          <b id="resultMisses">0</b><i>misses</i>
+        </div>
+      </div>
+      <p class="result-best" id="resultBest"></p>
+
+      <div class="result-actions">
+        <button class="btn btn-primary" id="btnLearnMore" type="button">
+          <img src="assets/images/ui/emoji/journal.png" alt=""><span>LEARN MORE</span>
+        </button>
+        <button class="btn" id="btnNextZone" type="button">
+          <img src="assets/images/ui/emoji/unlock.png" alt=""><span>NEXT ZONE</span>
+        </button>
+        <button class="btn" id="btnReplayZone" type="button">
+          <img src="assets/images/ui/emoji/replay.png" alt=""><span>REPLAY</span>
+        </button>
+        <button class="btn btn-quiet" id="btnResultMenu" type="button">
+          <img src="assets/images/ui/emoji/home.png" alt=""><span>MENU</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= LEARN MORE -->
+  <section class="screen modal" id="modalLearn">
+    <div class="panel panel-parchment panel-wide">
+      <header class="panel-head">
+        <h2 id="learnTitle">Field Notes</h2>
+        <button class="icon-btn" id="btnLearnClose" type="button" aria-label="Close">
+          <img src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+      </header>
+      <p class="learn-intro" id="learnIntro"></p>
+      <div class="learn-list" id="learnList"></div>
+    </div>
+  </section>
+
+  <!-- ======================================================= ZONE TITLE -->
+  <div class="zone-flash" id="zoneFlash" aria-hidden="true">
+    <img id="zoneFlashCrest" src="assets/images/ui/emoji/zone-1.png" alt="">
+    <b id="zoneFlashName">Swamp Tower</b>
+    <i id="zoneFlashSub"></i>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/ambient.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

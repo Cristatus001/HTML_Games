@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arthropoda HOTS Challenge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#87ceeb, #e0f6ff);
+    overflow: hidden;
+}
+#gameArea { width:100vw; height:100vh; position:relative; }
+#questionBox {
+    position:absolute; top:10px; left:50%;
+    transform:translateX(-50%);
+    background:#003366; color:white;
+    padding:15px; border-radius:10px;
+    font-size:18px; width:85%; text-align:center;
+}
+.cloud {
+    position:absolute; width:190px; height:100px;
+    background:white; border-radius:60px;
+    text-align:center; padding-top:35px;
+    font-weight:bold; box-shadow:0 5px 10px rgba(0,0,0,0.2);
+}
+#player {
+    position:absolute; width:60px; height:40px;
+    background:orange; border-radius:50%;
+}
+#score, #timer {
+    position:absolute; bottom:15px;
+    font-size:18px; font-weight:bold;
+}
+#score { left:15px; }
+#timer { right:15px; }
+#feedback {
+    position:absolute; bottom:60px; left:50%;
+    transform:translateX(-50%);
+    font-size:18px; font-weight:bold;
+}
+#retryBtn {
+    display:none;
+    position:absolute; bottom:100px; left:50%;
+    transform:translateX(-50%);
+    padding:10px 20px; font-size:16px;
+}
+#certificate {
+    display:none; position:absolute; inset:0;
+    background:#fffbe6; text-align:center;
+    padding-top:120px;
+}
+</style>
+</head>
+
+<body>
+<div id="gameArea">
+
+<div id="questionBox"></div>
+
+<div class="cloud" id="c1" style="top:200px; left:450px;"></div>
+<div class="cloud" id="c2" style="top:360px; left:750px;"></div>
+<div class="cloud" id="c3" style="top:520px; left:450px;"></div>
+
+<div id="player"></div>
+
+<div id="score">Score: 0</div>
+<div id="timer">Time: 30</div>
+<div id="feedback"></div>
+<button id="retryBtn">Retry Question</button>
+
+<div id="certificate">
+    <h1>🏆 Certificate of Completion</h1>
+    <p>You completed the Arthropoda HOTS Challenge</p>
+    <p id="finalScore"></p>
+</div>
+
+</div>
+
+<script>
+const questions = [
+{q:"Jointed appendages, open circulation and chitinous covering indicate?",
+ o:["Arthropoda","Annelida","Mollusca"], a:"Arthropoda"},
+{q:"Why must arthropods molt their exoskeleton?",
+ o:["Growth","Respiration","Reproduction"], a:"Growth"},
+{q:"Which respiration suits terrestrial insects best?",
+ o:["Tracheal system","Gills","Book gills"], a:"Tracheal system"},
+{q:"Which trait excludes an animal from Arthropoda?",
+ o:["Jointed legs","Closed circulation","Segmentation"], a:"Closed circulation"},
+{q:"Vector causing malaria belongs to?",
+ o:["Anopheles","Locusta","Limulus"], a:"Anopheles"},
+{q:"Balancing organs in arthropods are called?",
+ o:["Statocysts","Flame cells","Nephridia"], a:"Statocysts"},
+{q:"Correct economic insect pair:",
+ o:["Apis – Honey","Locusta – Silk","Aedes – Lac"], a:"Apis – Honey"},
+{q:"Which feature allows specialization of organs?",
+ o:["Segmentation","Radial symmetry","Diploblastic body"], a:"Segmentation"}
+];
+
+let index = 0, score = 0, time = 30, timer;
+let px = 100, py = 300;
+let answered = false;
+
+const player = document.getElementById("player");
+
+function updatePlayer() {
+    player.style.left = px + "px";
+    player.style.top = py + "px";
+}
+
+function loadQuestion() {
+    if (index >= questions.length) return endGame();
+
+    answered = false;
+    time = 30;
+    document.getElementById("timer").innerText = "Time: 30";
+    document.getElementById("feedback").innerText = "";
+    document.getElementById("retryBtn").style.display = "none";
+
+    const q = questions[index];
+    questionBox.innerText = q.q;
+    c1.innerText = q.o[0];
+    c2.innerText = q.o[1];
+    c3.innerText = q.o[2];
+
+    px = 100; py = 300;
+    updatePlayer();
+
+    clearInterval(timer);
+    timer = setInterval(() => {
+        time--;
+        document.getElementById("timer").innerText = "Time: " + time;
+        if (time === 0) fail("⏰ Time up!");
+    }, 1000);
+}
+
+document.addEventListener("keydown", e => {
+    if (answered) return;
+
+    if (e.key === "ArrowUp") py -= 10;
+    if (e.key === "ArrowDown") py += 10;
+    if (e.key === "ArrowLeft") px -= 10;
+    if (e.key === "ArrowRight") px += 10;
+
+    updatePlayer();
+    checkCollision();
+});
+
+function checkCollision() {
+    document.querySelectorAll(".cloud").forEach(cloud => {
+        const c = cloud.getBoundingClientRect();
+        const p = player.getBoundingClientRect();
+
+        if (!(p.right < c.left || p.left > c.right ||
+              p.bottom < c.top || p.top > c.bottom)) {
+
+            answered = true;
+            if (cloud.innerText === questions[index].a) {
+                success();
+            } else {
+                fail("❌ Wrong answer. Try again.");
+            }
+        }
+    });
+}
+
+function success() {
+    clearInterval(timer);
+    score++;
+    document.getElementById("score").innerText = "Score: " + score;
+    document.getElementById("feedback").innerText = "✔ Correct!";
+    index++;
+    setTimeout(loadQuestion, 1000);
+}
+
+function fail(msg) {
+    clearInterval(timer);
+    document.getElementById("feedback").innerText = msg;
+    document.getElementById("retryBtn").style.display = "block";
+}
+
+retryBtn.onclick = loadQuestion;
+
+function endGame() {
+    document.getElementById("certificate").style.display = "block";
+    document.getElementById("finalScore").innerText =
+        "Final Score: " + score + " / " + questions.length;
+}
+
+loadQuestion();
+</script>
+</body>
+</html>

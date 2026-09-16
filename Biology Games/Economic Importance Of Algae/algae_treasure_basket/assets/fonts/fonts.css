@@ -1,0 +1,30 @@
+/* Locally bundled webfonts — no network requests.
+   Bubblegum Sans and Roboto, Latin subset, from the @fontsource packages
+   (SIL Open Font License 1.1 and Apache License 2.0 respectively). */
+
+@font-face {
+  font-family: 'Bubblegum Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('bubblegum-sans-latin-400-normal.woff2') format('woff2'),
+       url('bubblegum-sans-latin-400-normal.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('roboto-latin-400-normal.woff2') format('woff2'),
+       url('roboto-latin-400-normal.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('roboto-latin-700-normal.woff2') format('woff2'),
+       url('roboto-latin-700-normal.woff') format('woff');
+}

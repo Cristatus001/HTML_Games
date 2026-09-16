@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#04081a">
+<meta name="format-detection" content="telephone=no">
+<title>Gravity Quest</title>
+<link rel="stylesheet" href="assets/css/game.css">
+</head>
+<body>
+
+<!-- ============================ AMBIENT BACKDROP ============================ -->
+<div class="backdrop" id="backdrop">
+    <div class="backdrop__sky" id="backdrop-sky"></div>
+    <canvas class="backdrop__canvas" id="ambient-canvas"></canvas>
+    <div class="backdrop__horizon" id="backdrop-horizon"></div>
+    <div class="backdrop__vignette"></div>
+    <div class="backdrop__scanlines"></div>
+</div>
+
+<!-- ============================ FX LAYERS ============================ -->
+<canvas class="fx-canvas" id="fx-canvas"></canvas>
+<div class="shockwave" id="shockwave"><span></span><span></span><span></span></div>
+
+<div id="app">
+
+<!-- ============================ HUD ============================ -->
+<header class="hud" id="hud" hidden>
+    <button class="hud__btn" id="hud-back" type="button" aria-label="Back">
+        <img class="icon" src="assets/images/ui/emoji/back-arrow.png" alt="">
+    </button>
+
+    <div class="hud__center">
+        <div class="hud__stage" id="hud-stage">Ascent Map</div>
+        <div class="hud__track" aria-hidden="true"><i id="hud-track-fill"></i></div>
+    </div>
+
+    <div class="shard-counter" id="shard-counter" title="Star Shards">
+        <span class="shard-counter__orb">
+            <img class="icon shard-counter__icon" src="assets/images/ui/emoji/star-shard.png" alt="Star Shards">
+        </span>
+        <span class="shard-counter__value" id="shard-value">50</span>
+    </div>
+
+    <button class="hud__btn" id="hud-settings" type="button" aria-label="Settings">
+        <img class="icon" src="assets/images/ui/emoji/orbit-settings.png" alt="">
+    </button>
+</header>
+
+<!-- ============================ BOOT ============================ -->
+<section class="screen screen--boot is-active" id="screen-boot">
+    <div class="boot">
+        <div class="boot__ring">
+            <svg viewBox="0 0 200 200" class="boot__svg" aria-hidden="true">
+                <defs>
+                    <linearGradient id="bootGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#a8fbff"/>
+                        <stop offset="100%" stop-color="#0a7f9c"/>
+                    </linearGradient>
+                    <radialGradient id="bootCore" cx="50%" cy="38%" r="62%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="45%" stop-color="#5fe9ff"/>
+                        <stop offset="100%" stop-color="#0b3c66"/>
+                    </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(120,220,255,.16)" stroke-width="3"/>
+                <circle cx="100" cy="100" r="86" fill="none" stroke="url(#bootGrad)" stroke-width="4"
+                        stroke-linecap="round" stroke-dasharray="150 400" class="boot__arc"/>
+                <ellipse cx="100" cy="100" rx="92" ry="34" fill="none" stroke="rgba(0,246,255,.35)" stroke-width="2"
+                         class="boot__orbit"/>
+                <circle cx="100" cy="100" r="34" fill="url(#bootCore)"/>
+            </svg>
+        </div>
+        <h2 class="boot__title">Gravity Quest</h2>
+        <p class="boot__status" id="boot-status">Calibrating gravimetric array</p>
+        <div class="meter"><i class="meter__fill" id="boot-meter"></i></div>
+    </div>
+</section>
+
+<!-- ============================ MAIN MENU ============================ -->
+<section class="screen screen--menu" id="screen-menu">
+    <div class="title-block">
+        <div class="title-block__crest">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+                <defs>
+                    <radialGradient id="crestCore" cx="50%" cy="36%" r="64%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="40%" stop-color="#7ff0ff"/>
+                        <stop offset="100%" stop-color="#06405e"/>
+                    </radialGradient>
+                    <linearGradient id="crestRing" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffe6a8"/>
+                        <stop offset="50%" stop-color="#ffc862"/>
+                        <stop offset="100%" stop-color="#a3641a"/>
+                    </linearGradient>
+                </defs>
+                <ellipse cx="60" cy="62" rx="54" ry="17" fill="none" stroke="url(#crestRing)" stroke-width="5"
+                         transform="rotate(-22 60 62)"/>
+                <circle cx="60" cy="58" r="27" fill="url(#crestCore)"/>
+                <ellipse cx="60" cy="62" rx="54" ry="17" fill="none" stroke="url(#crestRing)" stroke-width="5"
+                         transform="rotate(-22 60 62)" stroke-dasharray="30 200" stroke-dashoffset="14"/>
+            </svg>
+        </div>
+        <h1 class="title-block__name">Gravity<span>Quest</span></h1>
+        <p class="title-block__sub">Riddles of Free Fall</p>
+    </div>
+
+    <nav class="menu-stack">
+        <button class="btn btn--primary" id="btn-play" type="button">
+            <img class="icon btn__icon" src="assets/images/ui/emoji/rocket.png" alt="">
+            <span class="btn__label" id="btn-play-label">Initiate Launch</span>
+        </button>
+        <button class="btn" id="btn-howto" type="button">
+            <img class="icon btn__icon" src="assets/images/ui/emoji/manual.png" alt="">
+            <span class="btn__label">How to Play</span>
+        </button>
+        <button class="btn" id="btn-settings" type="button">
+            <img class="icon btn__icon" src="assets/images/ui/emoji/orbit-settings.png" alt="">
+            <span class="btn__label">Settings</span>
+        </button>
+    </nav>
+
+    <p class="menu-foot" id="menu-progress">Ascent progress: 0 / 4 nodes</p>
+</section>
+
+<!-- ============================ ASCENT MAP (LEVEL SELECT) ============================ -->
+<section class="screen screen--map" id="screen-map">
+    <div class="map-head">
+        <h2 class="section-title">The Ascent</h2>
+        <p class="section-sub">Four riddles stand between you and the summit.</p>
+    </div>
+
+    <div class="ascent" id="ascent">
+        <div class="ascent__rail"><i class="ascent__rail-fill" id="ascent-rail-fill"></i></div>
+        <div class="ascent__nodes" id="ascent-nodes"><!-- built by JS --></div>
+    </div>
+
+    <div class="map-foot">
+        <button class="btn btn--ghost" id="btn-map-menu" type="button">
+            <img class="icon btn__icon" src="assets/images/ui/emoji/back-arrow.png" alt="">
+            <span class="btn__label">Main Menu</span>
+        </button>
+    </div>
+</section>
+
+<!-- ============================ RIDDLE ============================ -->
+<section class="screen screen--riddle" id="screen-riddle">
+    <div class="riddle">
+        <div class="riddle__head">
+            <span class="riddle__badge" id="riddle-index">Node 1</span>
+            <h2 class="riddle__name" id="riddle-name">The Great Equalizer</h2>
+        </div>
+
+        <div class="panel panel--glass riddle__scroll">
+            <p class="riddle__text" id="riddle-text"></p>
+        </div>
+
+        <div class="options" id="options" role="group" aria-label="Answer options"></div>
+
+        <div class="riddle__foot">
+            <button class="btn btn--small btn--gold" id="btn-hint" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/hint-comet.png" alt="">
+                <span class="btn__label">Hint</span>
+                <span class="btn__cost">
+                    <img class="icon icon--xs" src="assets/images/ui/emoji/star-shard.png" alt="Star Shards">
+                    <b id="hint-cost">30</b>
+                </span>
+            </button>
+            <button class="btn btn--small btn--ghost" id="btn-riddle-back" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/back-arrow.png" alt="">
+                <span class="btn__label">Ascent Map</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ============================ CODEX ============================ -->
+<section class="screen screen--codex" id="screen-codex">
+    <div class="panel panel--slate codex">
+        <div class="codex__head">
+            <div class="codex__crest">
+                <img class="icon icon--lg" src="assets/images/ui/emoji/codex.png" alt="">
+            </div>
+            <h2 class="codex__title" id="codex-title">Codex Unlocked</h2>
+            <div class="tabs" id="codex-tabs">
+                <button class="tab is-active" type="button" data-tab="simulation">The Simulation</button>
+                <button class="tab" type="button" data-tab="lore">The Lore</button>
+            </div>
+        </div>
+
+        <div class="codex__body">
+            <!-- SIM 0 : Galileo -->
+            <div class="codex__page is-active" id="codex-page-0" data-page="sim">
+                <h3 class="codex__h3">Galileo's Experiment</h3>
+                <div class="stage stage--tower" id="sim-gravity">
+                    <div class="stage__ground"></div>
+                    <div class="tower" data-asset="sim.tower">
+                        <i></i><i></i><i></i><i></i>
+                    </div>
+
+                    <div class="drop-legend">
+                        <span class="chip chip--iron"><i></i>Iron <b>8.0 kg</b></span>
+                        <span class="chip chip--wood"><i></i>Wood <b>0.4 kg</b></span>
+                    </div>
+
+                    <div class="ball ball--iron" id="iron-ball" data-asset="sim.ironBall"></div>
+                    <div class="ball ball--wood" id="wooden-ball" data-asset="sim.woodBall"></div>
+
+                    <div class="drop-time drop-time--iron" id="time-iron"></div>
+                    <div class="drop-time drop-time--wood" id="time-wood"></div>
+
+                    <div class="stage__label" id="gravity-medium">Medium: Vacuum</div>
+                </div>
+                <div class="sim-controls">
+                    <button class="btn btn--small" id="btn-drop" type="button"><span class="btn__label">Drop Balls</span></button>
+                    <button class="btn btn--small" id="btn-air" type="button"><span class="btn__label">Add Air</span></button>
+                </div>
+            </div>
+
+            <!-- SIM 1 : Parachute -->
+            <div class="codex__page" id="codex-page-1" data-page="sim">
+                <h3 class="codex__h3">The Plunge</h3>
+                <div class="stage stage--sky" id="sim-air-resistance">
+                    <i class="cloud cloud--1"></i>
+                    <i class="cloud cloud--2"></i>
+                    <i class="cloud cloud--3"></i>
+
+                    <div class="plunge-hud">
+                        <div class="gauge">
+                            <span class="gauge__label">Altitude</span>
+                            <span class="gauge__val"><b id="plunge-alt">240</b>m</span>
+                        </div>
+                        <div class="gauge">
+                            <span class="gauge__label">Speed</span>
+                            <span class="gauge__val"><b id="plunge-speed">0</b>m/s</span>
+                        </div>
+                        <div class="forces">
+                            <div class="force">
+                                <span class="force__name">Gravity</span>
+                                <i class="force__track"><b id="force-grav"></b></i>
+                            </div>
+                            <div class="force">
+                                <span class="force__name">Drag</span>
+                                <i class="force__track"><b id="force-drag" class="is-drag"></b></i>
+                            </div>
+                        </div>
+                        <div class="terminal-badge" id="terminal-badge">Terminal Velocity</div>
+                    </div>
+
+                    <div class="skydiver" id="stick-figure" data-asset="char.skydiver">
+                        <div class="parachute">
+                            <span class="chute-lines"><i></i><i></i><i></i><i></i></span>
+                        </div>
+                        <div class="skydiver__body">
+                            <span class="skydiver__head"></span>
+                            <span class="skydiver__torso"></span>
+                            <span class="skydiver__arm skydiver__arm--l"></span>
+                            <span class="skydiver__arm skydiver__arm--r"></span>
+                            <span class="skydiver__leg skydiver__leg--l"></span>
+                            <span class="skydiver__leg skydiver__leg--r"></span>
+                        </div>
+                    </div>
+
+                    <div class="landing-zone"></div>
+                    <div class="stage__ground"></div>
+                    <div class="plunge-verdict" id="plunge-verdict"></div>
+                </div>
+                <div class="sim-controls">
+                    <button class="btn btn--small" id="btn-parachute" type="button"><span class="btn__label">Jump</span></button>
+                    <button class="btn btn--small btn--ghost" id="btn-plunge-reset" type="button"><span class="btn__label">Reset</span></button>
+                </div>
+            </div>
+
+            <!-- SIM 2 : Elevator -->
+            <div class="codex__page" id="codex-page-2" data-page="sim">
+                <h3 class="codex__h3">The Elevator Thought Experiment</h3>
+                <div class="stage stage--lift" id="sim-free-fall">
+
+                    <div class="lift-view" id="lift-view">
+                        <div class="shaft">
+                            <i class="shaft__rail shaft__rail--l"></i>
+                            <i class="shaft__rail shaft__rail--r"></i>
+                            <span class="shaft__mark" style="bottom:20%"></span>
+                            <span class="shaft__mark" style="bottom:40%"></span>
+                            <span class="shaft__mark" style="bottom:60%"></span>
+                            <span class="shaft__mark" style="bottom:80%"></span>
+                        </div>
+                        <div class="elevator" id="elevator-car" data-asset="sim.elevator">
+                            <div class="elevator__cable"></div>
+                            <div class="elevator__person" data-asset="char.observer"></div>
+                            <div class="elevator__scale"></div>
+                        </div>
+                        <div class="shaft__floor"></div>
+                    </div>
+
+                    <div class="readout">
+                        <span class="readout__val" id="scale-reading">70.0</span>
+                        <span class="readout__unit">kg</span>
+                    </div>
+                    <div class="stage__label" id="lift-state">At rest</div>
+                </div>
+                <div class="sim-controls" id="elevator-controls">
+                    <button class="btn btn--small" type="button" data-mode="up"><span class="btn__label">Move Up</span></button>
+                    <button class="btn btn--small" type="button" data-mode="down"><span class="btn__label">Move Down</span></button>
+                    <button class="btn btn--small btn--gold" type="button" data-mode="freefall"><span class="btn__label">Free Fall</span></button>
+                    <button class="btn btn--small btn--ghost" type="button" data-mode="reset"><span class="btn__label">Reset</span></button>
+                </div>
+            </div>
+
+            <!-- SIM 3 : Trajectory -->
+            <div class="codex__page" id="codex-page-3" data-page="sim">
+                <h3 class="codex__h3">The Trajectory</h3>
+                <div class="stage stage--lab" id="sim-trajectory">
+                    <div class="stage__grid"></div>
+                    <div class="stage__ground"></div>
+
+                    <svg class="arc-guide" id="arc-guide" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="trailGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#ff7a28" stop-opacity="0"></stop>
+                                <stop offset="22%" stop-color="#ff9a3c" stop-opacity=".85"></stop>
+                                <stop offset="70%" stop-color="#ffd98a"></stop>
+                                <stop offset="100%" stop-color="#fffbe8"></stop>
+                            </linearGradient>
+                        </defs>
+                        <path class="arc-ghost" id="arc-ghost" fill="none"></path>
+                        <path class="arc-trail" id="arc-trail" fill="none"></path>
+                    </svg>
+
+                    <div class="apex-mark" id="apex-mark"><i></i><span>Apex</span></div>
+
+                    <div class="cannon" id="cannon" data-asset="sim.cannon">
+                        <i class="cannon__barrel"><b></b></i>
+                        <i class="cannon__carriage"></i>
+                        <i class="cannon__wheel"></i>
+                    </div>
+                    <div class="muzzle-flash" id="muzzle-flash"></div>
+
+                    <div class="projectile" id="ball-projectile" data-asset="sim.projectile"></div>
+                    <div class="impact" id="impact"></div>
+
+                    <div class="stage__label">Acceleration: 9.8 m/s&sup2; down</div>
+                </div>
+                <div class="sim-controls">
+                    <button class="btn btn--small" id="btn-fire" type="button"><span class="btn__label">Fire</span></button>
+                </div>
+            </div>
+
+            <!-- LORE -->
+            <div class="codex__page codex__page--lore" id="codex-page-lore" data-page="lore">
+                <h3 class="codex__h3" id="lore-title"></h3>
+                <p class="codex__lore" id="lore-text"></p>
+            </div>
+        </div>
+
+        <div class="codex__foot">
+            <button class="btn" id="btn-codex-back" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/back-arrow.png" alt="">
+                <span class="btn__label">Return to Ascent</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ============================ QUEST COMPLETE ============================ -->
+<section class="screen screen--complete" id="screen-complete">
+    <div class="panel panel--brass complete">
+        <div class="complete__trophy">
+            <img class="icon icon--xl" src="assets/images/ui/emoji/trophy.png" alt="">
+        </div>
+        <h2 class="complete__title">Quest Complete</h2>
+        <p class="complete__body">
+            You have navigated the fundamental forces of our universe. Your ascent is complete,
+            but the journey for knowledge is infinite.
+        </p>
+        <div class="stat-row">
+            <div class="stat">
+                <span class="stat__label">Nodes Solved</span>
+                <span class="stat__value" id="stat-nodes">4 of 4</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label">Star Shards</span>
+                <span class="stat__value stat__value--gold" id="stat-shards">450</span>
+            </div>
+            <div class="stat">
+                <span class="stat__label">Hints Used</span>
+                <span class="stat__value" id="stat-hints">0</span>
+            </div>
+        </div>
+        <div class="complete__actions">
+            <button class="btn btn--primary" id="btn-learn-more" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/codex.png" alt="">
+                <span class="btn__label">Learn More</span>
+            </button>
+            <button class="btn" id="btn-play-again" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/play.png" alt="">
+                <span class="btn__label">Begin Anew</span>
+            </button>
+            <button class="btn btn--ghost" id="btn-complete-menu" type="button">
+                <img class="icon btn__icon" src="assets/images/ui/emoji/back-arrow.png" alt="">
+                <span class="btn__label">Main Menu</span>
+            </button>
+        </div>
+    </div>
+</section>
+
+</div><!-- /#app -->
+
+<!-- ============================ MODALS ============================ -->
+
+<!-- How to Play : gameplay controls & objective ONLY -->
+<div class="overlay" id="modal-howto" hidden>
+    <div class="panel panel--parchment modal">
+        <button class="modal__close" type="button" data-close="modal-howto" aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 class="modal__title">
+            <img class="icon icon--md" src="assets/images/ui/emoji/manual.png" alt="">
+            How to Play
+        </h2>
+        <p class="modal__intro">Your objective: reach the summit of the Ascent by solving every gravity riddle.</p>
+        <ul class="rules">
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Ascend.</b> Tap a numbered node on the Ascent Map to face its
+                riddle. Nodes unlock in order.</span>
+            </li>
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Answer.</b> Read the riddle, then tap one of the nine answer tiles.
+                Wrong tiles dim out &mdash; keep going until you find the truth.</span>
+            </li>
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Earn.</b> Each node solved for the first time awards
+                <img class="icon icon--xs" src="assets/images/ui/emoji/star-shard.png" alt="Star Shards"><b>100
+                Star Shards</b>.</span>
+            </li>
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Hint.</b> Stuck? Spend
+                <img class="icon icon--xs" src="assets/images/ui/emoji/star-shard.png" alt="Star Shards"><b>30
+                Star Shards</b> for a clue &mdash; one hint per node.</span>
+            </li>
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Unlock.</b> A correct answer opens that node's Codex: an interactive
+                simulation you can play with.</span>
+            </li>
+            <li>
+                <span class="rules__bullet"></span>
+                <span class="rules__body"><b>Controls.</b> Tap or click anywhere. On a keyboard, use
+                <kbd>1</kbd>&ndash;<kbd>9</kbd> to pick an answer, <kbd>H</kbd> for a hint, and <kbd>Esc</kbd>
+                to go back.</span>
+            </li>
+        </ul>
+        <button class="btn btn--primary modal__cta" type="button" data-close="modal-howto">
+            <span class="btn__label">Got It</span>
+        </button>
+    </div>
+</div>
+
+<!-- Learn More : conceptual / reference material ONLY -->
+<div class="overlay" id="modal-learn" hidden>
+    <div class="panel panel--slate modal modal--tall">
+        <button class="modal__close" type="button" data-close="modal-learn" aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 class="modal__title">
+            <img class="icon icon--md" src="assets/images/ui/emoji/codex.png" alt="">
+            Learn More
+        </h2>
+        <p class="modal__intro">Reference material on free fall &mdash; the physics behind every riddle you solved.</p>
+        <div class="learn" id="learn-body"><!-- built by JS --></div>
+        <button class="btn btn--primary modal__cta" type="button" data-close="modal-learn">
+            <span class="btn__label">Close</span>
+        </button>
+    </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="modal-settings" hidden>
+    <div class="panel panel--metal modal modal--narrow">
+        <button class="modal__close" type="button" data-close="modal-settings" aria-label="Close">
+            <img class="icon" src="assets/images/ui/emoji/close.png" alt="">
+        </button>
+        <h2 class="modal__title">
+            <img class="icon icon--md" src="assets/images/ui/emoji/orbit-settings.png" alt="">
+            Settings
+        </h2>
+
+        <div class="setting" id="setting-music">
+            <img class="icon icon--md setting__icon" id="icon-music" src="assets/images/ui/emoji/music-on.png" alt="">
+            <span class="setting__label">Music</span>
+            <button class="switch is-on" id="toggle-music" type="button" role="switch" aria-checked="true"
+                    aria-label="Toggle music"><i></i></button>
+        </div>
+
+        <div class="setting" id="setting-sfx">
+            <img class="icon icon--md setting__icon" id="icon-sfx" src="assets/images/ui/emoji/sound-on.png" alt="">
+            <span class="setting__label">Sound Effects</span>
+            <button class="switch is-on" id="toggle-sfx" type="button" role="switch" aria-checked="true"
+                    aria-label="Toggle sound effects"><i></i></button>
+        </div>
+
+        <div class="setting" id="setting-motion">
+            <img class="icon icon--md setting__icon" src="assets/images/ui/emoji/gravity-arrow.png" alt="">
+            <span class="setting__label">Ambient Motion</span>
+            <button class="switch is-on" id="toggle-motion" type="button" role="switch" aria-checked="true"
+                    aria-label="Toggle ambient motion"><i></i></button>
+        </div>
+
+        <div class="setting setting--stacked">
+            <span class="setting__label setting__label--wide">Saved Progress</span>
+            <button class="btn btn--small btn--danger" id="btn-reset" type="button">
+                <span class="btn__label">Reset Ascent</span>
+            </button>
+        </div>
+        <p class="setting__note" id="reset-note">Clears solved nodes and returns your Star Shards to 50.</p>
+    </div>
+</div>
+
+<!-- Toast / hint notification -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+    <img class="icon icon--md toast__icon" id="toast-icon" src="assets/images/ui/emoji/hint-comet.png" alt="">
+    <span class="toast__text" id="toast-text"></span>
+</div>
+
+<!-- Optional drop-in music track; procedural synth is used when this is absent -->
+<audio id="bgm-file" src="assets/audio/bgm.mp3" loop preload="none"></audio>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/assets.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/backdrop.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#08120a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Worm Guardian - Save the Sporophyte! A three-stage liverwort learning game.">
+<title>Worm Guardian &ndash; Save the Sporophyte!</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ ambient backdrop (pure CSS, no gameplay impact) ============ -->
+<div id="ambient" aria-hidden="true">
+  <div class="amb-layer amb-far"></div>
+  <div class="amb-layer amb-mid"></div>
+  <div class="amb-shafts"></div>
+  <div class="amb-motes" id="amb-motes"></div>
+  <div class="amb-canopy"></div>
+  <div class="amb-floor"></div>
+</div>
+
+<div id="app">
+
+  <!-- ============================== HUD ============================== -->
+  <header id="hud">
+    <div class="hud-brand">
+      <span class="hud-brand-main">Worm Guardian</span>
+      <span class="hud-brand-sub">Save the Sporophyte</span>
+    </div>
+
+    <div class="hud-stats">
+      <div class="chip" id="chip-level" title="Stage">
+        <span class="chip-orb"><img src="assets/images/ui/emoji/level.png" alt="" class="chip-icon"></span>
+        <span class="chip-body">
+          <span class="chip-label">Stage</span>
+          <span class="chip-value" id="level-display">1</span>
+        </span>
+      </div>
+
+      <div class="chip" id="chip-lives" title="Lives">
+        <span class="chip-orb chip-orb-moss"><img src="assets/images/ui/emoji/life.png" alt="" class="chip-icon"></span>
+        <span class="chip-body">
+          <span class="chip-label">Lives</span>
+          <span class="chip-value" id="lives-display">3</span>
+        </span>
+      </div>
+
+      <div class="chip" id="chip-score" title="Score">
+        <span class="chip-orb chip-orb-gold"><img src="assets/images/ui/emoji/score.png" alt="" class="chip-icon"></span>
+        <span class="chip-body">
+          <span class="chip-label">Score</span>
+          <span class="chip-value" id="score-display">0</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="hud-tools">
+      <button class="icon-button" id="btn-pause" type="button" title="Pause" aria-label="Pause">
+        <span class="pause-glyph"></span>
+      </button>
+      <button class="icon-button" id="btn-settings-hud" type="button" title="Settings" aria-label="Settings">
+        <img src="assets/images/ui/emoji/gemma.png" alt="Settings">
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================= progress rail ========================= -->
+  <div id="progress-rail" title="Spores collected this stage">
+    <div id="progress-fill"></div>
+    <div id="progress-pips"></div>
+  </div>
+
+  <!-- =========================== game frame =========================== -->
+  <div id="frame">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <!-- floating toast (replaces blocking alert) -->
+    <div id="toast" role="status" aria-live="polite">
+      <img src="assets/images/ui/emoji/hurt.png" alt="" id="toast-icon">
+      <span id="toast-text"></span>
+    </div>
+
+    <!-- touch controls -->
+    <div id="touch-layer" aria-hidden="true">
+      <div id="stick">
+        <div id="stick-base"></div>
+        <div id="stick-knob"></div>
+      </div>
+    </div>
+    <button id="btn-dash" type="button" aria-label="Dash">
+      <img src="assets/images/ui/emoji/dash.png" alt="">
+      <span>Dash</span>
+    </button>
+
+    <!-- ======================== BOOT ======================== -->
+    <section class="overlay boot" id="screen-boot">
+      <div class="boot-crest">
+        <img src="assets/images/ui/emoji/worm.png" alt="">
+      </div>
+      <h1 class="boot-title">Worm Guardian</h1>
+      <p class="boot-sub">Save the Sporophyte</p>
+      <div class="boot-bar"><div class="boot-bar-fill" id="boot-fill"></div></div>
+      <p class="boot-note" id="boot-note">Waking the forest floor&hellip;</p>
+    </section>
+
+    <!-- ======================== MENU ======================== -->
+    <section class="overlay" id="screen-menu" hidden>
+      <div class="panel panel-bark menu-panel">
+        <div class="crest">
+          <span class="crest-ring"></span>
+          <img src="assets/images/ui/emoji/worm.png" alt="" class="crest-art">
+        </div>
+        <h1 class="title-engraved">Worm Guardian</h1>
+        <p class="subtitle">Save the Sporophyte</p>
+        <p class="tagline">A three&#8209;stage journey through the life of a liverwort.</p>
+
+        <div class="menu-actions">
+          <button class="btn btn-primary btn-wide" id="btn-start" type="button">
+            <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico">
+            <span id="btn-start-text">Start Game</span>
+          </button>
+          <div class="menu-row">
+            <button class="btn btn-wide" id="btn-stages" type="button">
+              <img src="assets/images/ui/emoji/level.png" alt="" class="btn-ico">
+              <span>Stages</span>
+            </button>
+            <button class="btn btn-wide" id="btn-howto" type="button">
+              <img src="assets/images/ui/emoji/help.png" alt="" class="btn-ico">
+              <span>How to Play</span>
+            </button>
+          </div>
+          <button class="btn btn-ghost btn-wide" id="btn-settings" type="button">
+            <img src="assets/images/ui/emoji/gemma.png" alt="" class="btn-ico">
+            <span>Settings</span>
+          </button>
+        </div>
+
+        <p class="menu-foot" id="menu-progress">No spores recorded yet.</p>
+      </div>
+    </section>
+
+    <!-- ==================== HOW TO PLAY (menu only: controls + objective) ==================== -->
+    <section class="overlay" id="screen-howto" hidden>
+      <div class="panel panel-bark scrollable">
+        <h2 class="panel-title">How to Play</h2>
+        <p class="panel-kicker">Controls &amp; objective only</p>
+
+        <div class="howto-goal">
+          <img src="assets/images/ui/emoji/capsule.png" alt="" class="howto-goal-art">
+          <div>
+            <h3>Your objective</h3>
+            <p>Guide the guardian worm across the forest floor and gather every drifting
+               <strong>sporophyte spore</strong>. Each spore you reach opens a field note.
+               Clear all spores in a stage to advance. Clear all three stages to complete
+               the sporophyte and win.</p>
+          </div>
+        </div>
+
+        <div class="howto-grid">
+          <div class="howto-card">
+            <img src="assets/images/ui/emoji/spore.png" alt="" class="howto-ico">
+            <h4>Collect spores</h4>
+            <p>Touch a glowing spore to absorb it. <strong>+10 score</strong>, one field note &mdash;
+               and the worm <em>grows longer</em> with every spore it swallows.</p>
+          </div>
+          <div class="howto-card">
+            <img src="assets/images/ui/emoji/ladybug.png" alt="" class="howto-ico">
+            <h4>Avoid the insects</h4>
+            <p>Ladybugs, ants and spiders roam the floor &mdash; and some <em>hunt you</em>.
+               A red tracking ring marks a hunter. Each hit costs <strong>one life</strong>.
+               You have three.</p>
+          </div>
+          <div class="howto-card">
+            <img src="assets/images/ui/emoji/dash.png" alt="" class="howto-ico">
+            <h4>Dash to survive</h4>
+            <p>A dash makes you briefly fast <em>and</em> untouchable &mdash; the safe way past a hunter
+               or through a tight gap.</p>
+          </div>
+          <div class="howto-card">
+            <img src="assets/images/ui/emoji/life.png" alt="" class="howto-ico">
+            <h4>Lose all lives</h4>
+            <p>Run out and the stage is lost. Progress you already unlocked is kept.</p>
+          </div>
+        </div>
+
+        <h3 class="controls-head">Controls</h3>
+        <div class="controls-grid">
+          <div class="ctrl-row">
+            <span class="keycaps">
+              <span class="keycap">&#8592;</span><span class="keycap">&#8593;</span>
+              <span class="keycap">&#8595;</span><span class="keycap">&#8594;</span>
+            </span>
+            <span class="ctrl-desc">Move &mdash; arrow keys or <span class="keycap">W</span><span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span></span>
+          </div>
+          <div class="ctrl-row">
+            <span class="keycaps"><span class="keycap keycap-wide">Space</span></span>
+            <span class="ctrl-desc">Dash &mdash; a short burst of speed with invulnerability</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="keycaps"><span class="keycap keycap-wide">Drag</span></span>
+            <span class="ctrl-desc">Touch or mouse &mdash; press and drag anywhere on the field to steer</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="keycaps"><span class="keycap keycap-wide">Tap</span></span>
+            <span class="ctrl-desc">A quick tap (or the Dash button) triggers a dash</span>
+          </div>
+          <div class="ctrl-row">
+            <span class="keycaps"><span class="keycap keycap-wide">P</span><span class="keycap">Esc</span></span>
+            <span class="ctrl-desc">Pause the stage</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-wide back-btn" data-back="screen-menu" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Back to Menu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================== STAGE SELECT ======================== -->
+    <section class="overlay" id="screen-stages" hidden>
+      <div class="panel panel-bark scrollable">
+        <h2 class="panel-title">Stage Select</h2>
+        <p class="panel-kicker">Clear a stage to unlock the next</p>
+        <div class="stage-list" id="stage-list"></div>
+        <button class="btn btn-primary btn-wide back-btn" data-back="screen-menu" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Back to Menu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================= SETTINGS ========================= -->
+    <section class="overlay" id="screen-settings" hidden>
+      <div class="panel panel-glass">
+        <h2 class="panel-title">Settings</h2>
+        <p class="panel-kicker">Sound &amp; saved progress</p>
+
+        <div class="setting-row" id="row-music">
+          <img src="assets/images/ui/emoji/music-on.png" alt="" class="setting-ico" id="ico-music">
+          <div class="setting-text">
+            <span class="setting-name">Music</span>
+            <span class="setting-hint" id="music-hint">Ambient forest pad</span>
+          </div>
+          <button class="switch" id="sw-music" type="button" role="switch" aria-checked="true" aria-label="Toggle music">
+            <span class="switch-track"><span class="switch-knob"></span></span>
+          </button>
+        </div>
+
+        <div class="setting-row" id="row-sfx">
+          <img src="assets/images/ui/emoji/sound-on.png" alt="" class="setting-ico" id="ico-sfx">
+          <div class="setting-text">
+            <span class="setting-name">Sound Effects</span>
+            <span class="setting-hint">Collecting, dashing, impacts</span>
+          </div>
+          <button class="switch" id="sw-sfx" type="button" role="switch" aria-checked="true" aria-label="Toggle sound effects">
+            <span class="switch-track"><span class="switch-knob"></span></span>
+          </button>
+        </div>
+
+        <div class="setting-row" id="row-touch">
+          <img src="assets/images/ui/emoji/dash.png" alt="" class="setting-ico">
+          <div class="setting-text">
+            <span class="setting-name">On&#8209;screen Controls</span>
+            <span class="setting-hint">Stick &amp; dash button for touch</span>
+          </div>
+          <button class="switch" id="sw-touch" type="button" role="switch" aria-checked="true" aria-label="Toggle on-screen controls">
+            <span class="switch-track"><span class="switch-knob"></span></span>
+          </button>
+        </div>
+
+        <button class="btn btn-danger btn-wide" id="btn-wipe" type="button">
+          <img src="assets/images/ui/emoji/close.png" alt="" class="btn-ico"><span>Reset Saved Progress</span>
+        </button>
+        <button class="btn btn-primary btn-wide back-btn" data-back="screen-menu" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Done</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================== PAUSE =========================== -->
+    <section class="overlay" id="screen-pause" hidden>
+      <div class="panel panel-glass panel-narrow">
+        <h2 class="panel-title">Paused</h2>
+        <p class="panel-kicker">The forest holds its breath</p>
+        <button class="btn btn-primary btn-wide" id="btn-resume" type="button">
+          <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico"><span>Resume</span>
+        </button>
+        <button class="btn btn-wide" id="btn-pause-settings" type="button">
+          <img src="assets/images/ui/emoji/gemma.png" alt="" class="btn-ico"><span>Settings</span>
+        </button>
+        <button class="btn btn-ghost btn-wide" id="btn-quit" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Quit to Menu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================= FACT CARD ========================= -->
+    <section class="overlay" id="screen-fact" hidden>
+      <div class="panel panel-parchment fact-card">
+        <div class="fact-seal">
+          <img src="assets/images/ui/emoji/spore.png" alt="">
+        </div>
+        <p class="fact-eyebrow" id="fact-eyebrow">Field Note 1 of 5</p>
+        <h3 class="fact-heading" id="fact-heading">Fact Collected</h3>
+        <p class="fact-body" id="fact-card-text"></p>
+        <button class="btn btn-primary btn-wide" id="btn-continue" type="button">
+          <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico"><span>Continue</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ====================== LEVEL COMPLETE ====================== -->
+    <section class="overlay" id="screen-levelcomplete" hidden>
+      <div class="panel panel-bark scrollable">
+        <div class="burst"><img src="assets/images/ui/emoji/celebrate.png" alt=""></div>
+        <h2 class="panel-title">Stage <span id="lcs-level-num">1</span> Complete</h2>
+        <p class="panel-kicker" id="lcs-subtitle">Basics of Habitat &amp; Plant Body</p>
+
+        <div class="reward-scroll">
+          <p class="reward-head">Reward &mdash; Complete Sporophyte Structure</p>
+          <div class="diagram-host" id="diagram-lcs"></div>
+        </div>
+
+        <div class="tally">
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/spore.png" alt="" class="tally-ico">
+            <span class="tally-num" id="lcs-facts">0</span><span class="tally-lab">Notes</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/score.png" alt="" class="tally-ico">
+            <span class="tally-num" id="lcs-score">0</span><span class="tally-lab">Score</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/life.png" alt="" class="tally-ico">
+            <span class="tally-num" id="lcs-lives">3</span><span class="tally-lab">Lives</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-wide" id="btn-next-level" type="button">
+          <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico"><span id="btn-next-text">Proceed to Stage 2</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================= FINAL SUMMARY ======================= -->
+    <section class="overlay" id="screen-summary" hidden>
+      <div class="panel panel-bark scrollable">
+        <div class="burst"><img src="assets/images/ui/emoji/trophy.png" alt=""></div>
+        <h2 class="panel-title">Congratulations</h2>
+        <p class="panel-kicker">Liverwort Guardian &mdash; you saved the Sporophyte</p>
+
+        <div class="tally">
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/score.png" alt="" class="tally-ico">
+            <span class="tally-num" id="sum-score">0</span><span class="tally-lab">Final Score</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/spore.png" alt="" class="tally-ico">
+            <span class="tally-num" id="sum-facts">0</span><span class="tally-lab">Notes</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/life.png" alt="" class="tally-ico">
+            <span class="tally-num" id="sum-lives">0</span><span class="tally-lab">Lives Left</span>
+          </div>
+        </div>
+
+        <div class="reward-scroll">
+          <p class="reward-head">Completed Sporophyte Structure</p>
+          <div class="diagram-host" id="diagram-sum"></div>
+        </div>
+
+        <h3 class="list-head">All <span id="sum-total">22</span> Characteristics Learned</h3>
+        <ul class="summary-list" id="summary-facts-list"></ul>
+
+        <div class="menu-row">
+          <button class="btn btn-wide" id="btn-learn-sum" type="button">
+            <img src="assets/images/ui/emoji/learn.png" alt="" class="btn-ico"><span>Learn More</span>
+          </button>
+          <button class="btn btn-primary btn-wide" id="btn-retry" type="button">
+            <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico"><span>Play Again</span>
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-wide" id="btn-summary-menu" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Main Menu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================= GAME OVER ========================= -->
+    <section class="overlay" id="screen-gameover" hidden>
+      <div class="panel panel-bark">
+        <div class="burst burst-dim"><img src="assets/images/ui/emoji/hurt.png" alt=""></div>
+        <h2 class="panel-title panel-title-dim">Game Over</h2>
+        <p class="panel-kicker">The sporophyte withers without its guardian&hellip;</p>
+        <p class="go-body">Don&rsquo;t give up &mdash; the forest floor is patient.
+           Every run teaches you more about liverworts.</p>
+
+        <div class="tally">
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/level.png" alt="" class="tally-ico">
+            <span class="tally-num" id="go-level">1</span><span class="tally-lab">Stage</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/score.png" alt="" class="tally-ico">
+            <span class="tally-num" id="go-score">0</span><span class="tally-lab">Score</span>
+          </div>
+          <div class="tally-item">
+            <img src="assets/images/ui/emoji/spore.png" alt="" class="tally-ico">
+            <span class="tally-num" id="go-facts">0</span><span class="tally-lab">Notes</span>
+          </div>
+        </div>
+
+        <div class="menu-row">
+          <button class="btn btn-wide" id="btn-learn-go" type="button">
+            <img src="assets/images/ui/emoji/learn.png" alt="" class="btn-ico"><span>Learn More</span>
+          </button>
+          <button class="btn btn-primary btn-wide" id="btn-restart" type="button">
+            <img src="assets/images/ui/emoji/play.png" alt="" class="btn-ico"><span id="btn-restart-text">Retry Stage 1</span>
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-wide" id="btn-go-menu" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Main Menu</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ LEARN MORE (conceptual reference, end screens only) ============ -->
+    <section class="overlay" id="screen-learn" hidden>
+      <div class="panel panel-parchment scrollable learn-panel">
+        <h2 class="panel-title panel-title-ink">Learn More</h2>
+        <p class="panel-kicker panel-kicker-ink">Liverworts &mdash; reference &amp; definitions</p>
+
+        <div class="learn-hero">
+          <img src="assets/images/ui/emoji/droplet.png" alt="" class="learn-hero-ico">
+          <p><strong>Liverworts</strong> (division <em>Marchantiophyta</em>) are among the simplest
+             land plants &mdash; small, rootless bryophytes that live tethered to moisture.
+             They have no true roots, stems, leaves, or vascular tissue.</p>
+        </div>
+
+        <h3 class="learn-h">Key terms</h3>
+        <dl class="glossary" id="glossary"></dl>
+
+        <h3 class="learn-h">Common examples</h3>
+        <ul class="learn-list">
+          <li><em>Marchantia</em> &mdash; the classic thalloid liverwort, easily recognised by its gemma cups.</li>
+          <li><em>Riccia</em> &mdash; a small thalloid liverwort of damp soil and still water.</li>
+          <li><em>Porella</em> &mdash; a leafy liverwort with leaf&#8209;like structures in two rows.</li>
+          <li><em>Pellia</em> &mdash; a simple thalloid liverwort of wet stream banks.</li>
+        </ul>
+
+        <h3 class="learn-h">The life cycle at a glance</h3>
+        <div class="cycle" id="cycle"></div>
+
+        <h3 class="learn-h">Why it matters</h3>
+        <p class="learn-p">Liverworts are close to the earliest plants to colonise land. Because they
+           depend on a film of water for fertilisation, they never stray far from damp ground &mdash;
+           which is exactly why you find them on stream banks, shaded rocks and tree bark.
+           They also act as pioneer species, holding moisture and building the thin soil that
+           larger plants later need.</p>
+
+        <h3 class="learn-h">About the obstacles</h3>
+        <p class="learn-p">The ladybug, ant and spider in this game are obstacles, not
+           biology lessons &mdash; they represent the everyday hazards of the forest floor.
+           Contact with one costs the guardian a life.</p>
+
+        <button class="btn btn-primary btn-wide back-btn" id="btn-learn-back" type="button">
+          <img src="assets/images/ui/emoji/back.png" alt="" class="btn-ico"><span>Back</span>
+        </button>
+      </div>
+    </section>
+
+  </div><!-- /#frame -->
+
+  <!-- =========================== control bar =========================== -->
+  <footer id="controlbar">
+    <span class="hint-item">
+      <span class="keycap keycap-sm">&#8592;</span><span class="keycap keycap-sm">&#8593;</span>
+      <span class="keycap keycap-sm">&#8595;</span><span class="keycap keycap-sm">&#8594;</span>
+      <span class="hint-text">or drag to move</span>
+    </span>
+    <span class="hint-sep"></span>
+    <span class="hint-item">
+      <span class="keycap keycap-sm keycap-wide">Space</span>
+      <span class="hint-text">or tap to dash</span>
+    </span>
+    <span class="hint-sep"></span>
+    <span class="hint-item">
+      <span class="keycap keycap-sm">P</span>
+      <span class="hint-text">pause</span>
+    </span>
+  </footer>
+
+</div><!-- /#app -->
+
+<script src="js/game.js"></script>
+</body>
+</html>

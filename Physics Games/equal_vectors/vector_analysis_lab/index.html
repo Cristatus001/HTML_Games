@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#04080f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Vector Analysis Lab — find the equal vectors in ten real-world cases.">
+<link rel="icon" href="assets/images/ui/emoji/equals.png" type="image/png">
+<title>Vector Analysis Lab</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ====================== AMBIENT BACKGROUND ====================== -->
+<div id="bg-wrap">
+  <img id="bg-img" alt="">
+  <canvas id="bg"></canvas>
+</div>
+<div id="bg-veil"></div>
+<div class="frame-bracket fb-tl"></div>
+<div class="frame-bracket fb-tr"></div>
+<div class="frame-bracket fb-bl"></div>
+<div class="frame-bracket fb-br"></div>
+
+<!-- ====================== GAME CANVAS ====================== -->
+<canvas id="c"></canvas>
+<div id="flash"></div>
+
+<!-- ====================== BOOT ====================== -->
+<section id="boot" class="screen on">
+  <svg class="boot-mark" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+      <linearGradient id="bmC" gradientUnits="userSpaceOnUse" x1="0" y1="38" x2="0" y2="62">
+        <stop offset="0" stop-color="#e6feff"/><stop offset="1" stop-color="#12a7cc"/>
+      </linearGradient>
+      <linearGradient id="bmA" gradientUnits="userSpaceOnUse" x1="0" y1="60" x2="0" y2="84">
+        <stop offset="0" stop-color="#fff3da"/><stop offset="1" stop-color="#e2820a"/>
+      </linearGradient>
+      <filter id="bmG" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="3.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <polygon points="60,6 106,32 106,88 60,114 14,88 14,32" fill="none" stroke="#22d3ee" stroke-opacity=".5" stroke-width="2"/>
+    <polygon points="60,18 95,38 95,82 60,102 25,82 25,38" fill="#0a1524" fill-opacity=".8"/>
+    <g filter="url(#bmG)">
+      <path d="M32 50 H74" stroke="url(#bmC)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 40 L88 50 L70 60 Z" fill="url(#bmC)"/>
+      <path d="M32 72 H74" stroke="url(#bmA)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M70 62 L88 72 L70 82 Z" fill="url(#bmA)"/>
+    </g>
+  </svg>
+  <h1 class="boot-title">VECTOR ANALYSIS LAB</h1>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-status" id="boot-status">Calibrating sensors</div>
+</section>
+
+<!-- ====================== MAIN MENU ====================== -->
+<section id="menu" class="screen">
+  <div class="menu-inner">
+    <div class="logo-wrap">
+      <svg class="logo-svg" viewBox="0 0 320 168" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgC" gradientUnits="userSpaceOnUse" x1="0" y1="52" x2="0" y2="88">
+            <stop offset="0" stop-color="#e6feff"/><stop offset=".5" stop-color="#38d5f0"/><stop offset="1" stop-color="#0b7691"/>
+          </linearGradient>
+          <linearGradient id="lgA" gradientUnits="userSpaceOnUse" x1="0" y1="92" x2="0" y2="128">
+            <stop offset="0" stop-color="#fff2d8"/><stop offset=".5" stop-color="#ffb445"/><stop offset="1" stop-color="#b96806"/>
+          </linearGradient>
+          <linearGradient id="lgPlate" gradientUnits="userSpaceOnUse" x1="0" y1="8" x2="0" y2="160">
+            <stop offset="0" stop-color="#274058"/><stop offset=".55" stop-color="#12202f"/><stop offset="1" stop-color="#08111c"/>
+          </linearGradient>
+          <radialGradient id="lgCore" cx=".4" cy=".32" r=".8">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".85"/>
+            <stop offset=".45" stop-color="#22d3ee" stop-opacity=".35"/>
+            <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="lgGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- hex plate -->
+        <polygon points="160,8 268,54 268,132 160,160 52,132 52,54" fill="url(#lgPlate)" stroke="#3d6d86" stroke-width="1.6"/>
+        <polygon points="160,8 268,54 268,132 160,160 52,132 52,54" fill="url(#lgCore)"/>
+        <polygon points="160,18 258,60 258,126 160,150 62,126 62,60" fill="none" stroke="#22d3ee" stroke-opacity=".38" stroke-width="1.2"/>
+        <!-- grid ticks -->
+        <g stroke="#22d3ee" stroke-opacity=".16" stroke-width="1">
+          <path d="M76 70 H244 M76 88 H244 M76 106 H244"/>
+          <path d="M100 46 V138 M140 40 V144 M180 40 V144 M220 46 V138"/>
+        </g>
+        <!-- two equal vectors -->
+        <g filter="url(#lgGlow)">
+          <path d="M80 70 H172" stroke="url(#lgC)" stroke-width="11" stroke-linecap="round"/>
+          <path d="M166 57 L198 70 L166 83 Z" fill="url(#lgC)"/>
+          <circle cx="80" cy="70" r="7" fill="#08131f" stroke="#8fe9fb" stroke-width="2.4"/>
+          <path d="M80 110 H172" stroke="url(#lgA)" stroke-width="11" stroke-linecap="round"/>
+          <path d="M166 97 L198 110 L166 123 Z" fill="url(#lgA)"/>
+          <circle cx="80" cy="110" r="7" fill="#1f1204" stroke="#ffd79a" stroke-width="2.4"/>
+        </g>
+        <!-- equals emblem -->
+        <g filter="url(#lgGlow)">
+          <rect x="216" y="83" width="28" height="7" rx="3.5" fill="#b8f6ff"/>
+          <rect x="216" y="96" width="28" height="7" rx="3.5" fill="#ffd79a"/>
+        </g>
+      </svg>
+      <h1 class="game-title">VECTOR ANALYSIS LAB</h1>
+      <p class="game-sub">Equal Vector Field Study</p>
+    </div>
+
+    <div class="progress-strip panel">
+      <span class="label engraved">Cases logged</span>
+      <div class="progress-meter"><i id="menu-meter"></i></div>
+      <span class="progress-val" id="menu-progress">0 / 10</span>
+    </div>
+
+    <div class="menu-btns">
+      <button class="btn btn-primary btn-lg btn-block" id="btn-start">
+        <img src="assets/images/ui/emoji/play.png" alt="Start">
+        <span id="start-label">Begin Study</span>
+      </button>
+      <div class="menu-row">
+        <button class="btn btn-ghost" id="btn-select">
+          <img src="assets/images/ui/emoji/menu.png" alt="Cases">
+          <span>Cases</span>
+        </button>
+        <button class="btn btn-ghost" id="btn-howto">
+          <img src="assets/images/ui/emoji/help.png" alt="Help">
+          <span>How to Play</span>
+        </button>
+      </div>
+      <div class="menu-row">
+        <button class="btn btn-ghost" id="btn-settings">
+          <img src="assets/images/ui/emoji/settings.png" alt="Settings">
+          <span>Settings</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== CASE SELECT ====================== -->
+<section id="select" class="screen scrolls">
+  <div class="sel-head">
+    <button class="icon-btn" id="btn-sel-back"><img src="assets/images/ui/emoji/back.png" alt="Back"></button>
+    <h2 class="screen-title">Case Files</h2>
+    <span class="chip chip-cyan"><img src="assets/images/ui/emoji/core_on.png" alt=""><span id="sel-count">0 / 10</span></span>
+  </div>
+  <div class="case-grid" id="case-grid"></div>
+</section>
+
+<!-- ====================== GAMEPLAY ====================== -->
+<section id="game" class="screen">
+  <div class="hud" id="hud">
+    <div class="hud-top">
+      <div class="hud-left">
+        <div class="case-chip">
+          <span class="case-num" id="case-num">01</span>
+          <span class="case-of" id="case-of">/ 10</span>
+        </div>
+        <div class="cores" id="hud-cores"></div>
+      </div>
+      <div class="hud-mid">
+        <h2 id="title-text">&nbsp;</h2>
+      </div>
+      <div class="hud-right">
+        <button class="icon-btn" id="btn-hud-menu"><img src="assets/images/ui/emoji/back.png" alt="Menu"></button>
+        <button class="icon-btn" id="btn-hud-set"><img src="assets/images/ui/emoji/settings.png" alt="Settings"></button>
+      </div>
+    </div>
+    <p id="desc-text">&nbsp;</p>
+  </div>
+
+  <div class="objective" id="objective">
+    <img src="assets/images/ui/emoji/drag.png" alt="">
+    <span>Drag the <span class="k-amber">amber vector</span> onto the <span class="k-cyan">reference node</span></span>
+  </div>
+
+  <aside id="scanner" class="glass">
+    <div class="scan-head">
+      <img src="assets/images/ui/emoji/target.png" alt="" id="scan-head-ico">
+      <span>Vector Scanner</span>
+    </div>
+    <div class="check-row">
+      <img class="cr-ico" src="assets/images/ui/emoji/magnitude.png" alt="">
+      <span class="cr-label">Magnitude</span>
+      <span class="cr-val status-wait" id="s-mag"><img src="assets/images/ui/emoji/scanning.png" alt=""></span>
+    </div>
+    <div class="check-row">
+      <img class="cr-ico" src="assets/images/ui/emoji/direction.png" alt="">
+      <span class="cr-label">Direction</span>
+      <span class="cr-val status-wait" id="s-dir"><img src="assets/images/ui/emoji/scanning.png" alt=""></span>
+    </div>
+    <div class="gauge">
+      <div class="gauge-row">
+        <span class="gauge-tag">REF</span>
+        <span class="gauge-bar ref"><i id="g-ref"></i></span>
+        <span class="gauge-num" id="n-ref">--</span>
+      </div>
+      <div class="gauge-row">
+        <span class="gauge-tag">YRS</span>
+        <span class="gauge-bar ply"><i id="g-ply"></i></span>
+        <span class="gauge-num" id="n-ply">--</span>
+      </div>
+    </div>
+    <div id="res-box"><span>Awaiting sample.</span></div>
+  </aside>
+
+  <div id="controls">
+    <button id="btn-re" class="btn btn-ghost">
+      <img src="assets/images/ui/emoji/retry.png" alt="">
+      <span>Retry</span>
+    </button>
+    <button id="btn-next" class="btn btn-primary">
+      <span id="next-label">Next Case</span>
+      <img src="assets/images/ui/emoji/chevron.png" alt="">
+    </button>
+  </div>
+</section>
+
+<!-- ====================== OUTRO / RESULT ====================== -->
+<section id="outro" class="screen">
+  <div class="out-inner">
+    <img class="seal" src="assets/images/ui/emoji/certified.png" alt="Certified">
+    <h1 class="out-title">Mastery Achieved</h1>
+    <p class="out-sub">Field study complete. All ten real-world samples have been run through the scanner.</p>
+    <div class="stat-grid">
+      <div class="stat eq">
+        <img class="si" src="assets/images/ui/emoji/equals.png" alt="">
+        <span class="sv" id="stat-eq">0</span><span class="sl">Equal</span>
+      </div>
+      <div class="stat ne">
+        <img class="si" src="assets/images/ui/emoji/cross.png" alt="">
+        <span class="sv" id="stat-ne">0</span><span class="sl">Not equal</span>
+      </div>
+      <div class="stat tot">
+        <img class="si" src="assets/images/ui/emoji/burst.png" alt="">
+        <span class="sv" id="stat-tot">0</span><span class="sl">Cases analysed</span>
+      </div>
+    </div>
+    <div class="out-btns">
+      <button class="btn btn-amber btn-lg btn-block" id="btn-learn">
+        <img src="assets/images/ui/emoji/codex.png" alt="">
+        <span>Learn More</span>
+      </button>
+      <div class="menu-row">
+        <button class="btn btn-ghost" id="btn-restart">
+          <img src="assets/images/ui/emoji/retry.png" alt="">
+          <span>Restart</span>
+        </button>
+        <button class="btn btn-ghost" id="btn-out-menu">
+          <img src="assets/images/ui/emoji/menu.png" alt="">
+          <span>Main Menu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== MODAL: HOW TO PLAY ====================== -->
+<div class="modal" id="m-howto">
+  <div class="modal-box panel">
+    <div class="modal-head">
+      <img class="mh-ico" src="assets/images/ui/emoji/help.png" alt="">
+      <h2>How to Play</h2>
+      <button class="icon-btn" data-close="m-howto"><img src="assets/images/ui/emoji/close.png" alt="Close"></button>
+    </div>
+    <div class="modal-body">
+      <ul class="steps">
+        <li class="step">
+          <span class="step-n">1</span>
+          <p><b>Objective —</b> find the <b>equal vectors</b>. Each case shows two arrows taken from a real-life situation. Decide whether they are the same vector.</p>
+        </li>
+        <li class="step">
+          <img class="step-ico" src="assets/images/ui/emoji/drag.png" alt="">
+          <p><b>Drag</b> the <span class="k-amber">amber arrow</span> by its round tail node and drop it on the <span class="k-cyan">reference node</span> — the ringed target at the tail of the grey arrow. Touch and mouse both work.</p>
+        </li>
+        <li class="step">
+          <img class="step-ico" src="assets/images/ui/emoji/target.png" alt="">
+          <p>Once the tails snap together the <b>Vector Scanner</b> runs automatically and checks two things: <span class="k-amber">magnitude</span> (size/speed) and <span class="k-cyan">direction</span> (angle).</p>
+        </li>
+        <li class="step">
+          <img class="step-ico" src="assets/images/ui/emoji/check.png" alt="">
+          <p>If both match, the vectors are equal — the arrow lights up and colour rain falls. If either fails, the scanner explains exactly which property differs.</p>
+        </li>
+        <li class="step">
+          <img class="step-ico" src="assets/images/ui/emoji/chevron.png" alt="">
+          <p>Use <b>Next Case</b> to advance or <b>Retry</b> to reset the current case. Progress is saved automatically on this device.</p>
+        </li>
+      </ul>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-block" data-close="m-howto"><span>Got it</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: SETTINGS ====================== -->
+<div class="modal" id="m-settings">
+  <div class="modal-box panel">
+    <div class="modal-head">
+      <img class="mh-ico" src="assets/images/ui/emoji/settings.png" alt="">
+      <h2>Settings</h2>
+      <button class="icon-btn" data-close="m-settings"><img src="assets/images/ui/emoji/close.png" alt="Close"></button>
+    </div>
+    <div class="modal-body">
+      <div class="set-row">
+        <img class="set-ico" id="ico-music" src="assets/images/ui/emoji/music_on.png" alt="">
+        <div class="set-txt">
+          <h3>Music</h3>
+          <p>Ambient deck hum, generated live in your browser.</p>
+        </div>
+        <button class="switch on" id="sw-music" aria-label="Toggle music"><i></i></button>
+      </div>
+      <div class="set-row">
+        <img class="set-ico" id="ico-sfx" src="assets/images/ui/emoji/sfx_on.png" alt="">
+        <div class="set-txt">
+          <h3>Sound FX</h3>
+          <p>Scanner blips, snaps and verdict chimes.</p>
+        </div>
+        <button class="switch on" id="sw-sfx" aria-label="Toggle sound effects"><i></i></button>
+      </div>
+      <div class="set-row">
+        <img class="set-ico" src="assets/images/ui/emoji/core_off.png" alt="">
+        <div class="set-txt">
+          <h3>Reset Progress</h3>
+          <p>Clears saved cases and locks the study back to case 1.</p>
+        </div>
+        <button class="btn btn-ghost" id="btn-reset"><span>Reset</span></button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-block" data-close="m-settings"><span>Close</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== MODAL: LEARN MORE (reference material) ====================== -->
+<div class="modal" id="m-learn">
+  <div class="modal-box panel">
+    <div class="modal-head">
+      <img class="mh-ico" src="assets/images/ui/emoji/codex.png" alt="">
+      <h2>Learn More</h2>
+      <button class="icon-btn" data-close="m-learn"><img src="assets/images/ui/emoji/close.png" alt="Close"></button>
+    </div>
+    <div class="modal-body">
+      <div class="card codex-card">
+        <h3><img src="assets/images/ui/emoji/codex.png" alt="">The Textbook Definition</h3>
+        <p>In Physics and Mathematics, two vectors <span class="vec-bold">A</span> and <span class="vec-bold">B</span> are <b>EQUAL</b> if and only if:</p>
+        <div class="math-statement">
+          1. <span class="m-hl">|A| = |B|</span> &nbsp;(Same Magnitude)<br>
+          2. <span class="m-hl">Direction of A = Direction of B</span>
+        </div>
+        <div class="note-strip">
+          <img src="assets/images/ui/emoji/warn.png" alt="">
+          <p><b>Crucial note:</b> the <b>initial point</b> (starting position) does <b>not</b> matter. A vector can be moved anywhere parallel to itself without changing.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><img src="assets/images/ui/emoji/insight.png" alt="">Significance &amp; Applications</h3>
+        <p>Why is this significant? Vectors let us model the world consistently, no matter <i>where</i> an event happens.</p>
+        <div class="sig-grid">
+          <div class="sig-item"><b>1. Force calculation</b>Engineers slide force vectors along beams to simplify bridge math.</div>
+          <div class="sig-item"><b>2. Field theory</b>Magnetic and wind fields rely on the concept of uniform equal vectors across space.</div>
+          <div class="sig-item"><b>3. Game physics</b>A "jump" vector works the same way whether the player is at the start or end of the level.</div>
+          <div class="sig-item"><b>4. Collisions</b>Relative velocity vectors predict crashes regardless of map coordinates.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><img src="assets/images/ui/emoji/note.png" alt="">Case Notes</h3>
+        <p>Every sample in this study came from an ordinary scene. Rain in two different yards, two lifts on different floors, two lanes of traffic — all produced <b>equal</b> vectors, because only length and heading count.</p>
+        <p>The failures were just as instructive: opposite escalators reverse direction, a marching band turn changes the angle, and a fast car versus a slow car changes magnitude alone.</p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary btn-block" data-close="m-learn"><span>Close</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/background.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sky-realm",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Position-and-displacement-vector/a7ab7da4-742c-4aa3-86c7-754b6d3d8467/scratchpad/serve.js"
+      ],
+      "port": 8901
+    },
+    {
+      "name": "equal-vectors",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Physics-Games-Position-and-displacement-vector/bd69d753-f0d9-4437-9ca8-50640dab1a54/scratchpad/serve.js"
+      ],
+      "port": 8791
+    }
+  ]
+}

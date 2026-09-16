@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#3a2517">
+<title>Protist Detective - Field Journal of the Unseen</title>
+<style>
+/* ============================ FONTS (local, offline) ============================ */
+/* Single typeface across the whole game: Nunito */
+@font-face{font-family:'Fell';src:url('assets/fonts/nunito-800.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Fell';src:url('assets/fonts/nunito-800.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Garamond';src:url('assets/fonts/nunito-400.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Garamond';src:url('assets/fonts/nunito-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Garamond';src:url('assets/fonts/nunito-400-italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap;}
+@font-face{font-family:'Garamond';src:url('assets/fonts/nunito-700-italic.woff2') format('woff2');font-weight:700;font-style:italic;font-display:swap;}
+@font-face{font-family:'Hand';src:url('assets/fonts/nunito-700-italic.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Hand';src:url('assets/fonts/nunito-700-italic.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+/* ============================ THEME TOKENS ============================ */
+:root{
+  --paper:#e9d9b0; --paper-lit:#f3e6c4; --paper-dark:#d3ba88; --paper-deep:#c2a771;
+  --ink:#38230f; --ink-soft:#5c4327; --ink-faint:#7a5f3f;
+  --teal:#2f7d78; --teal-deep:#1c534f; --teal-lit:#4fb1a6;
+  --amber:#c98a2e; --amber-lit:#f0bf62; --gold:#caa24a; --gold-deep:#8c6c2a;
+  --wax:#9b3320; --wax-lit:#cc5236;
+  --edge:#b0904f; --edge-dark:#7d6231;
+  --shadow:rgba(56,35,15,.45);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; font-family:'Garamond',Georgia,serif; color:var(--ink);
+  background:
+    radial-gradient(140% 120% at 50% -10%, #6a5230 0%, #4a381f 45%, #2c2013 100%);
+  overflow:hidden; position:fixed; inset:0;
+  -webkit-user-select:none; user-select:none; touch-action:none;
+  -webkit-font-smoothing:antialiased;
+}
+/* Layout wrapper keeps everything centered & responsive */
+#app{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:14px;}
+
+/* ============================ AMBIENT BACKGROUND ============================ */
+#ambient{position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none;}
+#ambient .drift{position:absolute; opacity:.13; filter:blur(.3px);}
+@keyframes drift1{0%{transform:translate(-12vw,10vh) rotate(0deg);}100%{transform:translate(115vw,-8vh) rotate(200deg);}}
+@keyframes drift2{0%{transform:translate(112vw,80vh) rotate(0deg);}100%{transform:translate(-14vw,15vh) rotate(-240deg);}}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-18px);}}
+.mote{position:absolute; width:5px; height:5px; border-radius:50%;
+  background:radial-gradient(circle at 40% 40%, rgba(240,220,170,.9), rgba(200,160,90,0));
+  animation:mote-rise linear infinite;}
+@keyframes mote-rise{0%{transform:translateY(20px);opacity:0;}10%{opacity:.7;}100%{transform:translateY(-105vh);opacity:0;}}
+/* soft vignette + paper grain over everything */
+#grain{position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(120% 120% at 50% 40%, transparent 55%, rgba(20,12,4,.55) 100%);}
+
+/* ============================ SHARED PANEL / BUTTON CRAFT ============================ */
+.panel{
+  position:relative; border-radius:12px;
+  background:
+    linear-gradient(180deg, rgba(255,250,235,.55), rgba(80,55,20,.06) 40%, rgba(80,55,20,.14)),
+    radial-gradient(130% 100% at 28% 8%, var(--paper-lit), var(--paper) 55%, var(--paper-deep));
+  border:1px solid var(--edge);
+  box-shadow:
+    inset 0 2px 2px rgba(255,251,238,.65),
+    inset 0 -10px 22px rgba(90,60,25,.22),
+    inset 0 0 60px rgba(120,85,35,.12),
+    0 16px 34px rgba(0,0,0,.45);
+}
+/* stitched inner border */
+.panel::after{content:""; position:absolute; inset:9px; border:1.5px dashed rgba(90,62,30,.35); border-radius:7px; pointer-events:none;}
+
+.title-fell{font-family:'Fell',serif; letter-spacing:.5px;}
+.hand{font-family:'Hand',cursive;}
+
+button, .btn{font-family:'Garamond',serif; cursor:pointer; color:var(--ink); border:none; background:none;}
+
+/* Parchment tab button (options / secondary) */
+.btn-tab{
+  position:relative; display:flex; align-items:center; justify-content:center; gap:8px;
+  text-align:center; padding:13px 14px; border-radius:9px; font-size:1.02rem; line-height:1.15;
+  color:var(--ink);
+  background:linear-gradient(180deg, var(--paper-lit), var(--paper-dark));
+  border:1px solid var(--edge);
+  box-shadow:inset 0 1px 1px rgba(255,252,240,.8), inset 0 -4px 8px rgba(95,66,32,.22), 0 4px 9px rgba(0,0,0,.28);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.btn-tab:hover:not(:disabled){transform:translateY(-2px); background:linear-gradient(180deg,#f7ecca,#dcc590);
+  box-shadow:inset 0 1px 1px rgba(255,255,245,.9), inset 0 -3px 7px rgba(95,66,32,.2), 0 8px 16px rgba(0,0,0,.34);}
+.btn-tab:active:not(:disabled){transform:translateY(1px);
+  box-shadow:inset 0 3px 8px rgba(80,52,22,.5), inset 0 0 3px rgba(80,52,22,.4);}
+.btn-tab:disabled{cursor:default;}
+
+/* Wax-seal / lit primary button */
+.btn-seal{
+  position:relative; display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  padding:15px 26px; border-radius:11px; font-size:1.12rem; font-weight:700; letter-spacing:.6px;
+  color:#f6eccf; text-transform:uppercase;
+  background:radial-gradient(120% 130% at 35% 20%, var(--teal-lit), var(--teal) 45%, var(--teal-deep));
+  border:1px solid #123c39;
+  box-shadow:inset 0 2px 3px rgba(180,255,245,.4), inset 0 -8px 16px rgba(0,0,0,.4), 0 0 22px rgba(79,177,166,.35), 0 8px 18px rgba(0,0,0,.4);
+  transition:transform .12s ease, box-shadow .12s ease, filter .12s;
+}
+.btn-seal:hover{transform:translateY(-2px); filter:brightness(1.07); box-shadow:inset 0 2px 3px rgba(180,255,245,.5), inset 0 -8px 16px rgba(0,0,0,.4), 0 0 34px rgba(79,177,166,.6), 0 12px 24px rgba(0,0,0,.45);}
+.btn-seal:active{transform:translateY(1px); box-shadow:inset 0 4px 12px rgba(0,0,0,.55);}
+.btn-seal.wax{background:radial-gradient(120% 130% at 35% 20%, var(--wax-lit), var(--wax) 50%, #6f1f10); border-color:#5a1a0d; box-shadow:inset 0 2px 3px rgba(255,190,160,.4), inset 0 -8px 16px rgba(0,0,0,.4), 0 0 22px rgba(204,82,54,.4), 0 8px 18px rgba(0,0,0,.4);}
+.btn-seal.wax:hover{box-shadow:inset 0 2px 3px rgba(255,190,160,.5), inset 0 -8px 16px rgba(0,0,0,.4), 0 0 34px rgba(204,82,54,.65), 0 12px 24px rgba(0,0,0,.45);}
+
+.icon{width:1.15em; height:1.15em; vertical-align:middle; display:inline-block; image-rendering:auto;}
+
+/* ============================ SCREENS ============================ */
+.screen{display:none; width:100%; max-width:640px; position:relative; z-index:2;}
+.screen.active{display:block; animation:fadeUp .5s ease;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px);}to{opacity:1; transform:none;}}
+
+/* ---- BOOT ---- */
+#boot{position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+  background:radial-gradient(120% 120% at 50% 30%, #4a381f, #241a0f);}
+#boot.hide{opacity:0; pointer-events:none; transition:opacity .6s ease;}
+#boot .book{width:120px; height:120px; animation:bob 2.6s ease-in-out infinite;}
+#boot h1{font-family:'Fell',serif; color:var(--paper-lit); font-size:1.5rem; margin:0; text-align:center; text-shadow:0 2px 6px #000;}
+.loadbar{width:220px; height:8px; border-radius:5px; background:rgba(0,0,0,.4); overflow:hidden; border:1px solid var(--edge-dark);}
+.loadbar>i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--amber),var(--amber-lit)); box-shadow:0 0 10px var(--amber-lit); transition:width .1s linear;}
+#boot .sub{font-family:'Hand',cursive; color:var(--amber-lit); font-size:1.25rem;}
+
+/* ---- MENU ---- */
+#menu .book-cover{padding:26px 22px 24px; text-align:center;}
+.crest{width:96px; height:96px; margin:0 auto 6px; filter:drop-shadow(0 5px 8px rgba(0,0,0,.4));}
+#menu h1{font-family:'Fell',serif; font-size:clamp(1.7rem,6vw,2.5rem); margin:2px 0 0; color:var(--ink); line-height:1.05;}
+#menu .tag{font-family:'Hand',cursive; font-size:1.35rem; color:var(--teal-deep); margin:4px 0 6px;}
+.rule{height:2px; margin:14px auto; width:70%; background:linear-gradient(90deg,transparent,var(--edge-dark),transparent);}
+.menu-actions{display:flex; flex-direction:column; gap:11px; margin-top:6px;}
+.menu-row{display:flex; gap:11px;}
+.menu-row .btn-tab{flex:1;}
+
+/* level select */
+.levels-title{font-family:'Hand',cursive; font-size:1.3rem; color:var(--ink-soft); text-align:center; margin:16px 0 8px;}
+.levels{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.level{position:relative; text-align:left; padding:12px 13px; border-radius:10px;
+  background:linear-gradient(180deg,var(--paper-lit),var(--paper-dark)); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 1px rgba(255,252,240,.8), inset 0 -4px 8px rgba(95,66,32,.2), 0 4px 9px rgba(0,0,0,.26);
+  transition:transform .12s, box-shadow .12s;}
+.level:hover{transform:translateY(-2px); box-shadow:inset 0 1px 1px rgba(255,255,245,.9),0 9px 16px rgba(0,0,0,.32);}
+.level:active{transform:translateY(1px);}
+.level .lv-name{font-weight:700; font-size:1.02rem; color:var(--ink);}
+.level .lv-sub{font-family:'Hand',cursive; font-style:italic; font-size:.98rem; color:var(--ink-faint); line-height:1.15;}
+.level .lv-best{position:absolute; top:9px; right:10px; font-size:.72rem; font-weight:700; letter-spacing:.3px;
+  color:var(--teal-deep); background:rgba(47,125,120,.14); border:1px solid rgba(47,125,120,.4); padding:2px 6px; border-radius:20px;}
+.level.full{grid-column:1 / -1; background:radial-gradient(120% 130% at 30% 15%,var(--teal-lit),var(--teal) 55%,var(--teal-deep)); border-color:#123c39;}
+.level.full .lv-name,.level.full .lv-sub{color:#f4ead0;}
+.level.full .lv-sub{color:#cfe9e3;}
+.level.full .lv-best{color:#fff; background:rgba(0,0,0,.28); border-color:rgba(255,255,255,.35);}
+
+/* top-right settings pin */
+.corner-btns{position:absolute; top:-6px; right:-6px; display:flex; gap:6px; z-index:4;}
+.pin{width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 35% 30%, var(--paper-lit), var(--paper-deep)); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 1px rgba(255,252,240,.8), 0 4px 9px rgba(0,0,0,.35); cursor:pointer; transition:transform .12s;}
+.pin:hover{transform:rotate(20deg);}
+.pin img{width:26px; height:26px;}
+
+/* ---- GAME ---- */
+#game .journal{padding:16px 16px 18px;}
+.hud{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+.hud .chip{display:flex; align-items:center; gap:7px; font-family:'Fell',serif; font-size:.95rem; color:var(--ink);
+  background:linear-gradient(180deg,var(--paper-lit),var(--paper-dark)); padding:6px 12px; border-radius:22px;
+  border:1px solid var(--edge); box-shadow:inset 0 1px 1px rgba(255,252,240,.8), 0 3px 6px rgba(0,0,0,.22);}
+.score-seal{position:relative; width:24px; height:24px;}
+.score-seal img{width:24px; height:24px; position:relative; z-index:1;}
+.score-seal::before{content:""; position:absolute; inset:-7px; border-radius:50%;
+  background:radial-gradient(circle, rgba(240,191,98,.85), rgba(240,191,98,0) 68%); z-index:0; filter:blur(1px);}
+.hud .gear{cursor:pointer;}
+.hud .gear img{width:30px; height:30px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));}
+
+/* microscope plate */
+.plate-wrap{display:flex; justify-content:center; margin:2px 0 10px;}
+.plate{position:relative; width:min(58vw,220px); height:min(58vw,220px); border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.35), rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 50% 55%, #dfeee9 0%, #bcd6cf 55%, #91b3ab 100%);
+  /* circular brass rim built from concentric rings (border-image can't be round) */
+  box-shadow:
+    inset 0 0 40px rgba(28,83,79,.35),
+    inset 0 6px 14px rgba(255,255,255,.4),
+    0 0 0 3px #5c4520,
+    0 0 0 9px #d8bd76,
+    0 0 0 15px #9c7730,
+    0 0 0 18px #5c4520,
+    0 14px 30px rgba(0,0,0,.45);
+  transition:filter .3s; overflow:hidden;}
+.plate.correct{filter:drop-shadow(0 0 18px rgba(79,177,166,.9)) drop-shadow(0 0 6px rgba(79,177,166,.7));}
+.plate.wrong{filter:drop-shadow(0 0 18px rgba(204,82,54,.9)) drop-shadow(0 0 6px rgba(204,82,54,.7));}
+.plate .lens{position:absolute; inset:0; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, transparent 52%, rgba(20,45,42,.55) 100%);}
+.plate .specimen{position:absolute; inset:12%; display:flex; align-items:center; justify-content:center; z-index:1; animation:bob 4s ease-in-out infinite;}
+.plate .specimen svg{width:100%; height:100%; filter:drop-shadow(0 3px 5px rgba(20,50,46,.4));}
+.specimen-img{max-width:100%; max-height:100%; object-fit:contain;}
+/* feedback stamp */
+.stamp{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:3; opacity:0; pointer-events:none;}
+.stamp img{width:46%; height:46%;}
+.stamp.show{animation:stampIn .9s ease;}
+@keyframes stampIn{0%{opacity:0; transform:scale(1.7) rotate(-14deg);}18%{opacity:1; transform:scale(.92) rotate(-6deg);}30%{transform:scale(1) rotate(-6deg);}80%{opacity:1;}100%{opacity:0;}}
+
+/* clue */
+.clue{position:relative; font-size:1.08rem; line-height:1.5; color:var(--ink); text-align:left;
+  background:linear-gradient(180deg, rgba(255,250,235,.6), rgba(120,85,35,.08));
+  border-left:5px solid var(--teal); border-radius:6px; padding:13px 15px; margin:0 0 12px; min-height:56px;
+  box-shadow:inset 0 1px 1px rgba(255,252,240,.6), inset 0 -3px 8px rgba(95,66,32,.14);}
+.clue::before{content:"\201C"; font-family:'Fell',serif; position:absolute; top:-6px; left:6px; font-size:2.2rem; color:rgba(47,125,120,.35);}
+.keyword{color:var(--wax); font-weight:700; font-style:italic; border-bottom:2px dotted var(--amber);}
+
+.options{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.options.single{grid-template-columns:1fr 1fr;}
+.opt.correct-pick{background:radial-gradient(120% 130% at 35% 20%,var(--teal-lit),var(--teal) 55%,var(--teal-deep)); color:#f4ead0; border-color:#123c39; box-shadow:inset 0 1px 2px rgba(200,255,245,.4), 0 0 18px rgba(79,177,166,.5);}
+.opt.wrong-pick{background:radial-gradient(120% 130% at 35% 20%,var(--wax-lit),var(--wax) 55%,#6f1f10); color:#f6e6df; border-color:#5a1a0d; box-shadow:inset 0 1px 2px rgba(255,200,180,.4), 0 0 18px rgba(204,82,54,.5);}
+.opt.reveal{outline:2px solid var(--teal-lit); outline-offset:1px;}
+
+.explain{display:none; margin-top:13px; padding:12px 14px; border-radius:7px; text-align:left; font-size:1rem; color:var(--ink-soft);
+  background:repeating-linear-gradient(0deg, rgba(120,85,35,.04) 0 27px, rgba(120,85,35,.09) 27px 28px), var(--paper-lit);
+  border:1px solid var(--edge); box-shadow:inset 0 1px 1px rgba(255,252,240,.7);}
+.explain .lbl{font-family:'Hand',cursive; font-size:1.15rem; color:var(--teal-deep); display:block; margin-bottom:2px;}
+#next-btn{display:none; width:100%; margin-top:14px;}
+
+.progress-wrap{margin-top:14px; height:9px; border-radius:6px; background:rgba(56,35,15,.28); border:1px solid var(--edge-dark); overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,.4);}
+.progress-bar{height:100%; width:0; border-radius:6px; background:linear-gradient(90deg,var(--amber),var(--amber-lit)); box-shadow:0 0 10px var(--amber-lit); transition:width .4s ease;}
+
+/* ---- RESULT ---- */
+#result .journal{padding:24px 20px; text-align:center;}
+#result .medal{width:120px; height:120px; margin:0 auto 4px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));}
+#result h1{font-family:'Fell',serif; font-size:2rem; margin:4px 0 2px; color:var(--ink);}
+#result .rank{font-family:'Hand',cursive; font-size:1.8rem; color:var(--teal-deep); margin:2px 0;}
+#result .final{font-size:1.15rem; color:var(--ink-soft); margin:6px 0 2px;}
+#result .stars{font-size:1.6rem; letter-spacing:6px; margin:6px 0; height:34px;}
+.star{display:inline-block; width:30px; height:30px; vertical-align:middle;}
+#result .note{font-family:'Hand',cursive; font-size:1.2rem; color:var(--ink-faint); margin:6px 0 16px;}
+.result-actions{display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto;}
+.result-actions .menu-row{gap:10px;}
+
+/* ============================ MODALS ============================ */
+.modal{position:fixed; inset:0; z-index:40; display:none; align-items:center; justify-content:center; padding:16px;
+  background:rgba(20,12,4,.62); backdrop-filter:blur(2px);}
+.modal.active{display:flex; animation:fadeUp .3s ease;}
+.modal .sheet{width:100%; max-width:520px; max-height:88vh; overflow:auto; padding:22px 22px 20px; -webkit-overflow-scrolling:touch; touch-action:pan-y;}
+.modal h2{font-family:'Fell',serif; font-size:1.5rem; margin:0 0 4px; color:var(--ink); text-align:center;}
+.modal .sub{font-family:'Hand',cursive; font-size:1.2rem; color:var(--teal-deep); text-align:center; margin:0 0 12px;}
+.modal p{font-size:1.02rem; line-height:1.5; color:var(--ink-soft); margin:8px 0;}
+.modal .close{display:block; margin:16px auto 0; min-width:150px;}
+.howto-list{list-style:none; padding:0; margin:6px 0;}
+.howto-list li{display:flex; gap:11px; align-items:flex-start; margin:11px 0; font-size:1.02rem; line-height:1.4; color:var(--ink-soft);}
+.howto-list .num{flex:0 0 auto; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'Fell',serif; font-weight:700; color:#f4ead0; background:radial-gradient(circle at 35% 30%,var(--teal-lit),var(--teal-deep)); box-shadow:0 2px 5px rgba(0,0,0,.3);}
+
+/* learn more reference cards */
+.ref-card{text-align:left; border-radius:9px; padding:13px 15px; margin:11px 0;
+  background:linear-gradient(180deg,var(--paper-lit),var(--paper-dark)); border:1px solid var(--edge);
+  box-shadow:inset 0 1px 1px rgba(255,252,240,.7), 0 3px 8px rgba(0,0,0,.18);}
+.ref-card .rc-head{display:flex; align-items:center; gap:10px; margin-bottom:5px;}
+.ref-card .rc-emblem{width:40px; height:40px; flex:0 0 auto;}
+.ref-card h3{font-family:'Fell',serif; font-size:1.15rem; margin:0; color:var(--ink);}
+.ref-card p{margin:4px 0 0; font-size:.98rem; color:var(--ink-soft);}
+.ref-card .eg{font-family:'Hand',cursive; font-size:1.1rem; color:var(--teal-deep);}
+
+/* settings rows */
+.set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 4px; border-bottom:1px dashed rgba(90,62,30,.3);}
+.set-row .lbl{display:flex; align-items:center; gap:11px; font-size:1.1rem; color:var(--ink);}
+.set-row .lbl img{width:28px; height:28px;}
+.toggle{position:relative; width:64px; height:34px; border-radius:20px; cursor:pointer;
+  background:linear-gradient(180deg,#b89a63,#8a6d3a); border:1px solid var(--edge-dark);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.4); transition:background .2s;}
+.toggle.on{background:radial-gradient(120% 130% at 30% 20%,var(--teal-lit),var(--teal) 60%,var(--teal-deep));}
+.toggle .knob{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,var(--paper-lit),var(--paper-deep)); box-shadow:0 2px 4px rgba(0,0,0,.4); transition:left .2s ease;}
+.toggle.on .knob{left:33px;}
+
+/* ============================ RESPONSIVE ============================ */
+@media (max-width:430px){
+  #app{padding:9px;}
+  .panel{border-radius:10px;}
+  #menu .book-cover{padding:20px 15px;}
+  .clue{font-size:1rem;}
+  .options{gap:8px;}
+  .btn-tab{padding:12px 9px; font-size:.95rem;}
+  .levels{gap:8px;}
+  #result h1{font-size:1.65rem;}
+}
+@media (max-height:560px){
+  .plate{width:150px; height:150px;}
+  .crest{width:70px; height:70px;}
+}
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<!-- ambient drifting layer -->
+<div id="ambient" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<div id="app">
+
+  <!-- ============ MENU ============ -->
+  <section id="menu" class="screen">
+    <div class="panel book-cover">
+      <div class="corner-btns">
+        <div class="pin" id="menu-settings" role="button" aria-label="Settings"><img id="menu-gear-icon" src="assets/images/ui/emoji/gear.png" alt="Settings"></div>
+      </div>
+      <img class="crest" src="assets/images/ui/emoji/seal.png" alt="">
+      <h1 class="title-fell">Protist Detective</h1>
+      <div class="tag">A Field Journal of the Unseen</div>
+      <div class="rule"></div>
+
+      <div class="menu-actions">
+        <button class="btn-seal" id="start-full"><img class="icon" src="assets/images/ui/emoji/quill.png" alt="">Begin Investigation</button>
+        <div class="menu-row">
+          <button class="btn-tab" id="howto-btn"><img class="icon" src="assets/images/ui/emoji/quill.png" alt="">How to Play</button>
+          <button class="btn-tab" id="menu-settings-2"><img class="icon" src="assets/images/ui/emoji/gear.png" alt="">Settings</button>
+        </div>
+      </div>
+
+      <div class="levels-title">&mdash; Choose a Casebook &mdash;</div>
+      <div class="levels" id="levels"></div>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="game" class="screen">
+    <div class="panel journal">
+      <div class="hud">
+        <div class="chip" id="q-counter">SAMPLE 1 / 15</div>
+        <div class="chip"><span class="score-seal"><img src="assets/images/ui/emoji/seal.png" alt=""></span><span id="score">0</span></div>
+        <div class="chip gear" id="game-settings" role="button" aria-label="Settings"><img src="assets/images/ui/emoji/gear.png" alt="Settings"></div>
+      </div>
+
+      <div class="plate-wrap">
+        <div class="plate" id="plate">
+          <div class="specimen" id="specimen"></div>
+          <div class="lens"></div>
+          <div class="stamp" id="stamp"><img id="stamp-img" src="assets/images/ui/emoji/check.png" alt=""></div>
+        </div>
+      </div>
+
+      <div class="clue" id="clue">Initialising the lab&hellip;</div>
+      <div class="options" id="options"></div>
+      <div class="explain" id="explain"><span class="lbl">Field note</span><span id="explain-text"></span></div>
+      <button class="btn-seal" id="next-btn">Analyse Next Sample</button>
+
+      <div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="result" class="screen">
+    <div class="panel journal">
+      <img class="medal" id="result-medal" src="assets/images/ui/emoji/trophy.png" alt="">
+      <h1 class="title-fell">Investigation Complete</h1>
+      <div class="rank" id="result-rank">Lab Assistant</div>
+      <div class="stars" id="result-stars"></div>
+      <div class="final" id="result-final">Final tally: 0 / 150</div>
+      <div class="note" id="result-note">The specimens have been catalogued.</div>
+      <div class="result-actions">
+        <button class="btn-tab" id="learn-btn"><img class="icon" src="assets/images/ui/emoji/book.png" alt="">Learn More about Protista</button>
+        <div class="menu-row">
+          <button class="btn-seal" id="again-btn" style="flex:1;">Play Again</button>
+          <button class="btn-seal wax" id="tomenu-btn" style="flex:1;">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal" id="howto-modal">
+  <div class="panel sheet">
+    <h2 class="title-fell">How to Play</h2>
+    <div class="sub">Your objective, Detective</div>
+    <ol class="howto-list">
+      <li><span class="num">1</span><span>A specimen appears under the lens with a written <b>field clue</b> describing its traits.</span></li>
+      <li><span class="num">2</span><span>Read the clue, then <b>tap one of the answer tabs</b> to identify the organism or fact. Mouse, touch and stylus all work.</span></li>
+      <li><span class="num">3</span><span>A correct identification stamps the plate green and earns <b>10 points</b>. A wrong one reveals the right answer so you still learn it.</span></li>
+      <li><span class="num">4</span><span>Press <b>Analyse Next Sample</b> to move on. Work through the casebook to earn your rank and stars.</span></li>
+    </ol>
+    <p style="text-align:center;"><span class="hand" style="font-size:1.2rem; color:var(--ink-faint);">Tip: keywords in the clue are your strongest evidence.</span></p>
+    <button class="btn-seal close" data-close>Close the Manual</button>
+  </div>
+</div>
+
+<div class="modal" id="learn-modal">
+  <div class="panel sheet">
+    <h2 class="title-fell">The Kingdom Protista</h2>
+    <div class="sub">Reference plates &amp; lore</div>
+    <p style="text-align:center;">Protista is a diverse kingdom of mostly single-celled eukaryotes that bridge plants, animals and fungi. The specimens in your casebook fall into these great groups:</p>
+    <div id="ref-cards"></div>
+    <button class="btn-seal close" data-close>Close the Reference</button>
+  </div>
+</div>
+
+<div class="modal" id="settings-modal">
+  <div class="panel sheet">
+    <h2 class="title-fell">Settings</h2>
+    <div class="sub">The instrument panel</div>
+    <div class="set-row">
+      <span class="lbl"><img id="music-icon" src="assets/images/ui/emoji/music_on.png" alt="">Background Music</span>
+      <div class="toggle on" id="music-toggle" role="switch" aria-label="Background music"><span class="knob"></span></div>
+    </div>
+    <div class="set-row">
+      <span class="lbl"><img id="sfx-icon" src="assets/images/ui/emoji/sound_on.png" alt="">Sound Effects</span>
+      <div class="toggle on" id="sfx-toggle" role="switch" aria-label="Sound effects"><span class="knob"></span></div>
+    </div>
+    <p style="text-align:center; margin-top:14px;"><span class="hand" style="font-size:1.15rem; color:var(--ink-faint);">Music is generated live in your browser &mdash; no files required, fully offline.</span></p>
+    <button class="btn-seal close" data-close>Done</button>
+  </div>
+</div>
+
+<!-- ============ BOOT ============ -->
+<div id="boot">
+  <img class="book" src="assets/images/ui/emoji/book.png" alt="">
+  <h1 class="title-fell">Protist Detective</h1>
+  <div class="loadbar"><i id="boot-bar"></i></div>
+  <div class="sub" id="boot-msg">Opening the field journal&hellip;</div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   DATA  (content preserved from the original NCERT-based quiz)
+   ========================================================================= */
+const database = [
+  { cat:"chryso", art:"diatom",
+    clue:"My cell walls are embedded with <span class='keyword'>SILICA</span> and fit together like a soap box. I am indestructible.",
+    options:["Dinoflagellate","Chrysophyte","Slime Mould","Protozoan"], correct:1,
+    fact:"Correct! The accumulation of these walls over billions of years forms 'Diatomaceous Earth'." },
+  { cat:"chryso", art:"plankton",
+    clue:"We are the <span class='keyword'>CHIEF PRODUCERS</span> in the oceans and float passively in water currents.",
+    options:["Plankton (Chrysophytes)","Amoeba","Slime Moulds","Sporozoans"], correct:0,
+    fact:"Correct! Being 'plankton' means we drift with the current rather than swim actively." },
+  { cat:"chryso", art:"filter",
+    clue:"The gritty soil left behind by my cell walls is used for <span class='keyword'>FILTRATION</span> of oils and syrups.",
+    options:["Diatomaceous Earth","Red Tide toxin","Plasmodium spores","Pellicle"], correct:0,
+    fact:"Correct! The gritty nature of diatom cell walls makes them excellent for polishing and filtration." },
+
+  { cat:"dino", art:"dino",
+    clue:"I have two flagella: one lies longitudinally and the other <span class='keyword'>TRANSVERSELY</span> in a furrow between wall plates.",
+    options:["Euglenoids","Dinoflagellates","Chrysophytes","Ciliated Protozoans"], correct:1,
+    fact:"Correct! This unique flagella arrangement causes us to spin like a top." },
+  { cat:"dino", art:"armor",
+    clue:"I am mostly marine and photosynthetic. My cell wall has <span class='keyword'>STIFF CELLULOSE PLATES</span> on the outer surface.",
+    options:["Slime Mould","Amoeba","Dinoflagellate","Euglenoid"], correct:2,
+    fact:"Correct! Unlike Euglenoids (who are flexible), we have stiff armour plates." },
+  { cat:"dino", art:"redtide",
+    clue:"I am a red dinoflagellate (e.g., <span class='keyword'>GONYAULAX</span>). I multiply so fast I make the sea appear red.",
+    options:["Red Tide","Rust Disease","Red Algae","Red Mold"], correct:0,
+    fact:"Correct! These 'Red Tides' release toxins that can kill marine animals like fish." },
+
+  { cat:"eugleno", art:"euglena",
+    clue:"I have no cell wall. Instead, I have a protein-rich layer called a <span class='keyword'>PELLICLE</span> which makes my body flexible.",
+    options:["Diatom","Dinoflagellate","Euglenoid","Amoeba"], correct:2,
+    fact:"Correct! The pellicle allows us to expand and contract our bodies." },
+  { cat:"eugleno", art:"mixotroph",
+    clue:"I am a 'Mixotroph'. I am photosynthetic in sunlight, but I become a <span class='keyword'>HETEROTROPH (PREDATOR)</span> when deprived of sunlight.",
+    options:["Euglena","Paramoecium","Trypanosoma","Gonyaulax"], correct:0,
+    fact:"Correct! My pigments are identical to those present in higher plants." },
+
+  { cat:"slime", art:"slime",
+    clue:"I am a saprophyte. Under suitable conditions, I form an aggregation called <span class='keyword'>PLASMODIUM</span> which may spread over several feet.",
+    options:["Slime Mould","Malarial Parasite","Amoeba","Chrysophyte"], correct:0,
+    fact:"Correct! Do not confuse this 'Plasmodium' (the aggregation) with the malaria parasite Plasmodium!" },
+  { cat:"slime", art:"spores",
+    clue:"During unfavourable conditions, I form fruiting bodies bearing <span class='keyword'>SPORES</span>. These spores are dispersed by...",
+    options:["Water currents","Air currents","Insects","Active swimming"], correct:1,
+    fact:"Correct! The spores have true walls and are extremely resistant to harsh conditions." },
+
+  { cat:"protozoa", art:"amoeba",
+    clue:"I am an Amoeboid Protozoan. I capture prey using false feet called <span class='keyword'>PSEUDOPODIA</span>. Marine forms of me have silica shells.",
+    options:["Paramoecium","Entamoeba","Trypanosoma","Plasmodium"], correct:1,
+    fact:"Correct! Entamoeba is a parasitic example of this group." },
+  { cat:"protozoa", art:"tryp",
+    clue:"I am a Flagellated Protozoan. I am parasitic and cause diseases such as <span class='keyword'>SLEEPING SICKNESS</span>.",
+    options:["Trypanosoma","Paramoecium","Gonyaulax","Amoeba"], correct:0,
+    fact:"Correct! Trypanosoma is the flagellated parasite responsible for this disease." },
+  { cat:"protozoa", art:"param",
+    clue:"I am a Ciliated Protozoan (e.g., Paramoecium). I have a cavity called a <span class='keyword'>GULLET</span> that opens to the outside.",
+    options:["True","False"], correct:0,
+    fact:"Correct! The coordinated movement of thousands of cilia steers food into the gullet." },
+  { cat:"protozoa", art:"sporozoan",
+    clue:"I am a Sporozoan. I have an infectious spore-like stage. The most notorious member is <span class='keyword'>PLASMODIUM</span> (Malarial Parasite).",
+    options:["Sporozoan","Ciliated Protozoan","Slime Mould","Chrysophyte"], correct:0,
+    fact:"Correct! This causes malaria, which has a staggering effect on human population." },
+  { cat:"protozoa", art:"protozoan",
+    clue:"All Protozoans are...",
+    options:["Autotrophs","Heterotrophs (Predators/Parasites)","Producers","Saprophytes only"], correct:1,
+    fact:"Correct! Protozoans are believed to be primitive relatives of animals." }
+];
+
+const CATEGORIES = [
+  { id:"chryso",   name:"Chrysophytes",    sub:"Diatoms &amp; golden algae" },
+  { id:"dino",     name:"Dinoflagellates", sub:"Spinning armoured cells" },
+  { id:"eugleno",  name:"Euglenoids",      sub:"Flexible mixotrophs" },
+  { id:"slime",    name:"Slime Moulds",    sub:"Creeping saprophytes" },
+  { id:"protozoa", name:"Protozoans",      sub:"Predators &amp; parasites" }
+];
+
+const REFERENCE = [
+  { id:"chryso", name:"Chrysophytes", art:"diatom",
+    body:"Includes the diatoms and golden algae (desmids). Found in fresh water and marine, they are microscopic and float passively as plankton, forming the chief producers of the oceans. Diatom cell walls contain silica and are indestructible, leaving deposits called 'diatomaceous earth'.",
+    eg:"e.g. diatoms, desmids" },
+  { id:"dino", name:"Dinoflagellates", art:"dino",
+    body:"Mostly marine and photosynthetic, appearing yellow, green, brown, blue or red depending on their pigments. Stiff cellulose plates armour the cell surface, and two flagella (one longitudinal, one transverse) make them spin. Rapid growth of forms like Gonyaulax causes toxic red tides.",
+    eg:"e.g. Gonyaulax" },
+  { id:"eugleno", name:"Euglenoids", art:"euglena",
+    body:"Fresh-water organisms with no cell wall; instead a protein-rich pellicle keeps the body flexible. They have two flagella. Mixotrophic: photosynthetic in sunlight but predatory (heterotrophic) in the dark. Their pigments match those of higher plants.",
+    eg:"e.g. Euglena" },
+  { id:"slime", name:"Slime Moulds", art:"slime",
+    body:"Saprophytic protists. The body creeps along decaying matter and, under suitable conditions, forms an aggregation called a plasmodium that can spread over several feet. In hard times it forms fruiting bodies bearing highly resistant, wall-bound spores dispersed by air currents.",
+    eg:"aggregation = plasmodium" },
+  { id:"protozoa", name:"Protozoans", art:"amoeba",
+    body:"All protozoans are heterotrophs living as predators or parasites, thought to be primitive relatives of animals. Four groups: amoeboid (pseudopodia, e.g. Amoeba/Entamoeba), flagellated (e.g. Trypanosoma, sleeping sickness), ciliated (e.g. Paramoecium, with a gullet), and sporozoans (e.g. Plasmodium, malaria).",
+    eg:"e.g. Amoeba, Paramoecium, Plasmodium" }
+];
+
+/* =========================================================================
+   SPECIMEN VECTOR ART (ink-on-slide). Graceful PNG override handled below.
+   ========================================================================= */
+const IK="#2d3f36", IK2="#3f5a4c", TL="#2f7d78", TLD="#1c534f", RD="#9b3320", AM="#c98a2e", GLD="#caa24a";
+function svg(inner){ return `<svg viewBox='0 0 200 200'>${inner}</svg>`; }
+const SPECIMEN_ART = {
+  diatom: svg(`<g fill='none' stroke='${IK}' stroke-width='3'>
+    <ellipse cx='100' cy='100' rx='72' ry='40' fill='rgba(47,125,120,.22)'/>
+    <ellipse cx='100' cy='100' rx='72' ry='40'/><ellipse cx='100' cy='100' rx='60' ry='30' stroke-width='1.5'/>
+    ${Array.from({length:13},(_,i)=>{const x=40+i*10; const h=30*Math.sqrt(Math.max(0,1-Math.pow((x-100)/60,2)));return `<line x1='${x}' y1='${(100-h).toFixed(1)}' x2='${x}' y2='${(100+h).toFixed(1)}' stroke-width='1.3'/>`}).join('')}
+    <circle cx='100' cy='100' r='5' fill='${TLD}' stroke='none'/></g>`),
+  plankton: svg(`<g stroke='${IK}' stroke-width='2.6' fill='none'>
+    <path d='M14 120 q22 -14 44 0 t44 0 t44 0 t44 0' opacity='.5'/>
+    <path d='M14 150 q22 -14 44 0 t44 0 t44 0 t44 0' opacity='.35'/></g>
+    <g stroke='${IK}' stroke-width='3'>
+    <circle cx='72' cy='78' r='20' fill='rgba(202,162,74,.35)'/><circle cx='72' cy='78' r='20' fill='none'/>
+    <circle cx='124' cy='96' r='15' fill='rgba(47,125,120,.3)'/><circle cx='124' cy='96' r='15' fill='none'/>
+    <circle cx='96' cy='124' r='11' fill='rgba(202,162,74,.3)'/><circle cx='96' cy='124' r='11' fill='none'/>
+    <circle cx='72' cy='78' r='6' fill='${AM}' stroke='none'/><circle cx='124' cy='96' r='4' fill='${TLD}' stroke='none'/></g>`),
+  filter: svg(`<g stroke='${IK}' stroke-width='3' fill='none' stroke-linejoin='round'>
+    <path d='M52 46 L148 46 L112 108 L112 150 L88 162 L88 108 Z' fill='rgba(47,125,120,.18)'/>
+    <path d='M52 46 L148 46 L112 108 L112 150 L88 162 L88 108 Z'/></g>
+    <g fill='${AM}' stroke='none'>${Array.from({length:16},()=>{const x=68+Math.random()*64,y=60+Math.random()*30;return `<circle cx='${x.toFixed(0)}' cy='${y.toFixed(0)}' r='${(1.6+Math.random()*2).toFixed(1)}'/>`}).join('')}</g>`),
+  dino: svg(`<g stroke='${IK}' stroke-width='3'>
+    <path d='M100 40 C138 52 142 110 112 150 C104 160 96 160 88 150 C58 110 62 52 100 40 Z' fill='rgba(202,162,74,.28)'/>
+    <path d='M62 96 C90 108 110 108 138 96' fill='none' stroke-width='4'/>
+    <path d='M100 150 C102 168 108 178 122 186' fill='none' stroke-dasharray='2 5'/>
+    <path d='M62 96 C40 100 30 112 22 128' fill='none' stroke-dasharray='2 5'/>
+    <circle cx='96' cy='74' r='5' fill='${TLD}' stroke='none'/></g>`),
+  armor: svg(`<g stroke='${IK}' stroke-width='3' fill='rgba(47,125,120,.2)'>
+    <path d='M100 44 L150 74 L150 126 L100 156 L50 126 L50 74 Z'/></g>
+    <g stroke='${IK}' stroke-width='2' fill='none' opacity='.8'>
+    <path d='M100 44 L100 156 M50 74 L150 126 M150 74 L50 126 M50 100 L150 100'/></g>
+    <circle cx='100' cy='100' r='6' fill='${TLD}'/>`),
+  redtide: svg(`<g stroke='${IK}' stroke-width='2.4' fill='none'>
+    <path d='M12 132 q24 -16 48 0 t48 0 t48 0 t48 0' stroke='${RD}' opacity='.6'/>
+    <path d='M12 158 q24 -16 48 0 t48 0 t48 0 t48 0' stroke='${RD}' opacity='.4'/></g>
+    <g stroke='${RD}' stroke-width='2.6'>
+    ${Array.from({length:9},()=>{const x=45+Math.random()*110,y=45+Math.random()*55;return `<circle cx='${x.toFixed(0)}' cy='${y.toFixed(0)}' r='${(6+Math.random()*7).toFixed(0)}' fill='rgba(155,51,32,.4)'/>`}).join('')}</g>`),
+  euglena: svg(`<g stroke='${IK}' stroke-width='3'>
+    <path d='M92 34 C120 60 120 140 100 168 C80 140 80 60 92 34 Z' fill='rgba(47,125,120,.28)'/>
+    <path d='M96 34 C96 22 108 16 122 12' fill='none' stroke-width='2.6' stroke-dasharray='2 5'/>
+    <circle cx='97' cy='58' r='6' fill='${RD}' stroke='none'/>
+    <ellipse cx='96' cy='118' rx='9' ry='14' fill='rgba(202,162,74,.5)'/></g>`),
+  mixotroph: svg(`<g stroke='${AM}' stroke-width='3' stroke-linecap='round'>
+    ${Array.from({length:12},(_,i)=>{const a=i*30*Math.PI/180;return `<line x1='${(100+34*Math.cos(a)).toFixed(0)}' y1='${(100+34*Math.sin(a)).toFixed(0)}' x2='${(100+56*Math.cos(a)).toFixed(0)}' y2='${(100+56*Math.sin(a)).toFixed(0)}'/>`}).join('')}</g>
+    <circle cx='100' cy='100' r='30' fill='rgba(202,162,74,.4)' stroke='${IK}' stroke-width='3'/>
+    <path d='M100 70 A30 30 0 0 1 100 130 Z' fill='rgba(45,63,54,.55)'/>`),
+  slime: svg(`<g stroke='${IK}' stroke-width='3' fill='rgba(202,162,74,.3)'>
+    <path d='M40 96 C34 70 66 60 84 74 C96 56 132 58 138 82 C168 82 172 120 146 128 C154 152 122 168 104 152 C86 172 52 158 58 132 C30 132 26 104 40 96 Z'/></g>
+    <g stroke='${IK2}' stroke-width='2' fill='none' opacity='.8'>
+    <path d='M70 96 q18 6 34 -2 M96 118 q16 -8 30 2 M74 130 q14 8 26 0'/></g>`),
+  spores: svg(`<g stroke='${IK}' stroke-width='3'>
+    <line x1='100' y1='170' x2='100' y2='96' stroke-width='4'/>
+    <circle cx='100' cy='78' r='26' fill='rgba(47,125,120,.25)'/></g>
+    <g fill='${AM}' stroke='none'>
+    ${Array.from({length:10},()=>{const x=40+Math.random()*120,y=20+Math.random()*60;return `<circle cx='${x.toFixed(0)}' cy='${y.toFixed(0)}' r='${(2+Math.random()*3).toFixed(1)}'/>`}).join('')}</g>
+    <g stroke='${IK}' stroke-width='2' fill='none' opacity='.6'><path d='M100 78 q26 -30 56 -22 M100 78 q-26 -30 -56 -22'/></g>`),
+  amoeba: svg(`<g stroke='${IK}' stroke-width='3' fill='rgba(47,125,120,.22)'>
+    <path d='M70 60 C58 40 96 34 104 54 C130 40 156 66 140 88 C170 96 160 136 136 132 C140 160 104 170 96 148 C70 168 44 142 60 122 C34 118 40 80 66 84 C58 74 62 66 70 60 Z'/></g>
+    <circle cx='102' cy='104' r='13' fill='rgba(28,83,79,.55)' stroke='${IK}' stroke-width='2'/>
+    <circle cx='128' cy='78' r='6' fill='none' stroke='${IK}' stroke-width='2'/>`),
+  tryp: svg(`<g stroke='${IK}' stroke-width='3' fill='none'>
+    <path d='M40 150 C70 120 60 90 96 78 C124 68 132 44 156 40' stroke-width='5' stroke-linecap='round'/>
+    <path d='M40 150 C64 128 58 104 88 92 C118 80 126 60 150 52' stroke-width='2' opacity='.7'/></g>
+    <ellipse cx='90' cy='86' rx='11' ry='7' fill='rgba(155,51,32,.5)' stroke='${IK}' stroke-width='2' transform='rotate(-32 90 86)'/>
+    <circle cx='150' cy='40' r='4' fill='${TLD}' stroke='none'/>`),
+  param: svg(`<g stroke='${IK}' stroke-width='3'>
+    <path d='M56 78 C40 96 44 120 70 132 C110 150 150 140 152 112 C154 86 118 66 92 66 C78 66 64 70 56 78 Z' fill='rgba(47,125,120,.24)'/>
+    <path d='M96 96 L120 108' stroke-width='2.5'/><ellipse cx='104' cy='100' rx='9' ry='7' fill='rgba(28,83,79,.5)' stroke='none'/></g>
+    <g stroke='${IK}' stroke-width='1.6' stroke-linecap='round'>${Array.from({length:22},(_,i)=>{const t=i/21,x=56+96*t,y=78+ (Math.sin(t*Math.PI)*54)+40;return `<line x1='${x.toFixed(0)}' y1='${(y).toFixed(0)}' x2='${x.toFixed(0)}' y2='${(y+9).toFixed(0)}'/>`}).join('')}</g>`),
+  sporozoan: svg(`<g stroke='${IK}' stroke-width='3'>
+    <path d='M120 44 C150 74 150 126 120 156 C150 120 150 80 120 44 Z' fill='rgba(155,51,32,.35)'/>
+    <circle cx='110' cy='100' r='6' fill='${RD}' stroke='none'/></g>
+    <g fill='${RD}' stroke='none' opacity='.7'>${Array.from({length:6},()=>{const x=40+Math.random()*40,y=60+Math.random()*80;return `<circle cx='${x.toFixed(0)}' cy='${y.toFixed(0)}' r='${(3+Math.random()*3).toFixed(1)}'/>`}).join('')}</g>`),
+  protozoan: svg(`<g stroke='${IK}' stroke-width='3' fill='rgba(47,125,120,.22)'>
+    <circle cx='96' cy='100' r='52'/></g>
+    <path d='M96 100 m-52 0 a52 52 0 0 1 52 -52' fill='none' stroke='${TLD}' stroke-width='4'/>
+    <circle cx='118' cy='96' r='16' fill='rgba(155,51,32,.4)' stroke='${IK}' stroke-width='2.4'/>
+    <circle cx='80' cy='112' r='9' fill='rgba(28,83,79,.5)' stroke='none'/>`),
+  default: svg(`<circle cx='100' cy='100' r='54' fill='rgba(47,125,120,.25)' stroke='${IK}' stroke-width='3'/><circle cx='100' cy='100' r='10' fill='${TLD}'/>`)
+};
+
+/* =========================================================================
+   STATE + STORAGE
+   ========================================================================= */
+const LS_KEY="protistDetective.v1";
+let store = { music:true, sfx:true, best:{} };
+try{ const raw=localStorage.getItem(LS_KEY); if(raw) store=Object.assign(store, JSON.parse(raw)); }catch(e){}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){} }
+
+let deck=[], currentQ=0, score=0, currentMode="all";
+
+/* DOM refs */
+const $=id=>document.getElementById(id);
+const screens={menu:$("menu"),game:$("game"),result:$("result")};
+function show(name){ Object.values(screens).forEach(s=>s.classList.remove("active")); screens[name].classList.add("active"); }
+
+/* =========================================================================
+   AUDIO  (procedural ambient pad + SFX, with optional bgm.mp3 override)
+   ========================================================================= */
+const Audio_ = {
+  ctx:null, master:null, musicGain:null, sfxGain:null,
+  padNodes:[], lfo:null, started:false, htmlAudio:null, usingFile:false,
+  init(){
+    if(this.ctx) return;
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    this.ctx=new AC();
+    this.master=this.ctx.createGain(); this.master.gain.value=0.9; this.master.connect(this.ctx.destination);
+    this.musicGain=this.ctx.createGain(); this.musicGain.gain.value=store.music?0.5:0.0; this.musicGain.connect(this.master);
+    this.sfxGain=this.ctx.createGain(); this.sfxGain.gain.value=store.sfx?0.9:0.0; this.sfxGain.connect(this.master);
+  },
+  tryFile(){
+    // optional drop-in file overrides procedural music
+    const a=new Audio(); a.loop=true; a.preload="auto"; a.src="assets/audio/bgm.mp3";
+    a.addEventListener("canplaythrough",()=>{
+      if(this.usingFile) return; this.usingFile=true; this.htmlAudio=a;
+      this.stopPad();
+      a.volume=store.music?0.55:0.0;
+      if(this.started && store.music) a.play().catch(()=>{});
+    },{once:true});
+    a.addEventListener("error",()=>{ /* missing file: keep procedural */ });
+  },
+  startPad(){
+    if(this.usingFile||!this.ctx||this.padNodes.length) return;
+    const now=this.ctx.currentTime;
+    const filter=this.ctx.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=760; filter.Q.value=0.7; filter.connect(this.musicGain);
+    // slow filter sweep for movement
+    this.lfo=this.ctx.createOscillator(); const lfoG=this.ctx.createGain();
+    this.lfo.frequency.value=0.05; lfoG.gain.value=220; this.lfo.connect(lfoG); lfoG.connect(filter.frequency); this.lfo.start();
+    // gentle minor-ish pad chord (A2, E3, C4, G4) - calm, scholarly
+    const freqs=[110,164.81,261.63,392.0];
+    freqs.forEach((f,i)=>{
+      const o=this.ctx.createOscillator(); o.type=i<2?"triangle":"sine"; o.frequency.value=f;
+      const d=this.ctx.createOscillator(); d.type="sine"; d.frequency.value=f*1.006; // slight detune
+      const g=this.ctx.createGain(); g.gain.value=0.0; g.connect(filter);
+      o.connect(g); d.connect(g); o.start(); d.start();
+      g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.10-i*0.012, now+3+i);
+      // slow tremolo
+      const trem=this.ctx.createOscillator(); const tg=this.ctx.createGain();
+      trem.frequency.value=0.07+i*0.017; tg.gain.value=0.03; trem.connect(tg); tg.connect(g.gain); trem.start();
+      this.padNodes.push(o,d,trem);
+    });
+  },
+  stopPad(){ this.padNodes.forEach(n=>{try{n.stop();}catch(e){}}); this.padNodes=[]; if(this.lfo){try{this.lfo.stop();}catch(e){} this.lfo=null;} },
+  begin(){
+    this.init(); if(!this.ctx) return;
+    if(this.ctx.state==="suspended") this.ctx.resume();
+    this.started=true;
+    this.tryFile();
+    if(this.usingFile && this.htmlAudio){ if(store.music) this.htmlAudio.play().catch(()=>{}); }
+    else this.startPad();
+  },
+  setMusic(on){
+    store.music=on; save();
+    if(this.musicGain) this.musicGain.gain.setTargetAtTime(on?0.5:0.0, this.ctx.currentTime, 0.1);
+    if(this.htmlAudio){ this.htmlAudio.volume=on?0.55:0.0; if(on) this.htmlAudio.play().catch(()=>{}); else this.htmlAudio.pause(); }
+  },
+  setSfx(on){ store.sfx=on; save(); if(this.sfxGain) this.sfxGain.gain.value=on?0.9:0.0; },
+  blip(type){
+    this.init(); if(!this.ctx||!store.sfx) return;
+    const now=this.ctx.currentTime;
+    if(type==="correct"){ [523.25,659.25,783.99].forEach((f,i)=>this._tone(f,now+i*0.08,0.22,"triangle",0.16)); }
+    else if(type==="wrong"){ this._tone(196,now,0.28,"sawtooth",0.14); this._tone(146,now+0.03,0.3,"sawtooth",0.12); }
+    else if(type==="click"){ this._tone(440,now,0.06,"square",0.08); }
+    else if(type==="page"){ this._noise(now,0.16); }
+  },
+  _tone(f,t,dur,type,vol){ const o=this.ctx.createOscillator(),g=this.ctx.createGain(); o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+dur+0.02); },
+  _noise(t,dur){ const b=this.ctx.createBuffer(1,this.ctx.sampleRate*dur,this.ctx.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    const s=this.ctx.createBufferSource(); s.buffer=b; const f=this.ctx.createBiquadFilter(); f.type="highpass"; f.frequency.value=1200;
+    const g=this.ctx.createGain(); g.gain.value=0.5; s.connect(f); f.connect(g); g.connect(this.sfxGain); s.start(t); }
+};
+
+/* =========================================================================
+   GAME FLOW
+   ========================================================================= */
+function buildDeck(mode){
+  currentMode=mode;
+  deck = mode==="all" ? database.slice() : database.filter(q=>q.cat===mode);
+}
+function startGame(mode){
+  buildDeck(mode); currentQ=0; score=0;
+  $("score").textContent="0";
+  Audio_.begin();
+  show("game"); loadQuestion();
+}
+function setSpecimen(art){
+  const box=$("specimen");
+  box.innerHTML = SPECIMEN_ART[art] || SPECIMEN_ART.default; // vector fallback shown immediately
+  const img=new Image();
+  img.className="specimen-img"; img.alt="";
+  img.onload=()=>{ box.innerHTML=""; box.appendChild(img); };
+  img.onerror=()=>{}; // keep vector art
+  img.src="assets/images/characters/"+art+".png";
+}
+function loadQuestion(){
+  if(currentQ>=deck.length){ endGame(); return; }
+  const d=deck[currentQ];
+  $("q-counter").textContent="SAMPLE "+(currentQ+1)+" / "+deck.length;
+  $("progress").style.width=(currentQ/deck.length*100)+"%";
+  $("stamp").classList.remove("show");
+  $("next-btn").style.display="none";
+  $("explain").style.display="none";
+  $("plate").classList.remove("correct","wrong");
+  setSpecimen(d.art);
+  $("clue").innerHTML=d.clue;
+  const opts=$("options"); opts.innerHTML="";
+  d.options.forEach((opt,i)=>{
+    const b=document.createElement("button");
+    b.className="btn-tab opt"; b.textContent=opt;
+    b.addEventListener("pointerup",ev=>{ ev.preventDefault(); checkAnswer(i,d,b); },{passive:false});
+    opts.appendChild(b);
+  });
+}
+let answered=false;
+function checkAnswer(sel,d,btnEl){
+  if(answered) return; answered=true;
+  const btns=$("options").querySelectorAll("button");
+  btns.forEach(b=>b.disabled=true);
+  const stamp=$("stamp"), stampImg=$("stamp-img");
+  if(sel===d.correct){
+    score+=10; $("score").textContent=score;
+    btnEl.classList.add("correct-pick");
+    $("plate").classList.add("correct");
+    stampImg.src="assets/images/ui/emoji/check.png";
+    Audio_.blip("correct");
+    burst(true);
+  } else {
+    btnEl.classList.add("wrong-pick");
+    btns[d.correct].classList.add("reveal");
+    $("plate").classList.add("wrong");
+    stampImg.src="assets/images/ui/emoji/cross.png";
+    Audio_.blip("wrong");
+    burst(false);
+  }
+  stamp.classList.remove("show"); void stamp.offsetWidth; stamp.classList.add("show");
+  $("explain-text").innerHTML=d.fact;
+  $("explain").style.display="block";
+  $("next-btn").style.display="flex";
+}
+function nextQuestion(){ answered=false; currentQ++; loadQuestion(); Audio_.blip("page"); }
+
+function rankFor(pct){
+  if(pct>=90) return "Chief Scientist";
+  if(pct>=70) return "Senior Microscopist";
+  if(pct>=50) return "Lab Assistant";
+  if(pct>=25) return "Junior Intern";
+  return "Fresh Recruit";
+}
+function endGame(){
+  $("progress").style.width="100%";
+  const max=deck.length*10, pct=max?Math.round(score/max*100):0;
+  // save best per mode
+  const prev=store.best[currentMode]||0;
+  if(pct>prev){ store.best[currentMode]=pct; save(); }
+  $("result-rank").textContent=rankFor(pct);
+  $("result-final").textContent="Final tally: "+score+" / "+max+"  ("+pct+"%)";
+  const stars=pct>=90?3:pct>=60?2:pct>=30?1:0;
+  const sc=$("result-stars"); sc.innerHTML="";
+  for(let i=0;i<3;i++){
+    const s=document.createElement("span"); s.className="star"; s.innerHTML=starSVG(i<stars); sc.appendChild(s);
+  }
+  const notes=["Every specimen leaves a story in the ink.","The unseen world grows clearer.","A fine day at the microscope.","The casebook thickens with discovery."];
+  $("result-note").textContent = pct>=90 ? "Masterful work, Chief. The lab is in good hands." : notes[Math.floor(Math.random()*notes.length)];
+  show("result");
+}
+function starSVG(filled){
+  const fill=filled?"var(--amber-lit)":"none", stroke=filled?"var(--gold-deep)":"rgba(90,62,30,.5)";
+  return `<svg viewBox='0 0 32 32' width='30' height='30'><path d='M16 3 l3.8 8.6 9.4 .8 -7.1 6.2 2.2 9.2 -8.3-5 -8.3 5 2.2-9.2 -7.1-6.2 9.4-.8z' fill='${fill}' stroke='${stroke}' stroke-width='1.6' stroke-linejoin='round'/></svg>`;
+}
+
+/* juicy particle burst on the plate */
+function burst(good){
+  const plate=$("plate"); const n=good?16:8;
+  for(let i=0;i<n;i++){
+    const p=document.createElement("span");
+    const ang=Math.random()*Math.PI*2, dist=40+Math.random()*70;
+    const dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist;
+    const size=good?(4+Math.random()*6):(3+Math.random()*4);
+    p.style.cssText=`position:absolute; left:50%; top:50%; width:${size}px; height:${size}px; border-radius:50%; pointer-events:none; z-index:4;
+      background:radial-gradient(circle,${good?'#f0bf62':'#cc5236'},${good?'rgba(240,191,98,0)':'rgba(204,82,54,0)'});
+      transform:translate(-50%,-50%); transition:transform .8s cubic-bezier(.2,.7,.3,1), opacity .8s;`;
+    plate.appendChild(p);
+    requestAnimationFrame(()=>{ p.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.3)`; p.style.opacity="0"; });
+    setTimeout(()=>p.remove(),850);
+  }
+}
+
+/* =========================================================================
+   MENU / LEVELS / MODALS
+   ========================================================================= */
+function renderLevels(){
+  const wrap=$("levels"); wrap.innerHTML="";
+  // full lab card
+  const full=document.createElement("div");
+  full.className="level full"; full.setAttribute("role","button");
+  const bAll=store.best.all||0;
+  full.innerHTML=`<div class="lv-name">The Full Lab</div><div class="lv-sub">all 15 specimens</div>`+(bAll?`<span class="lv-best">Best ${bAll}%</span>`:"");
+  full.addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); startGame("all");});
+  wrap.appendChild(full);
+  CATEGORIES.forEach(c=>{
+    const el=document.createElement("div"); el.className="level"; el.setAttribute("role","button");
+    const b=store.best[c.id]||0;
+    el.innerHTML=`<div class="lv-name">${c.name}</div><div class="lv-sub">${c.sub}</div>`+(b?`<span class="lv-best">Best ${b}%</span>`:"");
+    el.addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); startGame(c.id);});
+    wrap.appendChild(el);
+  });
+}
+function renderReference(){
+  const wrap=$("ref-cards"); if(wrap.dataset.done) return; wrap.dataset.done="1";
+  REFERENCE.forEach(r=>{
+    const c=document.createElement("div"); c.className="ref-card";
+    c.innerHTML=`<div class="rc-head"><span class="rc-emblem">${SPECIMEN_ART[r.art]}</span><h3>${r.name}</h3></div>
+      <p>${r.body}</p><p class="eg">${r.eg}</p>`;
+    wrap.appendChild(c);
+  });
+}
+function openModal(id){ renderReferenceIfNeeded(id); $(id).classList.add("active"); }
+function closeModal(el){ el.classList.remove("active"); }
+function renderReferenceIfNeeded(id){ if(id==="learn-modal") renderReference(); }
+
+/* settings toggles reflect store */
+function syncToggles(){
+  const m=$("music-toggle"), s=$("sfx-toggle");
+  m.classList.toggle("on",store.music); s.classList.toggle("on",store.sfx);
+  $("music-icon").src="assets/images/ui/emoji/"+(store.music?"music_on.png":"music_off.png");
+  $("sfx-icon").src="assets/images/ui/emoji/"+(store.sfx?"sound_on.png":"sound_off.png");
+  $("menu-gear-icon").src="assets/images/ui/emoji/gear.png";
+}
+
+/* =========================================================================
+   WIRING
+   ========================================================================= */
+function wire(){
+  $("start-full").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); startGame("all");});
+  $("howto-btn").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.begin(); Audio_.blip("click"); openModal("howto-modal");});
+  $("menu-settings").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.begin(); Audio_.blip("click"); openModal("settings-modal");});
+  $("menu-settings-2").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.begin(); Audio_.blip("click"); openModal("settings-modal");});
+  $("game-settings").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); openModal("settings-modal");});
+  $("next-btn").addEventListener("pointerup",e=>{e.preventDefault(); nextQuestion();});
+  $("learn-btn").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); openModal("learn-modal");});
+  $("again-btn").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); startGame(currentMode);});
+  $("tomenu-btn").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); renderLevels(); show("menu");});
+
+  document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("pointerup",e=>{e.preventDefault(); Audio_.blip("click"); closeModal(b.closest(".modal"));}));
+  document.querySelectorAll(".modal").forEach(m=>m.addEventListener("pointerup",e=>{ if(e.target===m) closeModal(m); }));
+
+  $("music-toggle").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.begin(); Audio_.setMusic(!store.music); syncToggles(); Audio_.blip("click");});
+  $("sfx-toggle").addEventListener("pointerup",e=>{e.preventDefault(); Audio_.setSfx(!store.sfx); syncToggles(); Audio_.blip("click");});
+
+  syncToggles();
+  renderLevels();
+}
+
+/* =========================================================================
+   AMBIENT SCENERY
+   ========================================================================= */
+function buildAmbient(){
+  const amb=$("ambient");
+  const arts=["dino","diatom","amoeba","param","euglena","slime"];
+  for(let i=0;i<6;i++){
+    const d=document.createElement("div"); d.className="drift";
+    const size=60+Math.random()*90; d.style.width=d.style.height=size+"px";
+    d.innerHTML=SPECIMEN_ART[arts[i%arts.length]];
+    const dur=(38+Math.random()*40).toFixed(0), delay=(-Math.random()*40).toFixed(0);
+    d.style.top=(Math.random()*80)+"vh";
+    d.style.animation=`${i%2?'drift2':'drift1'} ${dur}s linear ${delay}s infinite`;
+    amb.appendChild(d);
+  }
+  // dust motes
+  for(let i=0;i<22;i++){
+    const m=document.createElement("div"); m.className="mote";
+    m.style.left=(Math.random()*100)+"vw"; m.style.bottom=(-10-Math.random()*10)+"vh";
+    const dur=(9+Math.random()*14).toFixed(1);
+    m.style.animationDuration=dur+"s"; m.style.animationDelay=(-Math.random()*dur)+"s";
+    m.style.transform=`scale(${(0.5+Math.random()*1.3).toFixed(2)})`;
+    amb.appendChild(m);
+  }
+}
+
+/* =========================================================================
+   INPUT GUARDS (mobile): block zoom/scroll/context, keep taps working
+   ========================================================================= */
+function inputGuards(){
+  document.addEventListener("gesturestart",e=>e.preventDefault());
+  document.addEventListener("gesturechange",e=>e.preventDefault());
+  document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
+  document.addEventListener("contextmenu",e=>e.preventDefault());
+  document.addEventListener("touchmove",e=>{ if(!e.target.closest(".sheet")) e.preventDefault(); },{passive:false});
+  let lastTouch=0;
+  document.addEventListener("touchend",e=>{ const now=Date.now(); if(now-lastTouch<=300) e.preventDefault(); lastTouch=now; },{passive:false});
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+function boot(){
+  buildAmbient(); wire(); inputGuards();
+  show("menu");
+  const bar=$("boot-bar"), msg=$("boot-msg");
+  const msgs=["Opening the field journal...","Calibrating the microscope...","Inking the specimen plates...","Ready, Detective."];
+  let p=0, mi=0;
+  const t=setInterval(()=>{
+    p+=6+Math.random()*10; if(p>100)p=100; bar.style.width=p+"%";
+    const idx=Math.min(msgs.length-1,Math.floor(p/26)); if(idx!==mi){mi=idx; msg.textContent=msgs[idx];}
+    if(p>=100){ clearInterval(t); setTimeout(()=>{ $("boot").classList.add("hide"); setTimeout(()=>$("boot").remove(),650); },380); }
+  },140);
+}
+window.addEventListener("DOMContentLoaded",boot);
+</script>
+</body>
+</html>

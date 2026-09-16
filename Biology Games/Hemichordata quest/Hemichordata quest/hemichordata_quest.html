@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hemichordata Hideaway</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #0d1b2a 0%, #010409 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #4cc9f0;
+            text-shadow: 0 0 20px #4cc9f0;
+            margin-top: 20px;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            position: relative;
+            width: 90%;
+            max-width: 1000px;
+            height: 75vh;
+            margin-top: 20px;
+        }
+
+        /* Central Riddle UI */
+        .riddle-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55%;
+            background: rgba(20, 33, 61, 0.9);
+            border: 3px solid #7209b7;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(114, 9, 183, 0.5);
+            z-index: 10;
+        }
+
+        #riddle-text {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            color: #f8f9fa;
+        }
+
+        input {
+            width: 85%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #4cc9f0;
+            background: #000814;
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .check-btn { background: #7209b7; color: white; }
+        .hint-btn { background: #4cc9f0; color: #000; }
+        button:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+        #feedback { margin-top: 15px; font-weight: bold; height: 25px; }
+
+        /* Corner Organisms */
+        .organism {
+            position: absolute;
+            width: 180px;
+            text-align: center;
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .circle-bg {
+            width: 140px;
+            height: 140px;
+            background: #000;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 4px solid #4cc9f0;
+            margin: 0 auto 10px;
+            box-shadow: 0 0 15px #4cc9f055;
+        }
+
+        .organism span {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #4cc9f0;
+        }
+
+        #balano { top: 0; left: 0; }
+        #sacco { top: 0; right: 0; }
+        #gland { bottom: 0; left: 0; }
+        #gills { bottom: 0; right: 0; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Final Report Overlay */
+        #final-report {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 8, 20, 0.98);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .report-card {
+            background: #14213d;
+            border: 5px solid #7209b7;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 0 50px rgba(114, 9, 183, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ HEMICHORDATA HIDEAWAY ✨</h1>
+
+    <div class="container">
+        <div class="organism" id="balano">
+            <div class="circle-bg">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <path d="M30 50 Q50 20 70 50 T30 80" fill="#fca311" stroke="#fff" stroke-width="2"/>
+                    <circle cx="35" cy="45" r="5" fill="#e63946"/>
+                </svg>
+            </div>
+            <span>Balanoglossus<br>(Acorn Worm)</span>
+        </div>
+
+        <div class="organism" id="sacco">
+            <div class="circle-bg">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <path d="M20 40 C40 10 60 90 80 60" fill="none" stroke="#4361ee" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="25" cy="40" r="8" fill="#4895ef"/>
+                </svg>
+            </div>
+            <span>Saccoglossus</span>
+        </div>
+
+        <div class="organism" id="gland">
+            <div class="circle-bg">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <path d="M50 20 L80 50 L50 80 L20 50 Z" fill="#7209b7" opacity="0.7"/>
+                    <circle cx="50" cy="50" r="15" fill="#f72585"/>
+                </svg>
+            </div>
+            <span>Proboscis Gland<br>(Excretion)</span>
+        </div>
+
+        <div class="organism" id="gills">
+            <div class="circle-bg">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <line x1="30" y1="30" x2="70" y2="30" stroke="#4cc9f0" stroke-width="4"/>
+                    <line x1="30" y1="50" x2="70" y2="50" stroke="#4cc9f0" stroke-width="4"/>
+                    <line x1="30" y1="70" x2="70" y2="70" stroke="#4cc9f0" stroke-width="4"/>
+                </svg>
+            </div>
+            <span>Gill Slits<br>(Respiration)</span>
+        </div>
+
+        <div class="riddle-box">
+            <div id="riddle-text">Analyzing marine specimens...</div>
+            <input type="text" id="answer-input" placeholder="Type answer here" autocomplete="off">
+            <div class="btn-group">
+                <button class="check-btn" onclick="checkAnswer()">Check Answer</button>
+                <button class="hint-btn" onclick="showHint()">Hint</button>
+            </div>
+            <div id="feedback"></div>
+        </div>
+    </div>
+
+    <div id="final-report">
+        <div class="report-card">
+            <h2 style="font-size: 2.5rem; color: #4cc9f0;">FINAL REPORT</h2>
+            <p style="font-size: 1.2rem; line-height: 1.6;">
+                <b>Phylum:</b> Hemichordata<br>
+                <b>Status:</b> All riddles solved!<br><br>
+                You have mastered the anatomy of worm-like marine animals,<br>
+                from the <b>Stomochord</b> to the <b>Proboscis Gland</b>.
+            </p>
+            <button class="check-btn" style="margin-top: 20px; padding: 15px 40px;" onclick="location.reload()">START ANEW</button>
+        </div>
+    </div>
+
+    <script>
+        const riddles = [
+            {
+                q: "I have a rudimentary structure in my collar region similar to a notochord. What am I called?",
+                a: "stomochord",
+                hint: "It starts with 'stomo-'."
+            },
+            {
+                q: "My body is composed of three parts: an anterior proboscis, a collar, and what long third part?",
+                a: "trunk",
+                hint: "The largest part of the cylindrical body."
+            },
+            {
+                q: "I am the specialized gland used for excretion in Hemichordates. What is my name?",
+                a: "proboscis gland",
+                hint: "It is located in the anterior-most region."
+            },
+            {
+                q: "Hemichordates were earlier considered a sub-phylum of which group?",
+                a: "chordata",
+                hint: "They are now placed under non-chordata."
+            },
+            {
+                q: "Respiration in this phylum takes place through which organs?",
+                a: "gills",
+                hint: "Look at the bottom-right corner icon."
+            }
+        ];
+
+        let currentIdx = 0;
+
+        function updateRiddle() {
+            document.getElementById('riddle-text').innerText = riddles[currentIdx].q;
+            document.getElementById('answer-input').value = '';
+            document.getElementById('feedback').innerText = '';
+        }
+
+        function checkAnswer() {
+            const userAns = document.getElementById('answer-input').value.toLowerCase().trim();
+            if (userAns === riddles[currentIdx].a) {
+                document.getElementById('feedback').innerHTML = "<span style='color:#4cc9f0'>✔ Scientific Accuracy Confirmed!</span>";
+                currentIdx++;
+                setTimeout(() => {
+                    if (currentIdx < riddles.length) {
+                        updateRiddle();
+                    } else {
+                        document.getElementById('final-report').style.display = 'flex';
+                    }
+                }, 1200);
+            } else {
+                document.getElementById('feedback').innerHTML = "<span style='color:#f72585'>✘ Incorrect specimen data.</span>";
+            }
+        }
+
+        function showHint() {
+            document.getElementById('feedback').innerHTML = "💡 " + riddles[currentIdx].hint;
+        }
+
+        updateRiddle();
+        document.getElementById('answer-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+    </script>
+</body>
+</html>

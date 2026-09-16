@@ -1,0 +1,195 @@
+Here is the complete, self-contained HTML file for your leaf sorting game.
+
+To solve the issue of missing local image files, I have embedded high-quality, lightweight **SVG (Scalable Vector Graphics) code directly inside the JavaScript data array**. This means you do not need an external images folder at all—just copy this code, save it as an `.html` file, and the visual assets for each leaf will render beautifully and instantly in any browser.
+
+I also added a subtle modern touch to the visual design, ensuring the leaf cards dynamically adjust their scale and centering to cleanly display both the botanical illustrations and the common names.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaf Morphology Sort</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f0f7f0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0; 
+            padding: 20px;
+        }
+        #game-container { width: 800px; margin-top: 20px; text-align: center; }
+        .bins { display: flex; justify-content: space-around; margin-top: 40px; }
+        .bin { 
+            width: 320px; 
+            height: 160px; 
+            border: 3px dashed #4a7c44; 
+            border-radius: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #e8f5e9; 
+            font-weight: bold; 
+            font-size: 1.2rem;
+            color: #2e7d32; 
+            transition: all 0.2s ease; 
+        }
+        .bin.hover { background: #c8e6c9; border-style: solid; transform: scale(1.02); }
+        #leaf-source { height: 180px; display: flex; justify-content: center; align-items: center; margin-top: 20px; }
+        .leaf-card { 
+            width: 150px; 
+            height: 160px; 
+            background: #fff; 
+            border: 2px solid #2e7d32; 
+            border-radius: 12px; 
+            cursor: grab; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .leaf-card:active { cursor: grabbing; }
+        .leaf-svg-container {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .leaf-svg-container svg {
+            width: 100%;
+            height: 100%;
+        }
+        .feedback { margin-top: 25px; font-size: 1.3rem; font-weight: bold; height: 35px; }
+        .score-board { font-size: 1.2rem; color: #333; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Leaf Type Sorter</h1>
+        <p>Drag the leaf to the correct classification bin based on its morphology.</p>
+        
+        <div id="leaf-source">
+            </div>
+
+        <div class="bins">
+            <div class="bin" id="simple" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leave(event)">SIMPLE LEAF</div>
+            <div class="bin" id="compound" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leave(event)">COMPOUND LEAF</div>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+        <div class="score-board">Score: <span id="score">0</span> / <span id="total">0</span></div>
+    </div>
+
+    <script>
+        // Array containing embedded, distinct vector illustrations for each leaf type
+        const leafData = [
+            { 
+                name: "Mango", 
+                type: "simple",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,90 Q48,60 50,10 Q52,60 50,90 Z" fill="#2E7D32"/><path d="M50,15 C20,45 25,75 50,90 C75,75 80,45 50,15 Z" fill="#4CAF50" opacity="0.85"/><path d="M50,15 Q50,55 50,90" stroke="#1B5E20" stroke-width="2" fill="none"/></svg>`
+            },
+            { 
+                name: "Hibiscus", 
+                type: "simple",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,90 C15,70 15,35 50,15 C85,35 85,70 50,90 Z" fill="#388E3C"/><path d="M50,15 Q50,55 50,92" stroke="#1B5E20" stroke-width="2.5" fill="none"/><path d="M50,70 Q30,60 25,55 M50,55 Q32,45 28,40 M50,40 Q35,30 32,25 M50,70 Q70,60 75,55 M50,55 Q68,45 72,40 M50,40 Q65,30 68,25" stroke="#1B5E20" stroke-width="1.5" fill="none"/></svg>`
+            },
+            { 
+                name: "Peepal", 
+                type: "simple",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,90 C10,75 10,45 50,30 C90,45 90,75 50,90 Z" fill="#2E7D32"/><path d="M50,30 C50,25 48,15 50,5 C52,15 50,25 50,30 Z" fill="#2E7D32"/><path d="M50,5 C50,45 50,90" stroke="#1B5E20" stroke-width="2" fill="none"/><path d="M50,75 Q25,65 20,60 M50,60 Q25,50 22,45 M50,45 Q30,38 28,35 M50,75 Q75,65 80,60 M50,60 Q75,50 78,45 M50,45 Q70,38 72,35" stroke="#1B5E20" stroke-width="1.5" fill="none"/></svg>`
+            },
+            { 
+                name: "Neem", 
+                type: "compound",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,95 L50,10" stroke="#5D4037" stroke-width="3" fill="none"/><path d="M50,15 C40,10 40,2 50,0 C60,2 60,10 50,15 Z" fill="#4CAF50"/><g fill="#4CAF50"><path d="M50,30 C25,25 20,15 15,20 C25,30 40,32 50,32 Z"/><path d="M50,30 C75,25 80,15 85,20 C75,30 60,32 50,32 Z"/><path d="M50,50 C25,45 20,35 15,40 C25,50 40,52 50,52 Z"/><path d="M50,50 C75,45 80,35 85,40 C75,50 60,52 50,52 Z"/><path d="M50,70 C25,65 20,55 15,60 C25,70 40,72 50,72 Z"/><path d="M50,70 C75,65 80,55 85,60 C75,70 60,72 50,72 Z"/></g></svg>`
+            },
+            { 
+                name: "Rose", 
+                type: "compound",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,95 L50,15" stroke="#5D4037" stroke-width="2.5" fill="none"/><path d="M50,20 C42,10 42,0 50,0 C58,0 58,10 50,20 Z" fill="#2E7D32"/><g fill="#2E7D32"><path d="M50,40 C25,32 22,20 15,25 C25,40 40,42 50,42 Z"/><path d="M50,40 C75,32 78,20 85,25 C75,40 60,42 50,42 Z"/><path d="M50,65 C25,57 22,45 15,50 C25,65 40,67 50,67 Z"/><path d="M50,65 C75,57 78,45 85,50 C75,65 60,67 50,67 Z"/></g></svg>`
+            },
+            { 
+                name: "Silk Cotton", 
+                type: "compound",
+                svg: `<svg viewBox="0 0 100 100"><path d="M50,95 L50,50" stroke="#5D4037" stroke-width="3" fill="none"/><g fill="#388E3C" transform="translate(50,50)"><path d="M0,0 C-15,-30 -10,-55 0,-60 C10,-55 15,-30 0,0 Z" transform="rotate(0)"/><path d="M0,0 C-15,-30 -10,-55 0,-60 C10,-55 15,-30 0,0 Z" transform="rotate(55)"/><path d="M0,0 C-15,-30 -10,-55 0,-60 C10,-55 15,-30 0,0 Z" transform="rotate(-55)"/><path d="M0,0 C-15,-30 -10,-55 0,-60 C10,-55 15,-30 0,0 Z" transform="rotate(110)"/><path d="M0,0 C-15,-30 -10,-55 0,-60 C10,-55 15,-30 0,0 Z" transform="rotate(-110)"/></g><circle cx="50" cy="50" r="4" fill="#5D4037"/></svg>`
+            }
+        ];
+
+        let currentLeaf = null;
+        let score = 0;
+        let total = 0;
+
+        const source = document.getElementById('leaf-source');
+        const feedback = document.getElementById('feedback');
+        const scoreEl = document.getElementById('score');
+        const totalEl = document.getElementById('total');
+
+        function spawnLeaf() {
+            const randomIndex = Math.floor(Math.random() * leafData.length);
+            currentLeaf = leafData[randomIndex];
+            
+            source.innerHTML = `
+                <div class="leaf-card" id="active-leaf" draggable="true" ondragstart="drag(event)">
+                    <div class="leaf-svg-container">
+                        ${currentLeaf.svg}
+                    </div>
+                    <strong>${currentLeaf.name}</strong>
+                </div>
+            `;
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            // Ensure the hover target is the bin element itself
+            const bin = ev.target.closest('.bin');
+            if (bin) bin.classList.add('hover');
+        }
+
+        function leave(ev) {
+            const bin = ev.target.closest('.bin');
+            if (bin) bin.classList.remove('hover');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.closest('.leaf-card').id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const bin = ev.target.closest('.bin');
+            if (!bin) return;
+            
+            bin.classList.remove('hover');
+            const droppedId = bin.id;
+            total++;
+
+            if (droppedId === currentLeaf.type) {
+                score++;
+                feedback.innerText = "Correct! " + currentLeaf.name + " is a " + currentLeaf.type + " leaf.";
+                feedback.style.color = "green";
+            } else {
+                feedback.innerText = "Incorrect. " + currentLeaf.name + " is actually " + currentLeaf.type + ".";
+                feedback.style.color = "red";
+            }
+
+            scoreEl.innerText = score;
+            totalEl.innerText = total;
+            spawnLeaf();
+        }
+
+        // Initialize game
+        spawnLeaf();
+    </script>
+</body>
+</html>
+
+```

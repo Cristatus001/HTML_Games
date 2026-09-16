@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arthropoda HOTS Challenge -- A Naturalist's Field Journal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4a2c15">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= MENU / BOOT SCREEN ================= -->
+  <section id="screen-menu" class="screen">
+    <div class="bg-decor" id="menuDecor"></div>
+    <button id="btnSettingsMenu" class="top-corner-btn" aria-label="Settings">
+      <img src="assets/images/ui/emoji/gear.png" alt="">
+    </button>
+
+    <div class="journal-cover paper-texture" id="journalCover">
+      <div class="cover-ornament">
+        <img src="assets/images/ui/emoji/compass.png" alt="">
+      </div>
+      <h1 class="title-engraved">Arthropoda<span>HOTS Challenge</span></h1>
+      <p class="subtitle">~ A Naturalist's Field Journal ~</p>
+
+      <div class="menu-buttons">
+        <button id="btnBegin" class="btn btn-brass">Begin Expedition</button>
+        <button id="btnContinue" class="btn btn-brass" hidden>Continue Expedition</button>
+        <button id="btnHowTo" class="btn btn-parchment">How to Play</button>
+      </div>
+
+      <p id="bestScoreLine" class="best-score" hidden></p>
+    </div>
+  </section>
+
+  <!-- ================= HOW TO PLAY MODAL ================= -->
+  <div id="modal-howto" class="modal-overlay" hidden>
+    <div class="modal-panel paper-texture">
+      <button class="modal-close" data-close="modal-howto">&times;</button>
+      <h2>How to Play</h2>
+      <p><strong>Objective:</strong> Guide your specimen across the field notebook page and land it on the answer tag that correctly completes the question -- before the hourglass runs out.</p>
+      <div class="howto-controls">
+        <div class="control-chip">Desktop<br>Arrow keys / WASD</div>
+        <div class="control-chip">Touch<br>Drag to steer</div>
+        <div class="control-chip">Mouse<br>Click &amp; drag</div>
+      </div>
+      <p>Land on the <strong>correct</strong> tag to confirm your answer and move to the next entry. Landing on a wrong tag, or letting the sand run out, means you must retry that question.</p>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS MODAL ================= -->
+  <div id="modal-settings" class="modal-overlay" hidden>
+    <div class="modal-panel paper-texture">
+      <button class="modal-close" data-close="modal-settings">&times;</button>
+      <h2>Settings</h2>
+      <div class="settings-row">
+        <span>Background Music</span>
+        <button id="toggleMusic" class="toggle-btn" aria-label="Toggle music">
+          <img src="assets/images/ui/emoji/music_on.png" alt="">
+        </button>
+      </div>
+      <div class="settings-row">
+        <span>Sound Effects</span>
+        <button id="toggleSfx" class="toggle-btn" aria-label="Toggle sound effects">
+          <img src="assets/images/ui/emoji/speaker_on.png" alt="">
+        </button>
+      </div>
+      <div class="settings-row">
+        <span>Saved Progress</span>
+        <button id="btnResetProgress" class="btn btn-parchment" style="padding:8px 12px;font-size:14px;">Reset</button>
+      </div>
+      <p id="resetConfirmMsg" style="display:none;font-family:'Special Elite',monospace;font-size:12px;color:var(--wax-red-dark);">Progress reset.</p>
+    </div>
+  </div>
+
+  <!-- ================= GAMEPLAY SCREEN ================= -->
+  <section id="screen-game" class="screen" hidden>
+    <div id="gameBackdrop" class="paper-texture">
+      <img id="gameBackdropImg" src="assets/images/background/parchment_bg.jpg" alt="" hidden>
+    </div>
+    <div class="bg-decor" id="gameDecor"></div>
+
+    <div id="hud">
+      <div class="hud-panel hud-score">
+        <div class="hud-icon-wrap"><img src="assets/images/ui/emoji/jar.png" alt=""></div>
+        <span id="scoreValue">0</span>
+      </div>
+      <div class="hud-panel hud-timer">
+        <div class="timer-top">
+          <div class="hud-icon-wrap"><img src="assets/images/ui/emoji/hourglass.png" alt=""></div>
+          <span id="timerValue">30</span>
+        </div>
+        <div class="sand-bar"><div id="sandFill"></div></div>
+      </div>
+      <button id="btnSettingsGame" class="top-corner-btn" style="position:relative;top:0;" aria-label="Settings">
+        <img src="assets/images/ui/emoji/gear.png" alt="">
+      </button>
+    </div>
+
+    <div id="questionCard" class="paper-texture">
+      <img class="pin-icon" src="assets/images/ui/emoji/pin.png" alt="">
+      <div class="question-body">
+        <div class="question-illustration-frame" hidden>
+          <img id="questionIllustration" src="" alt="">
+        </div>
+        <p id="questionText"></p>
+      </div>
+    </div>
+
+    <div id="flightZone">
+      <div id="ambientLayer"></div>
+
+      <div id="tagsRow">
+        <div class="specimen-tag" data-idx="0">
+          <img class="tag-pin" src="assets/images/ui/emoji/pin.png" alt="">
+          <span class="tag-text"></span>
+        </div>
+        <div class="specimen-tag" data-idx="1">
+          <img class="tag-pin" src="assets/images/ui/emoji/pin.png" alt="">
+          <span class="tag-text"></span>
+        </div>
+        <div class="specimen-tag" data-idx="2">
+          <img class="tag-pin" src="assets/images/ui/emoji/pin.png" alt="">
+          <span class="tag-text"></span>
+        </div>
+      </div>
+
+      <div id="player">
+        <img id="playerImg" src="assets/images/characters/player.png" alt="" hidden>
+        <svg id="playerFallback" viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="beetleBody" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#6b4a28"/>
+              <stop offset="100%" stop-color="#2c1a0d"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="60" cy="40" rx="22" ry="17" fill="rgba(243,230,200,0.55)" stroke="#3b2412" stroke-width="1" transform="rotate(-18 60 40)"/>
+          <ellipse cx="58" cy="30" rx="20" ry="15" fill="rgba(243,230,200,0.5)" stroke="#3b2412" stroke-width="1" transform="rotate(18 58 30)"/>
+          <ellipse cx="58" cy="38" rx="30" ry="19" fill="url(#beetleBody)" stroke="#1c0f06" stroke-width="2"/>
+          <line x1="58" y1="20" x2="58" y2="56" stroke="#1c0f06" stroke-width="1.5" opacity="0.6"/>
+          <ellipse cx="30" cy="35" rx="14" ry="13" fill="url(#beetleBody)" stroke="#1c0f06" stroke-width="2"/>
+          <circle cx="18" cy="32" r="8" fill="#1c0f06"/>
+          <path d="M12 26 C4 18, -4 14, -10 8" stroke="#1c0f06" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M14 30 C6 24, -2 22, -10 20" stroke="#1c0f06" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M30 50 C26 58, 20 60, 12 62" stroke="#1c0f06" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M45 55 C42 62, 36 66, 28 68" stroke="#1c0f06" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M60 57 C58 64, 54 68, 48 70" stroke="#1c0f06" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="48" cy="30" rx="9" ry="5" fill="rgba(255,255,255,0.35)" transform="rotate(-20 48 30)"/>
+        </svg>
+      </div>
+
+      <div id="feedbackBanner"></div>
+    </div>
+
+    <button id="retryBtn" class="btn btn-wax" hidden>Retry Question</button>
+  </section>
+
+  <!-- ================= END / CERTIFICATE SCREEN ================= -->
+  <section id="screen-end" class="screen" hidden>
+    <div class="bg-decor" id="endDecor"></div>
+    <div class="certificate paper-texture">
+      <div class="trophy-glow">
+        <img src="assets/images/ui/emoji/trophy_gold.png" alt="">
+      </div>
+      <h2>Certificate of Completion</h2>
+      <p class="cert-sub">~ Arthropoda HOTS Challenge ~</p>
+      <div class="wax-seal">FIELD<br>VERIFIED</div>
+      <p id="finalScoreText"></p>
+      <div class="end-buttons">
+        <button id="btnPlayAgain" class="btn btn-brass">Play Again</button>
+        <button id="btnLearnMore" class="btn btn-parchment">Learn More</button>
+        <button id="btnMainMenu" class="btn btn-parchment">Main Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LEARN MORE MODAL ================= -->
+  <div id="modal-learnmore" class="modal-overlay" hidden>
+    <div class="modal-panel paper-texture" style="width:min(96vw, 920px);">
+      <button class="modal-close" data-close="modal-learnmore">&times;</button>
+      <h2>Field Notes &amp; Specimens</h2>
+      <p>Reference material collected during the expedition -- for curiosity, beyond the challenge itself.</p>
+      <div class="specimen-gallery" id="specimenGallery"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/game.js"></script>
+</body>
+</html>

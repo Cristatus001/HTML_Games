@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:/Users/Admin/Downloads/Liverworts-20260811T113442Z-1-001/Liverworts/\")",
+      "Bash(python -c ' *)",
+      "PowerShell($p=\"C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Admin-Desktop-HTML-Games-Biology-Games-Liverworts\\\\fc5c7f5c-22ce-43ff-8d43-b9b10e0d8f24\\\\scratchpad\\\\docx\\\\word\\\\document.xml\"; $d=Get-Content $p -Raw; $d=$d -replace '</w:p>',\"`n\"; $d=$d -replace '<[^>]+>',''; [System.Web.HttpUtility]::HtmlDecode\\($d\\))",
+      "Bash(npm -v)",
+      "Bash(python -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Bash(cp \"C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Biology-Games-Liverworts/fc5c7f5c-22ce-43ff-8d43-b9b10e0d8f24/scratchpad/fontdl/node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2\" worm_guardian/assets/fonts/press-start-2p-latin-400-normal.woff2)",
+      "Bash(cp \"C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Biology-Games-Liverworts/fc5c7f5c-22ce-43ff-8d43-b9b10e0d8f24/scratchpad/fontdl/node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff\" worm_guardian/assets/fonts/press-start-2p-latin-400-normal.woff)",
+      "Bash(python gen_icons.py \"C:/Users/Admin/Desktop/HTML Games/Biology Games/Liverworts/worm_guardian/assets/images/ui/emoji\")",
+      "Bash(node --check js/game.js)",
+      "Bash(node --check js/game.test.js)",
+      "Bash(python \"C:/Users/Admin/AppData/Local/Temp/claude/C--Users-Admin-Desktop-HTML-Games-Biology-Games-Liverworts/fc5c7f5c-22ce-43ff-8d43-b9b10e0d8f24/scratchpad/escape.py\" js/game.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

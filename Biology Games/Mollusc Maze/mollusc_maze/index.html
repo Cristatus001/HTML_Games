@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d0f2b">
+<title>Mollusc Maze — The Spiral of Nacre</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ AMBIENT BACKGROUND STACK ============ -->
+<div id="bg-image-layer" aria-hidden="true"></div>
+<div class="bg-nacre" aria-hidden="true"></div>
+<svg class="bg-spiral" viewBox="0 0 200 200" aria-hidden="true">
+  <path id="bg-spiral-path" fill="none" stroke="url(#bgSpiralGrad)" stroke-width="1.4" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bgSpiralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7fe6d8"/>
+      <stop offset="50%" stop-color="#b98cf0"/>
+      <stop offset="100%" stop-color="#ff7a9c"/>
+    </linearGradient>
+  </defs>
+</svg>
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="caustics" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ============ BOOT ============ -->
+<section id="screen-boot" class="screen active">
+  <div class="boot-inner">
+    <div class="logo-bloom">
+      <img class="boot-logo" src="assets/images/ui/emoji/icon_shell.png" alt="">
+    </div>
+    <h1 class="game-title">Mollusc Maze</h1>
+    <p class="title-rule"><span></span><em>The Spiral of Nacre</em><span></span></p>
+    <p class="game-subtitle">Follow the snail into the shell &mdash; four specimens of the second largest phylum await.</p>
+    <button id="btn-boot-start" class="btn btn-gold btn-lg" type="button">
+      <span>Enter the Spiral</span>
+    </button>
+    <p class="boot-hint">Tap to begin</p>
+  </div>
+</section>
+
+<!-- ============ MAIN MENU ============ -->
+<section id="screen-menu" class="screen">
+  <div class="panel nacre menu-panel">
+    <span class="panel-shine" aria-hidden="true"></span>
+    <img class="menu-logo" src="assets/images/ui/emoji/icon_shell.png" alt="">
+    <h1 class="panel-title">Mollusc Maze</h1>
+    <p class="panel-sub">The Spiral of Nacre</p>
+
+    <div id="best-run-card" class="ledger hidden">
+      <div class="ledger-row">
+        <img src="assets/images/ui/emoji/icon_trophy.png" alt="">
+        <span class="ledger-label">Best Descent</span>
+        <span id="best-run-value" class="ledger-value">--:--</span>
+      </div>
+      <div class="ledger-row">
+        <img src="assets/images/ui/emoji/icon_pearl.png" alt="">
+        <span class="ledger-label">Finest Haul</span>
+        <span id="best-pearls-value" class="ledger-value">0</span>
+      </div>
+      <div id="best-run-stars" class="stars"></div>
+    </div>
+
+    <div class="menu-buttons">
+      <button id="btn-play" class="btn btn-gold" type="button">
+        <img src="assets/images/ui/emoji/icon_play.png" alt="">
+        <span>Begin Descent</span>
+      </button>
+      <button id="btn-howtoplay" class="btn btn-nacre" type="button">
+        <img src="assets/images/ui/emoji/icon_help.png" alt="">
+        <span>How to Play</span>
+      </button>
+      <button id="btn-settings" class="btn btn-nacre" type="button">
+        <img src="assets/images/ui/emoji/icon_settings.png" alt="">
+        <span>Settings</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GAMEPLAY ============ -->
+<section id="screen-game" class="screen screen-game">
+  <header class="hud">
+    <button id="btn-hud-menu" class="icon-btn" type="button" title="Main Menu">
+      <img src="assets/images/ui/emoji/icon_home.png" alt="Menu">
+    </button>
+
+    <div class="hud-chip">
+      <span class="hud-chip-label">Chamber</span>
+      <span id="station-counter" class="hud-chip-value">1 / 4</span>
+    </div>
+
+    <div class="hud-chip pearl-chip" id="pearl-chip">
+      <img src="assets/images/ui/emoji/icon_pearl.png" alt="Pearls">
+      <span id="pearl-count" class="hud-chip-value">0</span>
+    </div>
+
+    <div class="hud-spacer"></div>
+
+    <button id="btn-hud-sfx" class="icon-btn" type="button" title="Toggle Sound Effects">
+      <img id="icon-sfx" src="assets/images/ui/emoji/icon_sound_on.png" alt="Sound">
+    </button>
+    <button id="btn-hud-music" class="icon-btn" type="button" title="Toggle Music">
+      <img id="icon-music" src="assets/images/ui/emoji/icon_music_on.png" alt="Music">
+    </button>
+  </header>
+
+  <div class="play-area">
+
+    <!-- ---- The spiral shell maze ---- -->
+    <div class="maze-wrap" id="maze-wrap">
+      <svg class="maze-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="trackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7fe6d8"/>
+            <stop offset="45%" stop-color="#b98cf0"/>
+            <stop offset="100%" stop-color="#f5c565"/>
+          </linearGradient>
+          <radialGradient id="coreGrad" cx="38%" cy="32%" r="70%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="55%" stop-color="#fdf6ee"/>
+            <stop offset="100%" stop-color="#e3cdbe"/>
+          </radialGradient>
+        </defs>
+        <!-- the corridor the snail crawls down -->
+        <path id="maze-track" fill="none" stroke="rgba(253,246,238,0.10)" stroke-width="8.5" stroke-linecap="round"/>
+        <!-- dotted centreline, so the route is unmistakable -->
+        <path id="maze-track-dash" fill="none" stroke="rgba(253,246,238,0.5)" stroke-width="1.1"
+              stroke-linecap="round" stroke-dasharray="0.4 2.6"/>
+        <!-- lit (travelled) portion -->
+        <path id="maze-track-lit" fill="none" stroke="url(#trackGrad)" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- the pearl at the heart of the shell -->
+        <g id="maze-core">
+          <circle id="core-halo" cx="50" cy="50" r="7" fill="#fdf6ee" opacity="0.18"/>
+          <circle id="core-pearl" cx="50" cy="50" r="3.6" fill="url(#coreGrad)" stroke="#f5c565" stroke-width="0.5"/>
+        </g>
+      </svg>
+
+      <!-- specimen chambers: real photographs, positioned onto the spiral by JS -->
+      <div class="chamber" data-chamber="0">
+        <div class="medallion">
+          <span class="medallion-ring" aria-hidden="true"></span>
+          <img class="medallion-photo" src="assets/images/characters/pila.png" alt="Pila, an apple snail" onerror="this.classList.add('img-missing')">
+          <svg class="medallion-fallback" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#b98cf0" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+            <path fill="#7fe6d8" d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
+          </svg>
+          <img class="medallion-seal" src="assets/images/ui/emoji/icon_correct.png" alt="" aria-hidden="true">
+        </div>
+        <span class="chamber-label">Pila</span>
+      </div>
+
+      <div class="chamber" data-chamber="1">
+        <div class="medallion">
+          <span class="medallion-ring" aria-hidden="true"></span>
+          <img class="medallion-photo" src="assets/images/characters/radula.png" alt="A snail's radula" onerror="this.classList.add('img-missing')">
+          <svg class="medallion-fallback" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#7fe6d8" stroke-width="2">
+            <path d="M4 10h16M4 14h16M7 8l1 10M12 8l1 10M17 8l1 10"/>
+          </svg>
+          <img class="medallion-seal" src="assets/images/ui/emoji/icon_correct.png" alt="" aria-hidden="true">
+        </div>
+        <span class="chamber-label">Radula</span>
+      </div>
+
+      <div class="chamber" data-chamber="2">
+        <div class="medallion">
+          <span class="medallion-ring" aria-hidden="true"></span>
+          <img class="medallion-photo" src="assets/images/characters/hump.png" alt="Cross-section of a snail's shell and visceral hump" onerror="this.classList.add('img-missing')">
+          <svg class="medallion-fallback" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#ff7a9c" d="M12 3C7 3 3 7 3 12h18c0-5-4-9-9-9z"/>
+            <rect fill="#f5c565" x="3" y="12" width="18" height="4" rx="2"/>
+          </svg>
+          <img class="medallion-seal" src="assets/images/ui/emoji/icon_correct.png" alt="" aria-hidden="true">
+        </div>
+        <span class="chamber-label">Visceral Hump</span>
+      </div>
+
+      <div class="chamber" data-chamber="3">
+        <div class="medallion">
+          <span class="medallion-ring" aria-hidden="true"></span>
+          <img class="medallion-photo" src="assets/images/characters/octopus.png" alt="A reef octopus" onerror="this.classList.add('img-missing')">
+          <svg class="medallion-fallback" viewBox="0 0 24 24" aria-hidden="true">
+            <circle fill="#ff7a9c" cx="12" cy="8" r="5"/>
+            <path fill="#b98cf0" d="M7 12c-2 1-3 3-3 5s2 3 4 3 4-1 4-3-2-4-5-5zM17 12c2 1 3 3 3 5s-2 3-4 3-4-1-4-3 2-4 5-5z"/>
+          </svg>
+          <img class="medallion-seal" src="assets/images/ui/emoji/icon_correct.png" alt="" aria-hidden="true">
+        </div>
+        <span class="chamber-label">Octopus</span>
+      </div>
+
+      <!-- the travelling snail -->
+      <img id="snail-token" src="assets/images/ui/emoji/icon_snail.png" alt="" aria-hidden="true">
+    </div>
+
+    <!-- ---- The riddle plate ---- -->
+    <div class="panel nacre riddle-panel" id="riddle-panel">
+      <span class="panel-shine" aria-hidden="true"></span>
+      <div class="plate-header">
+        <span class="plate-rule"></span>
+        <span class="plate-caption" id="plate-caption">Chamber I &middot; Pila</span>
+        <span class="plate-rule"></span>
+      </div>
+
+      <div class="riddle-slate">
+        <p id="riddle-text">Loading&hellip;</p>
+      </div>
+
+      <div class="answer-slot">
+        <input type="text" id="user-input" placeholder="inscribe your answer"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+
+      <div class="riddle-buttons">
+        <button class="btn btn-gold" id="btn-check" type="button">
+          <span>Inscribe</span>
+        </button>
+        <button class="btn btn-nacre" id="btn-hint" type="button">
+          <img src="assets/images/ui/emoji/icon_hint.png" alt="">
+          <span>Lure</span>
+        </button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ END SCREEN ============ -->
+<section id="screen-end" class="screen">
+  <div class="panel nacre end-panel">
+    <span class="panel-shine" aria-hidden="true"></span>
+    <div class="logo-bloom small">
+      <img class="end-trophy" src="assets/images/ui/emoji/icon_trophy.png" alt="">
+    </div>
+    <h1 class="panel-title">The Shell Opens</h1>
+    <p class="panel-sub">You reached the heart of the spiral.</p>
+
+    <div class="stars" id="end-stars"></div>
+
+    <div class="pearl-haul">
+      <img src="assets/images/ui/emoji/icon_pearl.png" alt="">
+      <span id="end-pearls">0</span>
+      <small>pearls gathered</small>
+    </div>
+
+    <div class="end-stats">
+      <div class="stat-box">
+        <span class="stat-label">Descent</span>
+        <span id="end-time" class="stat-value">0:00</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Lures</span>
+        <span id="end-hints" class="stat-value">0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Misreads</span>
+        <span id="end-misses" class="stat-value">0</span>
+      </div>
+    </div>
+
+    <p id="end-best-badge" class="best-badge hidden">A new finest descent!</p>
+
+    <div class="menu-buttons">
+      <button id="btn-learnmore" class="btn btn-nacre" type="button">
+        <img src="assets/images/ui/emoji/icon_book.png" alt="">
+        <span>Learn More</span>
+      </button>
+      <button id="btn-play-again" class="btn btn-gold" type="button">
+        <img src="assets/images/ui/emoji/icon_replay.png" alt="">
+        <span>Descend Again</span>
+      </button>
+      <button id="btn-end-menu" class="btn btn-nacre" type="button">
+        <img src="assets/images/ui/emoji/icon_home.png" alt="">
+        <span>Main Menu</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODAL: HOW TO PLAY ============ -->
+<div id="modal-howtoplay" class="modal-overlay">
+  <div class="panel nacre modal-panel">
+    <span class="panel-shine" aria-hidden="true"></span>
+    <button class="icon-btn modal-close" data-close="modal-howtoplay" type="button">
+      <img src="assets/images/ui/emoji/icon_close.png" alt="Close">
+    </button>
+    <h2 class="panel-title small">How to Play</h2>
+    <div class="modal-body">
+      <p>The snail descends a spiral shell with four chambers. A specimen waits in each one, and each poses a riddle about mollusc anatomy.</p>
+      <ul class="howto-list">
+        <li><strong>Read</strong> the riddle on the nacre plate.</li>
+        <li><strong>Type</strong> your answer and press <strong>Enter</strong>, or tap <strong>Inscribe</strong>.</li>
+        <li>Stuck? Tap <strong>Lure</strong> for a clue &mdash; but it costs you a pearl.</li>
+        <li>Answer correctly and the snail crawls deeper into the shell.</li>
+        <li>Clear all four chambers to reach the pearl at the heart.</li>
+      </ul>
+      <p class="howto-note"><strong>Pearls:</strong> 3 for a clean first answer, fewer if you use a lure or misread. Wrong guesses never end your run &mdash; try as often as you like.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: SETTINGS ============ -->
+<div id="modal-settings" class="modal-overlay">
+  <div class="panel nacre modal-panel">
+    <span class="panel-shine" aria-hidden="true"></span>
+    <button class="icon-btn modal-close" data-close="modal-settings" type="button">
+      <img src="assets/images/ui/emoji/icon_close.png" alt="Close">
+    </button>
+    <h2 class="panel-title small">Settings</h2>
+    <div class="modal-body">
+      <div class="setting-row">
+        <img src="assets/images/ui/emoji/icon_music_on.png" alt="">
+        <span>Background Music</span>
+        <button id="toggle-music" class="switch" type="button" role="switch" aria-checked="true"><span class="switch-knob"></span></button>
+      </div>
+      <div class="setting-row">
+        <img src="assets/images/ui/emoji/icon_sound_on.png" alt="">
+        <span>Sound Effects</span>
+        <button id="toggle-sfx" class="switch" type="button" role="switch" aria-checked="true"><span class="switch-knob"></span></button>
+      </div>
+      <button id="btn-reset-progress" class="btn btn-coral" type="button">Reset Saved Progress</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: LEARN MORE ============ -->
+<div id="modal-learnmore" class="modal-overlay">
+  <div class="panel nacre modal-panel modal-panel-wide">
+    <span class="panel-shine" aria-hidden="true"></span>
+    <button class="icon-btn modal-close" data-close="modal-learnmore" type="button">
+      <img src="assets/images/ui/emoji/icon_close.png" alt="Close">
+    </button>
+    <h2 class="panel-title small">Field Notes &mdash; Phylum Mollusca</h2>
+    <div class="modal-body">
+      <p>Mollusca is the <strong>second largest animal phylum</strong> after Arthropoda, with over 85,000 known species &mdash; snails, clams, octopuses, squid and more. However varied, most share one body plan: a head, a <strong>muscular foot</strong>, and a <strong>visceral hump</strong> wrapped in a mantle that secretes the shell.</p>
+      <div class="specimen-grid">
+        <figure class="specimen-card">
+          <img src="assets/images/reference/pila_snail.jpg" alt="Pila, a freshwater apple snail">
+          <figcaption><strong>The Foot</strong><span>A single muscular foot &mdash; seen here on <em>Pila</em> &mdash; ripples in waves to crawl, burrow or swim.</span></figcaption>
+        </figure>
+        <figure class="specimen-card">
+          <img src="assets/images/reference/radula_closeup.jpg" alt="Close-up of a snail's radula">
+          <figcaption><strong>The Radula</strong><span>A chitinous, file-like ribbon of teeth that rasps food away. Found in molluscs and nowhere else.</span></figcaption>
+        </figure>
+        <figure class="specimen-card">
+          <img src="assets/images/reference/visceral_hump.jpg" alt="Cross-section of a snail's visceral hump and shell">
+          <figcaption><strong>Hump, Mantle &amp; Shell</strong><span>The visceral hump holds the organs. The mantle around it secretes the <strong>calcareous</strong> shell and encloses the <strong>mantle cavity</strong>, where the gills sit.</span></figcaption>
+        </figure>
+        <figure class="specimen-card">
+          <img src="assets/images/reference/octopus.jpg" alt="A reef octopus">
+          <figcaption><strong>Class Cephalopoda</strong><span>Octopuses kept the mantle cavity and jet water through it to swim &mdash; but lost the shell entirely.</span></figcaption>
+        </figure>
+      </div>
+      <p class="nacre-note">The iridescence in this game is <strong>nacre</strong> &mdash; mother-of-pearl &mdash; built by the mantle in microscopic aragonite layers. A pearl is simply nacre laid down around an irritant. No other phylum makes it.</p>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm-audio" loop preload="none"></audio>
+
+<script src="js/particles.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

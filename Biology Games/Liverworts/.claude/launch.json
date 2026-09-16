@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "worm-guardian",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "worm_guardian"],
+      "port": 8123
+    }
+  ]
+}
