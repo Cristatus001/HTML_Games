@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#24150c">
+  <title>Pharaoh's Twin-Seal Tomb: Equality of Complex Numbers</title>
+  <link rel="icon" href="assets/images/ui/icons/logo.png">
+  <link rel="preload" href="assets/fonts/rakkas-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/outfit-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app" class="app">
+  <div class="bg-stack" aria-hidden="true">
+    <div class="bg" id="bg-a"></div>
+    <div class="bg" id="bg-b"></div>
+    <div class="bg-shade"></div>
+    <div class="torchlight"></div>
+    <div class="fog" id="fog"><i></i><i></i></div>
+  </div>
+  <canvas id="ambient" class="ambient" aria-hidden="true"></canvas>
+  <div id="rim" class="rim" aria-hidden="true"></div>
+
+  <!-- ===================== BOOT ===================== -->
+  <section id="scr-boot" class="screen screen-center">
+    <div class="hero">
+      <img class="hero-scarab" src="assets/images/sprites/scarab.png" alt="" onerror="this.hidden=true">
+      <div class="title-plate">
+        <p class="eyebrow">Equality of Complex Numbers</p>
+        <h1>Pharaoh's Twin-Seal Tomb</h1>
+        <p class="lede">Every door in this tomb is held by two seals: the Sun Seal of the real part and the Moon Seal of the imaginary part. A door opens only when <b>both</b> match.</p>
+        <div class="seal-pair" aria-hidden="true">
+          <img src="assets/images/sprites/seal-sun.png" alt=""><span class="eq-sign">=</span><img src="assets/images/sprites/seal-moon.png" alt="">
+        </div>
+        <button class="btn btn-gold btn-xl" id="btn-boot" type="button"><img src="assets/images/ui/icons/play.png" alt="">Enter the tomb</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MENU ===================== -->
+  <section id="scr-menu" class="screen screen-center" hidden>
+    <div class="papyrus menu-card">
+      <div class="menu-head">
+        <img src="assets/images/ui/icons/logo.png" alt="" class="menu-logo">
+        <div>
+          <p class="eyebrow ink">Complex Number Escape Room</p>
+          <h2>Twin-Seal Tomb</h2>
+        </div>
+      </div>
+      <div class="vault-row">
+        <div class="stat"><span class="coin-glow sm"><img src="assets/images/ui/icons/coin.png" alt=""></span><span><b class="num" id="menu-vault">0</b><small>Treasure vault</small></span></div>
+        <div class="stat"><img src="assets/images/ui/icons/star.png" alt="" class="stat-ic"><span><b class="num" id="menu-stars">0</b><small>of 15 stars</small></span></div>
+        <div class="stat"><img src="assets/images/ui/icons/lock.png" alt="" class="stat-ic"><span><b class="num" id="menu-rooms">0</b><small>of 5 rooms open</small></span></div>
+      </div>
+      <div class="menu-btns">
+        <button class="btn btn-gold btn-lg" id="btn-play" type="button"><img src="assets/images/ui/icons/play.png" alt=""><span id="btn-play-label">Begin the escape</span></button>
+        <button class="btn btn-stone" id="btn-map" type="button"><img src="assets/images/ui/icons/book.png" alt="">Choose a room</button>
+        <div class="btn-row">
+          <button class="btn btn-stone" id="btn-howto" type="button"><img src="assets/images/ui/icons/help.png" alt="">How to play</button>
+          <button class="btn btn-stone" id="btn-settings" type="button"><img src="assets/images/ui/icons/settings.png" alt="">Settings</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ROOM MAP ===================== -->
+  <section id="scr-map" class="screen screen-map" hidden>
+    <header class="map-head">
+      <button class="icon-btn" id="btn-map-back" type="button" aria-label="Back to menu"><img src="assets/images/ui/icons/back.png" alt=""></button>
+      <h2>The Five Chambers</h2>
+      <div class="chip coin-chip"><span class="coin-glow"><img src="assets/images/ui/icons/coin.png" alt=""></span><b class="num" id="map-vault">0</b></div>
+    </header>
+    <ol class="room-list" id="room-list"></ol>
+  </section>
+
+  <!-- ===================== PLAY ===================== -->
+  <section id="scr-play" class="screen play" hidden>
+    <header class="hud">
+      <button class="icon-btn" id="btn-pause" type="button" aria-label="Pause"><img src="assets/images/ui/icons/pause.png" alt=""></button>
+      <div class="chip room-chip">
+        <span class="chip-k">Room <b class="num" id="hud-room">1</b><span class="num">/5</span></span>
+        <span class="chip-v" id="hud-room-name">The Locked Corridor</span>
+      </div>
+      <div class="chip time-chip" id="time-chip">
+        <img src="assets/images/ui/icons/clock.png" alt="">
+        <b class="num" id="hud-time">0:30</b>
+        <span class="time-bar"><i id="hud-time-bar"></i></span>
+      </div>
+      <div class="chip coin-chip" id="coin-chip">
+        <span class="coin-glow"><img id="hud-coin" src="assets/images/ui/icons/coin.png" alt=""></span>
+        <b class="num" id="hud-coins">0</b>
+      </div>
+      <button class="icon-btn hint-btn" id="btn-hint" type="button" aria-label="Hint, costs 15 coins">
+        <img src="assets/images/ui/icons/hint.png" alt=""><span class="hint-k">Hint</span><small class="num">&minus;15</small>
+      </button>
+    </header>
+
+    <div class="plaque" id="plaque">
+      <span class="plaque-k">Inscription on the door</span>
+      <div class="eq m" id="eq"></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="tray tray-real" id="tray-real" data-drop="real" role="button" tabindex="0" aria-label="Sun Seal, real part">
+        <div class="tray-head">
+          <img class="tray-seal" src="assets/images/sprites/seal-sun.png" alt="">
+          <div><b>Sun Seal</b><small id="lbl-real">Real</small></div>
+        </div>
+        <div class="slots" id="slots-real"></div>
+      </div>
+
+      <div class="door-wrap">
+        <div class="door" id="door">
+          <img class="door-frame" src="assets/images/sprites/door-frame.png" alt="">
+          <div class="door-light"></div>
+          <div class="leaf leaf-l" id="leaf-l">
+            <img src="assets/images/sprites/door-leaf-left.png" alt="">
+            <div class="socket" id="socket-real" data-drop="real"><img class="socket-seal" src="assets/images/sprites/seal-sun.png" alt=""></div>
+          </div>
+          <div class="leaf leaf-r" id="leaf-r">
+            <img src="assets/images/sprites/door-leaf-right.png" alt="">
+            <div class="socket" id="socket-imag" data-drop="imag"><img class="socket-seal" src="assets/images/sprites/seal-moon.png" alt=""></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tray tray-imag" id="tray-imag" data-drop="imag" role="button" tabindex="0" aria-label="Moon Seal, imaginary part">
+        <div class="tray-head">
+          <img class="tray-seal" src="assets/images/sprites/seal-moon.png" alt="">
+          <div><b>Moon Seal</b><small id="lbl-imag">Imaginary</small></div>
+        </div>
+        <div class="slots" id="slots-imag"></div>
+      </div>
+    </div>
+
+    <div class="dock" id="dock">
+      <div class="bank" id="bank" aria-label="Terms to sort"></div>
+      <div class="solve papyrus" id="solve" hidden>
+        <div class="solve-eqs">
+          <p class="srow srow-real"><img src="assets/images/ui/icons/seal-sun.png" alt=""><span class="srow-k">Real part</span><b class="m" id="eq-real"></b></p>
+          <p class="srow srow-imag"><img src="assets/images/ui/icons/seal-moon.png" alt=""><span class="srow-k">Imaginary part</span><b class="m" id="eq-imag"></b></p>
+          <p class="step" id="solve-step" hidden></p>
+        </div>
+        <div class="solve-in">
+          <div class="inputs">
+            <label class="in-box" id="box-x"><var>x</var><span>=</span><input id="in-x" class="num" type="text" inputmode="none" autocomplete="off" spellcheck="false" maxlength="5" aria-label="x"></label>
+            <label class="in-box" id="box-y"><var>y</var><span>=</span><input id="in-y" class="num" type="text" inputmode="none" autocomplete="off" spellcheck="false" maxlength="5" aria-label="y"></label>
+          </div>
+          <div class="keypad" id="keypad" aria-label="Number pad"></div>
+        </div>
+        <button class="btn btn-gold btn-solve" id="btn-solve" type="button"><img src="assets/images/ui/icons/lock.png" alt=""><span id="solve-label">Unlock</span></button>
+      </div>
+    </div>
+
+    <div class="guide" id="guide">
+      <img class="guide-img" src="assets/images/sprites/scarab.png" alt="" onerror="this.hidden=true">
+      <p class="bubble" id="guide-text" aria-live="polite"></p>
+    </div>
+
+    <div class="banner" id="banner" aria-live="polite"><span class="banner-k" id="banner-k"></span><span class="banner-v" id="banner-v"></span></div>
+  </section>
+
+  <!-- ===================== FINAL ===================== -->
+  <section id="scr-final" class="screen screen-center" hidden>
+    <div class="final">
+      <img class="final-trophy" src="assets/images/ui/icons/trophy.png" alt="">
+      <div class="certificate">
+        <p class="eyebrow ink">Pharaoh's Twin-Seal Tomb</p>
+        <h2>Certificate of Escape</h2>
+        <p>You have mastered the Equality of Complex Numbers.</p>
+        <p>Real parts match. Imaginary parts match.</p>
+        <p class="free">You are free!</p>
+        <div class="final-stats">
+          <div class="stat"><span class="coin-glow sm"><img src="assets/images/ui/icons/coin.png" alt=""></span><span><b class="num" id="final-run">0</b><small>this escape</small></span></div>
+          <div class="stat"><img src="assets/images/ui/icons/star.png" alt="" class="stat-ic"><span><b class="num" id="final-stars">0</b><small>of 15 stars</small></span></div>
+          <div class="stat"><span class="coin-glow sm"><img src="assets/images/ui/icons/coin.png" alt=""></span><span><b class="num" id="final-vault">0</b><small>treasure vault</small></span></div>
+        </div>
+        <div class="btn-row wrap">
+          <button class="btn btn-gold" id="btn-final-again" type="button"><img src="assets/images/ui/icons/replay.png" alt="">Play again</button>
+          <button class="btn btn-stone" id="btn-final-learn" type="button"><img src="assets/images/ui/icons/book.png" alt="">Learn more</button>
+          <button class="btn btn-stone" id="btn-final-map" type="button"><img src="assets/images/ui/icons/home.png" alt="">Rooms</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MODALS ===================== -->
+  <div class="modal" id="modal-result" hidden role="dialog" aria-modal="true" aria-labelledby="res-title">
+    <div class="papyrus sheet">
+      <p class="eyebrow ink" id="res-room">Room 1</p>
+      <h2 id="res-title">Door opened!</h2>
+      <div class="stars" id="res-stars"></div>
+      <ul class="breakdown" id="res-breakdown"></ul>
+      <div class="res-total"><span class="coin-glow"><img src="assets/images/ui/icons/coin.png" alt=""></span><b class="num" id="res-total">0</b><span class="new-best" id="res-best" hidden>New best!</span></div>
+      <div class="mistakes" id="res-mistakes" hidden><h3>Mistakes to remember</h3><ul id="res-mistake-list"></ul></div>
+      <div class="btn-row wrap">
+        <button class="btn btn-gold" id="btn-res-next" type="button"><img src="assets/images/ui/icons/next.png" alt=""><span id="btn-res-next-label">Next room</span></button>
+        <button class="btn btn-stone" id="btn-res-replay" type="button"><img src="assets/images/ui/icons/replay.png" alt="">Replay</button>
+        <button class="btn btn-stone" id="btn-res-learn" type="button"><img src="assets/images/ui/icons/book.png" alt="">Learn more</button>
+        <button class="btn btn-stone" id="btn-res-map" type="button"><img src="assets/images/ui/icons/home.png" alt="">Rooms</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-fail" hidden role="alertdialog" aria-modal="true" aria-labelledby="fail-title">
+    <div class="papyrus sheet sheet-fail">
+      <img class="fail-ic" src="assets/images/ui/icons/cross.png" alt="">
+      <h2 id="fail-title">Incorrect solution</h2>
+      <p id="fail-why"></p>
+      <p class="fail-ans" id="fail-ans"></p>
+      <p class="fail-note">Retrying with a new inscription&hellip;</p>
+      <span class="retry-bar"><i id="retry-bar"></i></span>
+      <button class="btn btn-gold" id="btn-fail-retry" type="button"><img src="assets/images/ui/icons/replay.png" alt="">Try again now</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-pause" hidden role="dialog" aria-modal="true" aria-labelledby="pause-title">
+    <div class="papyrus sheet sheet-sm">
+      <h2 id="pause-title">Paused</h2>
+      <p class="muted">The hourglass is stopped.</p>
+      <div class="btn-col">
+        <button class="btn btn-gold" id="btn-resume" type="button"><img src="assets/images/ui/icons/play.png" alt="">Resume</button>
+        <button class="btn btn-stone" id="btn-restart" type="button"><img src="assets/images/ui/icons/replay.png" alt="">Restart room</button>
+        <button class="btn btn-stone" id="btn-pause-help" type="button"><img src="assets/images/ui/icons/help.png" alt="">How to play</button>
+        <button class="btn btn-stone" id="btn-pause-settings" type="button"><img src="assets/images/ui/icons/settings.png" alt="">Settings</button>
+        <button class="btn btn-stone" id="btn-quit" type="button"><img src="assets/images/ui/icons/home.png" alt="">Leave to rooms</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-settings" hidden role="dialog" aria-modal="true" aria-labelledby="set-title">
+    <div class="papyrus sheet sheet-sm">
+      <button class="icon-btn close-x" data-close type="button" aria-label="Close"><img src="assets/images/ui/icons/close.png" alt=""></button>
+      <h2 id="set-title">Settings</h2>
+      <button class="toggle" id="tg-music" type="button" aria-pressed="true"><img id="tg-music-ic" src="assets/images/ui/icons/music-on.png" alt=""><span>Music</span><b id="tg-music-v">On</b></button>
+      <button class="toggle" id="tg-sfx" type="button" aria-pressed="true"><img id="tg-sfx-ic" src="assets/images/ui/icons/sfx-on.png" alt=""><span>Sound effects</span><b id="tg-sfx-v">On</b></button>
+      <button class="btn btn-danger" id="btn-reset" type="button"><img src="assets/images/ui/icons/replay.png" alt=""><span id="btn-reset-label">Reset progress</span></button>
+      <p class="muted small">Reset clears scores, stars and opened rooms. Your sound settings are kept.</p>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-howto" hidden role="dialog" aria-modal="true" aria-labelledby="how-title">
+    <div class="papyrus sheet sheet-wide">
+      <button class="icon-btn close-x" data-close type="button" aria-label="Close"><img src="assets/images/ui/icons/close.png" alt=""></button>
+      <h2 id="how-title">How to Play</h2>
+      <div class="how-grid">
+        <section>
+          <h3><img src="assets/images/ui/icons/lock.png" alt="">The goal</h3>
+          <p>Escape five chambers. Each door shows an inscription such as <span class="m">3<var>x</var> + <var>i</var>7 = 15 + <var>i</var>7</span>. Two complex numbers are equal only when their <b>real parts</b> are equal <b>and</b> their <b>imaginary parts</b> are equal.</p>
+        </section>
+        <section>
+          <h3><img src="assets/images/ui/icons/seal-sun.png" alt=""><span class="num">1.</span> Sort the terms</h3>
+          <p>Drag each stone tablet onto the <b>Sun Seal</b> (real part: no <var>i</var>) or the <b>Moon Seal</b> (imaginary part: the number multiplied by <var>i</var>). You can also tap a tablet, then tap a seal. <span class="m"><var>i</var>7</span> means 7<var>i</var>: its imaginary part is 7.</p>
+        </section>
+        <section>
+          <h3><img src="assets/images/ui/icons/seal-moon.png" alt=""><span class="num">2.</span> Solve</h3>
+          <p>When both seals are set, solve the two equations for <var>x</var> (and <var>y</var>). Type whole numbers with the keyboard or the stone keypad; use <b>&minus;</b> for negatives. Press the button or Enter.</p>
+        </section>
+        <section>
+          <h3><img src="assets/images/ui/icons/clock.png" alt="">The hourglass</h3>
+          <p>Rooms last 30, 40, 50, 60 and 75 seconds. A wrong solution or an empty hourglass resets the room with a new inscription after 3 seconds.</p>
+        </section>
+        <section>
+          <h3><img src="assets/images/ui/icons/coin.png" alt="">Coins and stars</h3>
+          <p>Opening a door pays <b class="num">100</b> coins, plus <b class="num">4</b> per second left, minus <b class="num">15</b> per hint and <b class="num">10</b> per mistake (never below <b class="num">20</b>). A mistake is a tablet on the wrong seal, a wrong solution or a time-out. Stars: 3 with no mistakes, 2 with 1&ndash;2, 1 with 3 or more.</p>
+        </section>
+        <section>
+          <h3><img src="assets/images/ui/icons/hint.png" alt="">Hints and the free helper</h3>
+          <p>The Eye button shows a hint for <b class="num">15</b> coins: it places a tablet while sorting, or shows a working step while solving. When <b>half the time</b> has gone, the scarab helps for free: the next tablet and its seal pulse, or the first working step appears.</p>
+        </section>
+      </div>
+      <p class="keys muted small">Keys: Enter to solve, Esc or P to pause, digits and &minus; to type.</p>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-learn" hidden role="dialog" aria-modal="true" aria-labelledby="learn-title">
+    <div class="papyrus sheet sheet-wide">
+      <button class="icon-btn close-x" data-close type="button" aria-label="Close"><img src="assets/images/ui/icons/close.png" alt=""></button>
+      <h2 id="learn-title">Learn More: Equality of Complex Numbers</h2>
+      <div class="learn-grid">
+        <section>
+          <h3>The rule</h3>
+          <p class="rule m"><var>a</var> + <var>i</var><var>b</var> = <var>c</var> + <var>i</var><var>d</var> &nbsp;&hArr;&nbsp; <var>a</var> = <var>c</var> and <var>b</var> = <var>d</var></p>
+          <p>A complex number has two independent parts. The real axis and the imaginary axis never mix, so one equation between complex numbers is really <b>two</b> equations between real numbers. That is why one inscription can fix two unknowns, <var>x</var> and <var>y</var>.</p>
+          <p><span class="m"><var>i</var>7</span> and <span class="m">7<var>i</var></span> are the same number. In <span class="m"><var>i</var>(4<var>y</var> + 3)</span> the whole bracket is the imaginary part.</p>
+          <div class="axis" aria-hidden="true">
+            <span class="ax ax-r"><img src="assets/images/ui/icons/seal-sun.png" alt="">Real part</span>
+            <span class="ax-plus">+</span>
+            <span class="ax ax-i"><img src="assets/images/ui/icons/seal-moon.png" alt=""><var>i</var> &times; Imaginary part</span>
+          </div>
+        </section>
+        <section>
+          <h3 id="learn-ex-title">Worked example</h3>
+          <div id="learn-worked"></div>
+        </section>
+        <section>
+          <h3>How the rooms grow</h3>
+          <ul class="ladder">
+            <li><b>Room 1:</b> the imaginary parts already match; solve for <var>x</var>.</li>
+            <li><b>Rooms 2&ndash;3:</b> each part holds one unknown.</li>
+            <li><b>Room 4:</b> the real part gives <var>x</var>; substitute it into the imaginary part.</li>
+            <li><b>Room 5:</b> both parts hold <var>x</var> and <var>y</var>; solve the system by elimination.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="fly-layer" class="fly-layer" aria-hidden="true"></div>
+  <div id="drag-layer" class="drag-layer" aria-hidden="true"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/teach.js"></script>
+<script src="assets/js/storage.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/ambient.js"></script>
+<script src="assets/js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "twin-seal-tomb",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8742", "--directory", "equality_of_complex_numbers"],
+      "port": 8742
+    }
+  ]
+}

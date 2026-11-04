@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex Number Escape Room</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-green: #0aff00;
+            --neon-red: #ff003c;
+            --neon-gold: #ffd700;
+            --bg-dark: #050505;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- UI Elements --- */
+        #mute-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+        #mute-btn:hover { background: rgba(0, 243, 255, 0.2); }
+
+        #timer-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+
+        #timer-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+            margin-bottom: 5px;
+        }
+
+        #timer-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #555;
+        }
+
+        #timer-bar-fill {
+            height: 100%;
+            background: var(--neon-red);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        #narrator-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--neon-blue);
+            padding: 15px;
+            text-align: center;
+            font-size: 1rem;
+            color: var(--neon-blue);
+            z-index: 90;
+            border-radius: 5px;
+            min-height: 60px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            text-shadow: 0 0 2px var(--neon-blue);
+        }
+
+        /* --- Screens & Backgrounds --- */
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none; /* Toggled by JS */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-size: cover;
+            transition: opacity 0.5s;
+        }
+
+        .active-screen {
+            display: flex;
+            animation: fadeIn 1s;
+        }
+
+        /* 1. Title Screen */
+        #title-screen { background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%); }
+
+        /* 2. Room 1: Industrial Corridor */
+        #room1-screen {
+            background: repeating-linear-gradient(90deg, #0a0a0a, #0a0a0a 40px, #141414 40px, #141414 80px);
+            box-shadow: inset 0 0 100px #000;
+        }
+
+        /* 3. Room 2: The Chamber */
+        #room2-screen { background: radial-gradient(circle at 50% 50%, #2b1055 0%, #000000 90%); }
+
+        /* 4. Room 3: The Fog */
+        #room3-screen { background: linear-gradient(to bottom, #05181c, #0d2b33); }
+
+        /* 5. Room 4: Misty Gallery */
+        #room4-screen { background: linear-gradient(135deg, #1c232e 0%, #2f3b4d 100%); }
+
+        /* 6. Room 5: Master Lock */
+        #room5-screen {
+            background: radial-gradient(circle, #380000 10%, #1a0000 60%, #000000 100%);
+            border: 10px solid #111;
+        }
+
+        /* 7. Final Screen */
+        #final-screen {
+            background: linear-gradient(to bottom, #87CEEB 0%, #ffd700 100%);
+            color: #333;
+        }
+        
+        h1 { text-align: center; color: var(--neon-gold); text-shadow: 0 0 10px var(--neon-gold); margin-bottom: 2rem;}
+        h2 { text-shadow: 0 0 5px currentColor; margin-bottom: 15px; text-align: center;}
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: rgba(0,0,0,0.6);
+            color: var(--neon-green);
+            border: 2px solid var(--neon-green);
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--neon-green);
+            transition: transform 0.2s;
+            font-family: var(--font-main);
+            border-radius: 5px;
+        }
+        .start-btn:hover { transform: scale(1.1); background: rgba(10, 255, 0, 0.1); }
+
+        .door-visual { 
+            font-size: 16rem; /* Increased size by 4x */
+            margin-bottom: 20px; 
+            color: #555; 
+            text-shadow: 0 0 20px #fff; 
+            line-height: 1;
+        }
+
+        .puzzle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 95%;
+            max-width: 800px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+            border: 1px solid #333;
+        }
+
+        .equation-display { font-size: 1.5rem; margin-bottom: 20px; color: white; letter-spacing: 2px; text-align: center; }
+
+        .draggables-area {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            min-height: 50px;
+        }
+
+        .term-pill {
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border: 1px solid var(--neon-blue);
+            color: white;
+            cursor: grab;
+            border-radius: 20px;
+            font-weight: bold;
+            touch-action: none; 
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .drop-zones { display: flex; justify-content: space-around; width: 100%; gap: 10px; margin-bottom: 20px; }
+
+        .drop-zone {
+            width: 45%;
+            min-height: 120px;
+            border: 2px dashed #666;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            transition: border-color 0.3s, background 0.3s;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .drop-zone h3 { margin: 0 0 10px 0; font-size: 1rem; color: #aaa; }
+        .drop-zone.correct-glow { border: 2px solid var(--neon-green); box-shadow: 0 0 15px var(--neon-green); background: rgba(10,255,0,0.05); }
+
+        .solve-phase {
+            display: none; 
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+            border-top: 1px solid #444;
+            padding-top: 15px;
+        }
+
+        .solve-row { margin: 10px 0; font-size: 1.2rem; }
+
+        input[type="number"] {
+            background: #222;
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 5px;
+            width: 70px;
+            text-align: center;
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            border-radius: 4px;
+        }
+        
+        .check-btn {
+            margin-top: 10px;
+            padding: 10px 25px;
+            background: var(--neon-blue);
+            border: none;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: var(--font-main);
+            border-radius: 4px;
+            font-size: 1rem;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+        .check-btn:hover { background: white; }
+
+        .fog-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.4"/></svg>');
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 5;
+            animation: fogMove 20s linear infinite;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .overlay-msg { font-size: 2rem; margin-bottom: 20px; }
+        .success-text { color: var(--neon-green); text-shadow: 0 0 20px var(--neon-green); }
+        .fail-text { color: var(--neon-red); text-shadow: 0 0 20px var(--neon-red); }
+
+        .treasure { font-size: 5rem; margin: 20px; animation: bounce 2s infinite; }
+        .certificate {
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border: 8px double gold;
+            text-align: center;
+            color: black;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            max-width: 90%;
+            border-radius: 10px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fogMove { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes redFlash { 0%, 100% { background-color: transparent; } 50% { background-color: rgba(255,0,0,0.3); } }
+        .flash-red { animation: redFlash 0.5s 2; }
+
+        @media (max-width: 600px) {
+            .drop-zones { flex-direction: column; align-items: center; }
+            .drop-zone { width: 90%; }
+            .equation-display { font-size: 1.1rem; }
+            #narrator-box { font-size: 0.9rem; }
+            h1 { font-size: 1.8rem; }
+            /* Adjust door visual for mobile so it doesn't break layout completely, but still huge */
+            .door-visual { font-size: 10rem; } 
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Audio Control -->
+    <button id="mute-btn">Audio: ON 🔊</button>
+
+    <!-- Timer -->
+    <div id="timer-container">
+        <div id="timer-display">00:00</div>
+        <div id="timer-bar-bg"><div id="timer-bar-fill"></div></div>
+    </div>
+
+    <!-- Narrator -->
+    <div id="narrator-box">Welcome to the Complex Number Escape Room. To escape, match the real and imaginary parts. Solve all puzzles to unlock the final door.</div>
+
+    <!-- Overlay for Success/Fail -->
+    <div id="overlay">
+        <div class="overlay-msg" id="overlay-text"></div>
+    </div>
+
+    <!-- SCREENS -->
+
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen active-screen">
+        <div class="door-visual">🚪</div>
+        <h1>COMPLEX NUMBER<br>ESCAPE ROOM</h1>
+        <button class="start-btn" onclick="game.start()">ENTER THE CORRIDOR</button>
+    </div>
+
+    <!-- Room 1 -->
+    <div id="room1-screen" class="screen">
+        <h2 style="color:var(--neon-blue)">The Locked Corridor 🔒</h2>
+        <div class="puzzle-container">
+            <div class="equation-display" id="r1-eq"></div>
+            <div class="draggables-area" id="r1-bank"></div>
+            <div class="drop-zones">
+                <div class="drop-zone" id="r1-real-zone" data-type="real"><h3>REAL</h3></div>
+                <div class="drop-zone" id="r1-imag-zone" data-type="imag"><h3>IMAGINARY</h3></div>
+            </div>
+            <div class="solve-phase" id="r1-solve">
+                <div class="solve-row" id="r1-real-eq"></div>
+                <div class="solve-row" id="r1-imag-eq"></div>
+                <div>x = <input type="number" id="r1-input-x"></div>
+                <button class="check-btn" onclick="game.checkSolution()">UNLOCK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room 2 -->
+    <div id="room2-screen" class="screen">
+        <h2 style="color:#e0aaff">The Matching Chamber ⭕⭕</h2>
+        <div class="puzzle-container">
+            <div class="equation-display" id="r2-eq"></div>
+            <div class="draggables-area" id="r2-bank"></div>
+            <div class="drop-zones">
+                <div class="drop-zone" id="r2-real-zone" data-type="real"><h3>REAL RING</h3></div>
+                <div class="drop-zone" id="r2-imag-zone" data-type="imag"><h3>IMAGINARY RING</h3></div>
+            </div>
+            <div class="solve-phase" id="r2-solve">
+                <div class="solve-row" id="r2-real-eq"></div>
+                <div class="solve-row" id="r2-imag-eq"></div>
+                <div>x = <input type="number" id="r2-input-x"> y = <input type="number" id="r2-input-y"></div>
+                <button class="check-btn" onclick="game.checkSolution()">ALIGN RINGS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room 3 -->
+    <div id="room3-screen" class="screen">
+        <div class="fog-layer"></div>
+        <h2 style="color:var(--neon-green); z-index:10;">The Fog Chamber ⛆</h2>
+        <div class="puzzle-container" style="z-index:10;">
+            <div class="equation-display" id="r3-eq"></div>
+            <div class="draggables-area" id="r3-bank"></div>
+            <div class="drop-zones">
+                <div class="drop-zone" id="r3-real-zone" data-type="real"><h3>REAL</h3></div>
+                <div class="drop-zone" id="r3-imag-zone" data-type="imag"><h3>IMAGINARY</h3></div>
+            </div>
+            <div class="solve-phase" id="r3-solve">
+                <div class="solve-row" id="r3-real-eq"></div>
+                <div class="solve-row" id="r3-imag-eq"></div>
+                <div>x = <input type="number" id="r3-input-x"> y = <input type="number" id="r3-input-y"></div>
+                <button class="check-btn" onclick="game.checkSolution()">CLEAR FOG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room 4 -->
+    <div id="room4-screen" class="screen">
+        <h2 style="color:#a8c0ff">The Misty Gallery 🌫️</h2>
+        <div class="puzzle-container">
+            <div class="equation-display" id="r4-eq"></div>
+            <div class="draggables-area" id="r4-bank"></div>
+            <div class="drop-zones">
+                <div class="drop-zone" id="r4-real-zone" data-type="real"><h3>REAL</h3></div>
+                <div class="drop-zone" id="r4-imag-zone" data-type="imag"><h3>IMAGINARY</h3></div>
+            </div>
+            <div class="solve-phase" id="r4-solve">
+                <div class="solve-row" id="r4-real-eq"></div>
+                <div class="solve-row" id="r4-imag-eq"></div>
+                <div>x = <input type="number" id="r4-input-x"> y = <input type="number" id="r4-input-y"></div>
+                <button class="check-btn" onclick="game.checkSolution()">SOLVE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room 5 -->
+    <div id="room5-screen" class="screen">
+        <h2 style="color:var(--neon-gold)">The Master Lock 🔐</h2>
+        <div class="puzzle-container" style="border-color: var(--neon-gold);">
+            <div class="equation-display" id="r5-eq"></div>
+            <div class="draggables-area" id="r5-bank"></div>
+            <div class="drop-zones">
+                <div class="drop-zone" id="r5-real-zone" data-type="real"><h3>REAL</h3></div>
+                <div class="drop-zone" id="r5-imag-zone" data-type="imag"><h3>IMAGINARY</h3></div>
+            </div>
+            <div class="solve-phase" id="r5-solve">
+                <div class="solve-row" id="r5-real-eq"></div>
+                <div class="solve-row" id="r5-imag-eq"></div>
+                <div>x = <input type="number" id="r5-input-x"> y = <input type="number" id="r5-input-y"></div>
+                <button class="check-btn" onclick="game.checkSolution()" style="background:var(--neon-gold)">BREAK SEAL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Room -->
+    <div id="final-screen" class="screen">
+        <div class="treasure">🏆🏆🏆</div>
+        <div class="certificate">
+            <h2>CERTIFICATE OF ESCAPE</h2>
+            <p>You have mastered the Equality of Complex Numbers.</p>
+            <p>Real parts match. Imaginary parts match.</p>
+            <p><strong>YOU ARE FREE!</strong></p>
+            <button class="check-btn" onclick="location.reload()" style="background:gold; color:black; border:1px solid black;">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- QUESTION POOLS --- */
+        const questions = {
+            1: [
+                { display: "3x + i7 = 15 + i7", parts: [["3x","real"], ["15","real"], ["7","imag"], ["7","imag"]], eqReal: "3x = 15", eqImag: "7 = 7", ans: {x:5} },
+                { display: "5x + i3 = 25 + i3", parts: [["5x","real"], ["25","real"], ["3","imag"], ["3","imag"]], eqReal: "5x = 25", eqImag: "3 = 3", ans: {x:5} },
+                { display: "6x - 3 + i4 = 15 + i4", parts: [["6x-3","real"], ["15","real"], ["4","imag"], ["4","imag"]], eqReal: "6x - 3 = 15", eqImag: "4 = 4", ans: {x:3} },
+                { display: "7x + i9 = 28 + i9", parts: [["7x","real"], ["28","real"], ["9","imag"], ["9","imag"]], eqReal: "7x = 28", eqImag: "9 = 9", ans: {x:4} },
+                { display: "x + 7 + i5 = 13 + i5", parts: [["x+7","real"], ["13","real"], ["5","imag"], ["5","imag"]], eqReal: "x + 7 = 13", eqImag: "5 = 5", ans: {x:6} },
+                { display: "9x - 4 + i3 = 23 + i3", parts: [["9x-4","real"], ["23","real"], ["3","imag"], ["3","imag"]], eqReal: "9x - 4 = 23", eqImag: "3 = 3", ans: {x:3} },
+                { display: "2x + 1 + i4 = 9 + i4", parts: [["2x+1","real"], ["9","real"], ["4","imag"], ["4","imag"]], eqReal: "2x + 1 = 9", eqImag: "4 = 4", ans: {x:4} },
+                { display: "4x - 5 + i2 = 11 + i2", parts: [["4x-5","real"], ["11","real"], ["2","imag"], ["2","imag"]], eqReal: "4x - 5 = 11", eqImag: "2 = 2", ans: {x:4} },
+                { display: "x + 9 + i4 = 15 + i4", parts: [["x+9","real"], ["15","real"], ["4","imag"], ["4","imag"]], eqReal: "x + 9 = 15", eqImag: "4 = 4", ans: {x:6} },
+                { display: "3x + 4 + i7 = 25 + i7", parts: [["3x+4","real"], ["25","real"], ["7","imag"], ["7","imag"]], eqReal: "3x + 4 = 25", eqImag: "7 = 7", ans: {x:7} }
+            ],
+            2: [
+                { display: "2x + i(4y + 3) = 14 + i11", parts: [["2x","real"], ["14","real"], ["4y+3","imag"], ["11","imag"]], eqReal: "2x = 14", eqImag: "4y + 3 = 11", ans: {x:7, y:2} },
+                { display: "5x + i(y - 2) = 25 + i7", parts: [["5x","real"], ["25","real"], ["y-2","imag"], ["7","imag"]], eqReal: "5x = 25", eqImag: "y - 2 = 7", ans: {x:5, y:9} },
+                { display: "9x + i(3y + 5) = 27 + i17", parts: [["9x","real"], ["27","real"], ["3y+5","imag"], ["17","imag"]], eqReal: "9x = 27", eqImag: "3y + 5 = 17", ans: {x:3, y:4} },
+                { display: "x + i(y - 7) = 3 + i1", parts: [["x","real"], ["3","real"], ["y-7","imag"], ["1","imag"]], eqReal: "x = 3", eqImag: "y - 7 = 1", ans: {x:3, y:8} },
+                { display: "4x + i(6y - 2) = 12 + i22", parts: [["4x","real"], ["12","real"], ["6y-2","imag"], ["22","imag"]], eqReal: "4x = 12", eqImag: "6y - 2 = 22", ans: {x:3, y:4} },
+                { display: "3x + i(2y + 4) = 9 + i10", parts: [["3x","real"], ["9","real"], ["2y+4","imag"], ["10","imag"]], eqReal: "3x = 9", eqImag: "2y + 4 = 10", ans: {x:3, y:3} },
+                { display: "6x + i(y + 8) = 24 + i15", parts: [["6x","real"], ["24","real"], ["y+8","imag"], ["15","imag"]], eqReal: "6x = 24", eqImag: "y + 8 = 15", ans: {x:4, y:7} },
+                { display: "7x + i(4y - 3) = 28 + i13", parts: [["7x","real"], ["28","real"], ["4y-3","imag"], ["13","imag"]], eqReal: "7x = 28", eqImag: "4y - 3 = 13", ans: {x:4, y:4} },
+                { display: "2x + i(5y + 1) = 6 + i26", parts: [["2x","real"], ["6","real"], ["5y+1","imag"], ["26","imag"]], eqReal: "2x = 6", eqImag: "5y + 1 = 26", ans: {x:3, y:5} },
+                { display: "5x + i(3y - 4) = 15 + i11", parts: [["5x","real"], ["15","real"], ["3y-4","imag"], ["11","imag"]], eqReal: "5x = 15", eqImag: "3y - 4 = 11", ans: {x:3, y:5} }
+            ],
+            3: [
+                { display: "x + 4 + i(2y + 9) = 10 + i25", parts: [["x+4","real"], ["10","real"], ["2y+9","imag"], ["25","imag"]], eqReal: "x + 4 = 10", eqImag: "2y + 9 = 25", ans: {x:6, y:8} },
+                { display: "x - 5 + i(7y - 2) = 3 + i12", parts: [["x-5","real"], ["3","real"], ["7y-2","imag"], ["12","imag"]], eqReal: "x - 5 = 3", eqImag: "7y - 2 = 12", ans: {x:8, y:2} },
+                { display: "x + 6 + i(3y + 4) = 9 + i16", parts: [["x+6","real"], ["9","real"], ["3y+4","imag"], ["16","imag"]], eqReal: "x + 6 = 9", eqImag: "3y + 4 = 16", ans: {x:3, y:4} },
+                { display: "x - 7 + i(5y + 1) = 2 + i11", parts: [["x-7","real"], ["2","real"], ["5y+1","imag"], ["11","imag"]], eqReal: "x - 7 = 2", eqImag: "5y + 1 = 11", ans: {x:9, y:2} },
+                { display: "x + 1 + i(2y - 3) = 8 + i7", parts: [["x+1","real"], ["8","real"], ["2y-3","imag"], ["7","imag"]], eqReal: "x + 1 = 8", eqImag: "2y - 3 = 7", ans: {x:7, y:5} },
+                { display: "x - 10 + i(4y + 2) = 3 + i14", parts: [["x-10","real"], ["3","real"], ["4y+2","imag"], ["14","imag"]], eqReal: "x - 10 = 3", eqImag: "4y + 2 = 14", ans: {x:13, y:3} },
+                { display: "x + 18 + i(6y - 5) = 22 + i7", parts: [["x+18","real"], ["22","real"], ["6y-5","imag"], ["7","imag"]], eqReal: "x + 18 = 22", eqImag: "6y - 5 = 7", ans: {x:4, y:2} },
+                { display: "x - 2 + i(3y + 6) = 10 + i18", parts: [["x-2","real"], ["10","real"], ["3y+6","imag"], ["18","imag"]], eqReal: "x - 2 = 10", eqImag: "3y + 6 = 18", ans: {x:12, y:4} },
+                { display: "x + 9 + i(5y - 7) = 24 + i8", parts: [["x+9","real"], ["24","real"], ["5y-7","imag"], ["8","imag"]], eqReal: "x + 9 = 24", eqImag: "5y - 7 = 8", ans: {x:15, y:3} },
+                { display: "x - 4 + i(7y + 3) = 12 + i24", parts: [["x-4","real"], ["12","real"], ["7y+3","imag"], ["24","imag"]], eqReal: "x - 4 = 12", eqImag: "7y + 3 = 24", ans: {x:16, y:3} }
+            ],
+            4: [
+                { display: "5x + i(2x - y) = 15 + i4", parts: [["5x","real"], ["15","real"], ["2x-y","imag"], ["4","imag"]], eqReal: "5x = 15 (so x=3)", eqImag: "2x - y = 4", ans: {x:3, y:2} },
+                { display: "3x + i(4x - 2y) = 9 + i12", parts: [["3x","real"], ["9","real"], ["4x-2y","imag"], ["12","imag"]], eqReal: "3x = 9 (so x=3)", eqImag: "4x - 2y = 12", ans: {x:3, y:0} },
+                { display: "6x + i(3x + y) = 18 + i5", parts: [["6x","real"], ["18","real"], ["3x+y","imag"], ["5","imag"]], eqReal: "6x = 18 (so x=3)", eqImag: "3x + y = 5", ans: {x:3, y:-4} },
+                { display: "2x + i(5x - y) = 10 + i7", parts: [["2x","real"], ["10","real"], ["5x-y","imag"], ["7","imag"]], eqReal: "2x = 10 (so x=5)", eqImag: "5x - y = 7", ans: {x:5, y:18} },
+                { display: "7x + i(2x + 3y) = 21 + i9", parts: [["7x","real"], ["21","real"], ["2x+3y","imag"], ["9","imag"]], eqReal: "7x = 21 (so x=3)", eqImag: "2x + 3y = 9", ans: {x:3, y:1} },
+                { display: "4x + i(6x - 2y) = 16 + i20", parts: [["4x","real"], ["16","real"], ["6x-2y","imag"], ["20","imag"]], eqReal: "4x = 16 (so x=4)", eqImag: "6x - 2y = 20", ans: {x:4, y:2} },
+                { display: "5x + i(3x + y) = 20 + i11", parts: [["5x","real"], ["20","real"], ["3x+y","imag"], ["11","imag"]], eqReal: "5x = 20 (so x=4)", eqImag: "3x + y = 11", ans: {x:4, y:1} },
+                { display: "8x + i(4x - y) = 32 - i3", parts: [["8x","real"], ["32","real"], ["4x-y","imag"], ["-3","imag"]], eqReal: "8x = 32 (so x=4)", eqImag: "4x - y = -3", ans: {x:4, y:19} },
+                { display: "3x + i(2x + 4y) = 12 + i16", parts: [["3x","real"], ["12","real"], ["2x+4y","imag"], ["16","imag"]], eqReal: "3x = 12 (so x=4)", eqImag: "2x + 4y = 16", ans: {x:4, y:2} },
+                { display: "9x + i(5x - 3y) = 27 + i6", parts: [["9x","real"], ["27","real"], ["5x-3y","imag"], ["6","imag"]], eqReal: "9x = 27 (so x=3)", eqImag: "5x - 3y = 6", ans: {x:3, y:3} }
+            ],
+            5: [
+                { display: "(4x-2y+8) + i(3x+y-6) = 10 + i8", parts: [["4x-2y+8","real"], ["10","real"], ["3x+y-6","imag"], ["8","imag"]], eqReal: "4x-2y+8 = 10", eqImag: "3x+y-6 = 8", ans: {x:3, y:5} },
+                { display: "(6x-y+3) + i(2x+3y+10) = 18 + i5", parts: [["6x-y+3","real"], ["18","real"], ["2x+3y+10","imag"], ["5","imag"]], eqReal: "6x-y+3 = 18", eqImag: "2x+3y+10 = 5", ans: {x:2, y:-3} },
+                { display: "(3x-4y+8) + i(5x+y-2) = 10 + i9", parts: [["3x-4y+8","real"], ["10","real"], ["5x+y-2","imag"], ["9","imag"]], eqReal: "3x-4y+8 = 10", eqImag: "5x+y-2 = 9", ans: {x:2, y:1} },
+                { display: "(7x-2y+1) + i(4x+y-7) = 2 + i0", parts: [["7x-2y+1","real"], ["2","real"], ["4x+y-7","imag"], ["0","imag"]], eqReal: "7x-2y+1 = 2", eqImag: "4x+y-7 = 0", ans: {x:1, y:3} },
+                { display: "(5x+y-6) + i(3x-2y+4) = -3 + i11", parts: [["5x+y-6","real"], ["-3","real"], ["3x-2y+4","imag"], ["11","imag"]], eqReal: "5x+y-6 = -3", eqImag: "3x-2y+4 = 11", ans: {x:1, y:-2} },
+                { display: "(2x-3y+10) + i(6x+y-5) = 10 + i15", parts: [["2x-3y+10","real"], ["10","real"], ["6x+y-5","imag"], ["15","imag"]], eqReal: "2x-3y+10 = 10", eqImag: "6x+y-5 = 15", ans: {x:3, y:2} },
+                { display: "(8x-y-2) + i(3x+4y-8) = -13 + i1", parts: [["8x-y-2","real"], ["-13","real"], ["3x+4y-8","imag"], ["1","imag"]], eqReal: "8x-y-2 = -13", eqImag: "3x+4y-8 = 1", ans: {x:-1, y:3} },
+                { display: "(4x+5y-9) + i(2x-y+3) = 0 + i4", parts: [["4x+5y-9","real"], ["0","real"], ["2x-y+3","imag"], ["4","imag"]], eqReal: "4x+5y-9 = 0", eqImag: "2x-y+3 = 4", ans: {x:1, y:1} },
+                { display: "(3x-y+11) + i(7x+2y-10) = 22 + i33", parts: [["3x-y+11","real"], ["22","real"], ["7x+2y-10","imag"], ["33","imag"]], eqReal: "3x-y+11 = 22", eqImag: "7x+2y-10 = 33", ans: {x:5, y:4} },
+                { display: "(9x-3y+4) + i(5x+y-1) = -20 - i17", parts: [["9x-3y+4","real"], ["-20","real"], ["5x+y-1","imag"], ["-17","imag"]], eqReal: "9x-3y+4 = -20", eqImag: "5x+y-1 = -17", ans: {x:-3, y:-1} }
+            ]
+        };
+
+        const config = {
+            1: { time: 30, narrator: "Welcome to the Complex Number Escape Room." },
+            2: { time: 40, narrator: "The room expands. Separate the rings of reality and imagination." },
+            3: { time: 50, narrator: "The fog obscures your vision. Stay focused on the terms." },
+            4: { time: 60, narrator: "Time flows differently here. Substitution is key." },
+            5: { time: 75, narrator: "The Master Lock. Solve the system to escape." }
+        };
+
+        /* --- AUDIO SYSTEM V2 (With Ambient Loops) --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+        let isMuted = false;
+        let ambientNodes = [];
+
+        // Mute Toggle
+        document.getElementById('mute-btn').addEventListener('click', () => {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-btn');
+            if(isMuted) {
+                masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                btn.textContent = "Audio: OFF 🔈";
+            } else {
+                masterGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.1);
+                btn.textContent = "Audio: ON 🔊";
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+            }
+        });
+
+        // Helper: Play Tone
+        function playTone(freq, type, duration, vol=0.5) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(masterGain);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // SFX Functions
+        function sfxClick() { playTone(800, 'sine', 0.1, 0.3); }
+        function sfxCorrect() { 
+            playTone(600, 'sine', 0.1, 0.4); 
+            setTimeout(() => playTone(1200, 'sine', 0.3, 0.4), 100);
+        }
+        function sfxSiren() { 
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+        function sfxSuccess() {
+            let now = audioCtx.currentTime;
+            [440, 554, 659, 880].forEach((f, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = f;
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start(now + i*0.1);
+                gain.gain.setValueAtTime(0.5, now + i*0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i*0.1 + 1.5);
+                osc.stop(now + i*0.1 + 1.5);
+            });
+        }
+
+        // --- AMBIENT SOUND GENERATOR ---
+        function stopAmbience() {
+            ambientNodes.forEach(node => {
+                try { node.stop(); } catch(e){}
+                try { node.disconnect(); } catch(e){}
+            });
+            ambientNodes = [];
+        }
+
+        function playAmbience(level) {
+            stopAmbience();
+            // All rooms now use the Room 5 (Master Vault) deep bass sound
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = 40;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 100;
+            gain.gain.value = 0.06;
+            osc.connect(filter).connect(gain).connect(masterGain);
+            osc.start();
+            ambientNodes.push(osc, filter, gain);
+        }
+
+        /* --- GAME LOGIC --- */
+        const game = {
+            level: 0,
+            currQ: null,
+            timer: null,
+            timeLeft: 0,
+            initialTime: 0,
+            paused: false,
+            itemsToMatch: 0,
+            matchedCount: 0,
+            dragItem: null,
+
+            start: function() {
+                // Resume Audio Context on user gesture
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                this.loadLevel(1);
+            },
+
+            loadLevel: function(lvl) {
+                this.level = lvl;
+                this.paused = false;
+                
+                // UI Reset
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+                if (lvl > 5) {
+                    document.getElementById('final-screen').classList.add('active-screen');
+                    document.getElementById('timer-container').style.display = 'none';
+                    document.getElementById('narrator-box').textContent = "You escaped!";
+                    stopAmbience(); 
+                    sfxSuccess();
+                    return;
+                }
+
+                // Audio Ambience
+                playAmbience(lvl);
+
+                // Setup Room
+                document.getElementById(`room${lvl}-screen`).classList.add('active-screen');
+                document.getElementById('timer-container').style.display = 'block';
+                
+                // Pick Question
+                const pool = questions[lvl];
+                this.currQ = pool[Math.floor(Math.random() * pool.length)];
+                
+                // Setup Timer
+                this.initialTime = config[lvl].time;
+                this.timeLeft = this.initialTime;
+                this.updateTimerDisplay();
+                clearInterval(this.timer);
+                this.timer = setInterval(() => this.tick(), 1000);
+
+                // Narrator
+                document.getElementById('narrator-box').textContent = config[lvl].narrator;
+
+                // Render Puzzle
+                this.renderPuzzle();
+            },
+
+            renderPuzzle: function() {
+                const lvl = this.level;
+                const prefix = `r${lvl}`;
+                document.getElementById(`${prefix}-eq`).textContent = this.currQ.display;
+                document.getElementById(`${prefix}-solve`).style.display = 'none';
+                
+                const realZone = document.getElementById(`${prefix}-real-zone`);
+                const imagZone = document.getElementById(`${prefix}-imag-zone`);
+                Array.from(realZone.children).forEach(c => { if(c.tagName !== 'H3') c.remove() });
+                Array.from(imagZone.children).forEach(c => { if(c.tagName !== 'H3') c.remove() });
+                realZone.classList.remove('correct-glow');
+                imagZone.classList.remove('correct-glow');
+
+                const bank = document.getElementById(`${prefix}-bank`);
+                bank.innerHTML = '';
+                this.matchedCount = 0;
+                this.itemsToMatch = this.currQ.parts.length;
+
+                const shuffledParts = [...this.currQ.parts].sort(() => Math.random() - 0.5);
+                shuffledParts.forEach(p => {
+                    const el = document.createElement('div');
+                    el.className = 'term-pill';
+                    el.textContent = p[0];
+                    el.dataset.type = p[1];
+                    el.addEventListener('mousedown', (e) => this.dragStart(e, el));
+                    el.addEventListener('touchstart', (e) => this.dragStart(e, el), {passive: false});
+                    bank.appendChild(el);
+                });
+            },
+
+            tick: function() {
+                if (this.paused) return;
+                this.timeLeft--;
+                this.updateTimerDisplay();
+                if (this.timeLeft <= 0) {
+                    this.failLevel("TIME'S UP!");
+                }
+            },
+
+            updateTimerDisplay: function() {
+                const min = Math.floor(this.timeLeft / 60);
+                const sec = this.timeLeft % 60;
+                document.getElementById('timer-display').textContent = 
+                    `${min}:${sec < 10 ? '0'+sec : sec}`;
+                const pct = (this.timeLeft / this.initialTime) * 100;
+                document.getElementById('timer-bar-fill').style.width = `${pct}%`;
+            },
+
+            /* --- DRAG & DROP --- */
+            dragStart: function(e, el) {
+                if(this.paused) return;
+                e.preventDefault();
+                this.dragItem = el;
+                el.style.position = 'fixed';
+                el.style.zIndex = 1000;
+                el.style.opacity = '0.8';
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                this.moveElement(clientX, clientY);
+
+                const moveHandler = (ev) => {
+                    const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+                    const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                    this.moveElement(cx, cy);
+                };
+
+                const upHandler = (ev) => {
+                    document.removeEventListener('mousemove', moveHandler);
+                    document.removeEventListener('touchmove', moveHandler);
+                    document.removeEventListener('mouseup', upHandler);
+                    document.removeEventListener('touchend', upHandler);
+                    this.drop(ev);
+                };
+
+                document.addEventListener('mousemove', moveHandler);
+                document.addEventListener('touchmove', moveHandler, {passive: false});
+                document.addEventListener('mouseup', upHandler);
+                document.addEventListener('touchend', upHandler);
+            },
+
+            moveElement: function(x, y) {
+                if(this.dragItem) {
+                    this.dragItem.style.left = (x - this.dragItem.offsetWidth / 2) + 'px';
+                    this.dragItem.style.top = (y - this.dragItem.offsetHeight / 2) + 'px';
+                }
+            },
+
+            drop: function(e) {
+                if (!this.dragItem) return;
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                
+                this.dragItem.style.display = 'none';
+                let elemBelow = document.elementFromPoint(clientX, clientY);
+                this.dragItem.style.display = 'block';
+
+                const zone = elemBelow ? elemBelow.closest('.drop-zone') : null;
+
+                if (zone && zone.dataset.type === this.dragItem.dataset.type) {
+                    sfxClick();
+                    zone.appendChild(this.dragItem);
+                    this.dragItem.style.position = 'static';
+                    this.dragItem.style.opacity = '1';
+                    this.dragItem.style.zIndex = '1';
+                    const clone = this.dragItem.cloneNode(true);
+                    this.dragItem.remove();
+                    zone.appendChild(clone);
+                    clone.style.cursor = 'default';
+                    this.matchedCount++;
+                    if(this.matchedCount === this.itemsToMatch) this.phaseComplete();
+                } else {
+                    this.dragItem.style.position = 'static';
+                    this.dragItem.style.opacity = '1';
+                    this.dragItem.style.zIndex = '1';
+                    document.getElementById(`r${this.level}-bank`).appendChild(this.dragItem);
+                }
+                this.dragItem = null;
+            },
+
+            phaseComplete: function() {
+                sfxCorrect();
+                const prefix = `r${this.level}`;
+                document.getElementById(`${prefix}-real-zone`).classList.add('correct-glow');
+                document.getElementById(`${prefix}-imag-zone`).classList.add('correct-glow');
+                
+                setTimeout(() => {
+                    const solveDiv = document.getElementById(`${prefix}-solve`);
+                    solveDiv.style.display = 'block';
+                    document.getElementById(`${prefix}-real-eq`).textContent = "Real Part: " + this.currQ.eqReal;
+                    document.getElementById(`${prefix}-imag-eq`).textContent = "Imaginary Part: " + this.currQ.eqImag;
+                    const inX = document.getElementById(`${prefix}-input-x`);
+                    if(inX) inX.value = '';
+                    const inY = document.getElementById(`${prefix}-input-y`);
+                    if(inY) inY.value = '';
+                }, 500);
+            },
+
+            checkSolution: function() {
+                const prefix = `r${this.level}`;
+                const userX = parseInt(document.getElementById(`${prefix}-input-x`).value);
+                const yInput = document.getElementById(`${prefix}-input-y`);
+                const userY = yInput ? parseInt(yInput.value) : null;
+                const correctX = this.currQ.ans.x;
+                const correctY = this.currQ.ans.y;
+                let isCorrect = (userX === correctX);
+                if (correctY !== undefined) {
+                    if (userY !== correctY) isCorrect = false;
+                }
+
+                if (isCorrect) this.levelSuccess();
+                else this.failLevel("INCORRECT SOLUTION");
+            },
+
+            levelSuccess: function() {
+                this.paused = true; 
+                clearInterval(this.timer);
+                sfxSuccess();
+                const overlay = document.getElementById('overlay');
+                const txt = document.getElementById('overlay-text');
+                overlay.style.display = 'flex';
+                txt.innerHTML = `<span class="success-text">SUCCESS!</span>`;
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    this.loadLevel(this.level + 1);
+                }, 2000);
+            },
+
+            failLevel: function(msg) {
+                sfxSiren();
+                clearInterval(this.timer);
+                document.body.classList.add('flash-red');
+                setTimeout(() => document.body.classList.remove('flash-red'), 1000);
+                const overlay = document.getElementById('overlay');
+                const txt = document.getElementById('overlay-text');
+                overlay.style.display = 'flex';
+                txt.innerHTML = `<span class="fail-text">${msg}</span><br><span style="font-size:1rem; color:white">Retrying...</span>`;
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    this.loadLevel(this.level); 
+                }, 3000);
+            }
+        };
+
+        document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+
+    </script>
+</body>
+</html>
