@@ -26,9 +26,28 @@ argand_plane/
     │   ├── fx.js       DOM effects: flying coins, toasts, banners, lantern shower
     │   └── game.js     game flow, rules, HUD, screens, saving
     ├── fonts/          Baloo 2 (display) + Lexend (body and all numbers), .woff2, OFL
-    ├── images/ui/icons/  36 generated PNG icons (128x128)
+    ├── images/
+    │   ├── ui/icons/   36 generated PNG icons (128x128)
+    │   ├── sprites/    houses (3 styles x 4 states), taxi, boat, moon, skyline
+    │   └── art/        title illustration + one illustration per sector card
     └── audio/          empty: optional bgm.mp3 goes here
 ```
+
+## Art
+
+All art is original and generated from SVG (Node + `sharp`), in the game's dusk palette
+with ink outlines. It is presentation only: no rule, score or task depends on it.
+
+- **Houses:** three building styles (cottage, tower, shop with a striped awning), each in the four
+  states the game uses: dark, failing (red windows that flicker), lit (powered) and mirror (violet).
+  A house's style comes from its address, never from its role, so the art cannot give away which
+  house is z or z̄. When z̄ is reached it becomes the violet mirror image of z's own building.
+- **Taxi:** a top-down checker-striped taxi with a glowing roof lantern, rotated to the direction of travel.
+- **Scenery:** a moon, a far skyline on the river bank that drifts with parallax and is reflected
+  faintly in the water below the real axis, and two lantern boats drifting along the river.
+  All scenery is drawn behind the grid and the houses, and never touches gameplay.
+- **Screens:** a title illustration on the start screen (the city reflected in the river) and an
+  illustration for each sector card: Lantern Quay, Copper Bridge, Willow Bend, Four Quarters, Far Shore.
 
 ## Changes taken from the deck ("Games and simulations (Complex Numbers).pptx")
 
@@ -73,13 +92,19 @@ Scoring is identical to the original:
 
 ## Replaceable / optional assets
 
-All are optional; the game is complete without them.
+Every image below ships with the game and can be replaced with a file of the same name.
+The game still runs if any of them is deleted.
 
 | File | Size and orientation | If missing |
 |---|---|---|
-| `assets/audio/bgm.mp3` | any length, loops | Procedural Web Audio music |
-| `assets/images/sprites/car.png` | ~256×160, transparent, car **facing right** (it is rotated to face the direction of travel) | Canvas-drawn toy taxi |
-| `assets/images/sprites/house.png` | ~256×256, transparent, square | Canvas-drawn house (used for dark houses only; lit, failing and mirror houses stay canvas-drawn so their states still show) |
+| `assets/audio/bgm.mp3` | any length, loops (not shipped) | Procedural Web Audio music |
+| `assets/images/sprites/house-{cottage,tower,shop}-{dark,failing,lit,mirror}.png` | 256×256, transparent; ground line at y ≈ 226, house centred | Canvas-drawn house |
+| `assets/images/sprites/car.png` | 256×160, transparent, top-down, car **facing right** (rotated to the direction of travel) | Canvas-drawn toy taxi |
+| `assets/images/sprites/boat.png` | 160×100, transparent, side view facing right, waterline near the bottom | No boats |
+| `assets/images/sprites/moon.png` | 256×256, transparent, with its own glow | No moon |
+| `assets/images/sprites/skyline.png` | 2048×340, transparent, tiles horizontally, ground at the bottom edge | No skyline |
+| `assets/images/art/title.png` | 1200×440 | The start screen shows text only |
+| `assets/images/art/sector-1.png` … `sector-5.png` | 480×240 (shown cropped to about 2.3:1) | Sector cards without a picture |
 | `assets/images/ui/icons/*.png` | 128×128, transparent | Required: generated, already present |
 
 ## Bugs fixed from the original
@@ -102,4 +127,6 @@ All are optional; the game is complete without them.
 - 200 generated maps per sector (1,000 total): every bank question appears, with no duplicate houses, no house on the river, exactly one z and one z̄ house, and the decoy count equal to the original.
 - With every Web Animation frozen at t = 0, coins still land, the score reaches its total and the results open.
 - No horizontal scroll at 375×812, 1366×640 and 1440×900. The canvas fills the whole viewport at every size.
-- The only 404s are the optional drop-ins above and the browser's automatic `favicon.ico` request.
+- The only 404s are the optional `bgm.mp3` and the browser's automatic `favicon.ico` request.
+- Art pass: all four house states, the flipping ghost house, the lit-up sector, the title and the
+  sector cards were checked on screen at 1440×900 and 375×812.

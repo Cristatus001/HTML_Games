@@ -26,7 +26,7 @@
     canvas: null, ctx: null, dpr: 1, w: 0, h: 0, unit: 40,
     cam: { x: 0, y: 0, zoom: 1 },
     particles: [], floats: [], motes: [], shake: 0,
-    sprites: { car: null, house: null },
+    sprites: {}, boats: [],
     safeTop: 80, safeBottom: 0, offX: 0, offY: 0
   };
 
@@ -36,13 +36,25 @@
     for (var i = 0; i < 34; i++) {
       W.motes.push({ x: Math.random(), y: Math.random(), s: 0.6 + Math.random() * 1.8, sp: 0.004 + Math.random() * 0.012, ph: Math.random() * 6.28 });
     }
-    // Optional art drop-ins (see README). Missing files fall back to the canvas art.
-    ['car', 'house'].forEach(function (k) {
+    // Sprite art (see README). Any missing file falls back to the canvas-drawn art.
+    var names = ['car', 'boat', 'moon', 'skyline'];
+    HOUSE_STYLES.forEach(function (st) { HOUSE_LOOKS.forEach(function (lk) { names.push('house-' + st + '-' + lk); }); });
+    names.forEach(function (k) {
       var im = new Image();
       im.onload = function () { W.sprites[k] = im; };
       im.src = 'assets/images/sprites/' + k + '.png';
     });
+    W.boats = [{ p: 0.15, sp: 0.018, s: 1 }, { p: 0.62, sp: -0.012, s: 0.8 }];
   };
+
+  // Each house gets one of three building styles from its address (not from its role),
+  // so a building's look never hints at which house is z or z-bar.
+  var HOUSE_STYLES = ['cottage', 'tower', 'shop'], HOUSE_LOOKS = ['dark', 'failing', 'lit', 'mirror'];
+  function styleOf(x, y) {
+    var hsh = (x * 73856093) ^ (y * 19349663);
+    return HOUSE_STYLES[Math.abs(hsh) % 3];
+  }
+  W.styleOf = styleOf;
 
   W.resize = function () {
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -86,8 +98,10 @@
     ctx.save();
     ctx.translate(sx, sy);
     drawBackdrop(ctx, S);
+    drawScenery(ctx, S);
     drawGrid(ctx);
     drawRiver(ctx, S);
+    drawBoats(ctx, dt, S);
     drawAxes(ctx, S);
     if (S.active) {
       drawGuides(ctx, S);
@@ -140,6 +154,54 @@
       }
       ctx.restore();
     }
+  }
+
+  /* ---------- scenery: moon, a far skyline on the river bank, and its reflection ---------- */
+  function drawScenery(ctx, S) {
+    var ry = W.toScreen(0, 0).y, u = W.unit * W.cam.zoom;
+    var moon = W.sprites.moon, sky = W.sprites.skyline;
+    if (moon && ry > 40) {
+      var ms = clamp(Math.min(W.w, W.h) * 0.2, 90, 200);
+      var mx = W.w * 0.82 - W.cam.x * u * 0.04, my = Math.min(ry - ms * 0.9, W.h * 0.2) - W.cam.y * u * 0.02;
+      ctx.globalAlpha = 0.9; ctx.drawImage(moon, mx - ms / 2, my - ms / 2, ms, ms); ctx.globalAlpha = 1;
+    }
+    if (!sky) return;
+    // parallax: the skyline drifts at a third of the map's speed, so it reads as far away
+    var hs = clamp(W.h * 0.2, 80, 200), ws = hs * sky.width / sky.height;
+    var x0 = ((-W.cam.x * u * 0.3) % ws + ws) % ws - ws;
+    if (ry > 0) {
+      ctx.globalAlpha = 0.3;
+      for (var x = x0; x < W.w; x += ws - 1) ctx.drawImage(sky, x, ry - hs, ws, hs);
+    }
+    if (ry < W.h) { // the mirror image across the river (the whole city is reflected: z to z-bar)
+      ctx.save();
+      ctx.globalAlpha = 0.1;
+      ctx.translate(0, ry); ctx.scale(1, -1);
+      for (var x2 = x0; x2 < W.w; x2 += ws - 1) ctx.drawImage(sky, x2, -hs, ws, hs);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBoats(ctx, dt, S) {
+    var b = W.sprites.boat; if (!b) return;
+    var ry = W.toScreen(0, 0).y, u = W.unit * W.cam.zoom;
+    var bw = clamp(u * 0.78, 28, 64), bh = bw * b.height / b.width; // smaller than the taxi: scenery, not a player
+    if (ry < -bh || ry > W.h + bh) return;
+    W.boats.forEach(function (bt, i) {
+      if (!S.reduced) bt.p += bt.sp * dt;
+      bt.p = ((bt.p % 1.3) + 1.3) % 1.3;
+      var span = W.w + bw * 2;
+      var x = ((bt.p / 1.3 * span - W.cam.x * u * 0.15) % span + span) % span - bw;
+      var bob = S.reduced ? 0 : Math.sin(S.time * 1.6 + i * 2) * 1.6;
+      var w = bw * bt.s, h = bh * bt.s;
+      ctx.save();
+      ctx.translate(x, ry - h * 0.72 + bob);
+      if (bt.sp < 0) { ctx.translate(w, 0); ctx.scale(-1, 1); }
+      ctx.globalAlpha = 0.72; ctx.drawImage(b, 0, 0, w, h);
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
   }
 
   function viewBounds() {
@@ -275,7 +337,10 @@
 
   function drawHouses(ctx, S) {
     var u = W.unit * W.cam.zoom, b = viewBounds();
-    S.houses.forEach(function (h) {
+    // back to front, so a tall building never covers the one standing in front of it
+    var order = S.houses.slice().sort(function (p, q) { return q.y - p.y; });
+    var tStyle = S.target ? styleOf(S.target.a, S.target.b) : null;
+    order.forEach(function (h) {
       if (h.x < b.x0 - 1 || h.x > b.x1 + 1 || h.y < b.y0 - 1 || h.y > b.y1 + 1) return;
       var p = houseScreen(h, S);
       if (p.sc <= 0) return;
@@ -298,12 +363,34 @@
         ctx.restore();
       }
       ctx.globalAlpha = p.al;
-      drawHouse(ctx, p.x, p.y, size, look, S.time, h);
+      // once z-bar is reached it turns into the mirror image of z's own building
+      drawHouse(ctx, p.x, p.y, size, look, S.time, look === 'mirror' && tStyle ? tStyle : styleOf(h.x, h.y));
       ctx.globalAlpha = 1;
     });
   }
 
-  function drawHouse(ctx, cx, cy, s, look, t, h) {
+  function drawHouse(ctx, cx, cy, s, look, t, style) {
+    var lk = look === 'powered' ? 'lit' : (look || 'dark');
+    if (lk === 'failing' && Math.sin(t * 22) <= 0.2) lk = 'dark-failing';
+    var spr = W.sprites['house-' + (style || 'cottage') + '-' + (lk === 'dark-failing' ? 'dark' : lk)];
+    if (spr) {
+      {
+        // dark houses get a faint cream backlight so they stand off the dusk sky and the skyline
+        var hc = lk === 'dark' ? 'rgba(255,244,226,' : lk === 'mirror' ? 'rgba(160,130,255,' : lk === 'lit' ? 'rgba(255,204,77,' : 'rgba(255,77,94,';
+        var a = lk === 'dark' ? 0.16 : lk === 'failing' ? 0.55 : lk === 'dark-failing' ? 0.2 : 0.5;
+        var rg0 = ctx.createRadialGradient(cx, cy, s * 0.1, cx, cy, s * 1.1);
+        rg0.addColorStop(0, hc + a + ')'); rg0.addColorStop(1, hc + '0)');
+        ctx.fillStyle = rg0; ctx.beginPath(); ctx.arc(cx, cy, s * 1.1, 0, 7); ctx.fill();
+      }
+      // sprite ground line sits where the canvas house's ground was (cy + 0.40 s)
+      var D = s * 1.3;
+      ctx.drawImage(spr, cx - D / 2, cy + s * 0.4 - D * (226 / 256), D, D);
+      return;
+    }
+    drawHouseCanvas(ctx, cx, cy, s, look, t);
+  }
+
+  function drawHouseCanvas(ctx, cx, cy, s, look, t) {
     var wall, wall2, roof, roofDk, win, halo = null, line = C.ink;
     if (look === 'powered' || look === 'lit') {
       wall = C.cream; wall2 = C.creamDk; roof = C.terraLit; roofDk = C.terra; win = C.lantern; halo = 'rgba(255,204,77,';
@@ -314,10 +401,6 @@
       win = Math.sin(t * 22) > 0.2 ? C.rose : '#4a1d26'; halo = 'rgba(255,77,94,';
     } else {
       wall = '#6b5470'; wall2 = '#4d3954'; roof = '#7d4a52'; roofDk = '#57303a'; win = '#2a1a2e';
-    }
-    if (W.sprites.house && (look === 'dark' || !look)) {
-      ctx.drawImage(W.sprites.house, cx - s * 0.55, cy - s * 0.6, s * 1.1, s * 1.1);
-      return;
     }
     if (halo) {
       var a = look === 'failing' ? 0.35 + 0.25 * Math.sin(t * 22) : 0.5;
@@ -387,7 +470,7 @@
         var gy = Z.y + (Zc.y - Z.y) * easeInOut(q);
         ctx.save(); ctx.globalAlpha = 0.55;
         ctx.translate(Z.x, gy); ctx.scale(1, Math.cos(q * Math.PI) || 0.01); ctx.translate(-Z.x, -gy);
-        drawHouse(ctx, Z.x, gy, u * 0.82, 'mirror', S.time);
+        drawHouse(ctx, Z.x, gy, u * 0.82, 'mirror', S.time, styleOf(t.a, t.b));
         ctx.restore();
       }
     }
@@ -428,8 +511,11 @@
     hg.addColorStop(0, 'rgba(255,241,184,0.42)'); hg.addColorStop(1, 'rgba(255,241,184,0)');
     ctx.fillStyle = hg;
     ctx.beginPath(); ctx.moveTo(L * 0.42, -Wd * 0.32); ctx.lineTo(L * 1.9, -Wd * 1.0); ctx.lineTo(L * 1.9, Wd * 1.0); ctx.lineTo(L * 0.42, Wd * 0.32); ctx.closePath(); ctx.fill();
-    if (W.sprites.car) {
-      ctx.drawImage(W.sprites.car, -L / 2, -Wd / 2 - L * 0.1, L, Wd + L * 0.2);
+    var car = W.sprites.car;
+    if (car) {
+      // keep the sprite's own proportions; it faces right and is rotated with the car
+      var cw = u * 0.74, chh = cw * car.height / car.width;
+      ctx.drawImage(car, -cw / 2, -chh / 2, cw, chh);
       ctx.restore(); return;
     }
     // shadow

@@ -167,6 +167,15 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
 .hero-logo { width: clamp(90px, 14vw, 140px); height: auto; filter: drop-shadow(0 0 22px var(--lantern-a)); animation: bob 3.2s ease-in-out infinite; }
 .hero-logo.small { width: clamp(70px, 10vw, 100px); }
 .plate-hero .btn { margin-top: 22px; }
+/* title illustration: full-bleed at the top of the boot plate, logo medallion overlapping its foot */
+.hero-art { position: relative; margin: calc(-1 * clamp(22px, 3vw, 34px)) calc(-1 * clamp(18px, 3vw, 34px)) 40px; border-bottom: 3px solid var(--terra); }
+.hero-art > img:first-child { display: block; width: 100%; height: auto; max-height: 34vh; object-fit: cover; }
+.hero-art .hero-logo {
+  position: absolute; left: calc(50% - 42px); bottom: -36px; width: 84px; height: 84px; padding: 6px;
+  border-radius: 50%; border: 3px solid var(--terra);
+  background: radial-gradient(circle at 40% 30%, var(--cream-hi), var(--cream-lo));
+  box-shadow: 0 4px 0 var(--terra-dk), 0 0 26px var(--lantern-a);
+}
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 .menu-stats { display: flex; justify-content: center; gap: 12px; margin: 16px 0 6px; flex-wrap: wrap; }
@@ -200,8 +209,18 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
 }
 .sector:hover:not(:disabled) { transform: translateY(-3px); }
 .sector:active:not(:disabled) { transform: translateY(2px); }
+.sector-art {
+  grid-column: 1 / -1; position: relative; display: block; overflow: hidden;
+  margin: -18px -16px 6px; aspect-ratio: 2.3 / 1;
+  border-radius: 17px 21px 0 0; border-bottom: 3px solid var(--terra);
+  background: var(--dusk-2);
+}
+.sector-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.sector:hover:not(:disabled) .sector-art img { transform: scale(1.05); }
+.sector-lock { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(29, 16, 48, 0.45); }
+.sector-lock img { width: 48px; height: 48px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); }
 .sector-num {
-  grid-row: 1 / span 2; width: 54px; height: 54px; border-radius: 50%;
+  grid-row: 2 / span 2; width: 54px; height: 54px; border-radius: 50%;
   display: grid; place-items: center; font-weight: 700; font-size: 26px; color: var(--cream-hi);
   background: radial-gradient(circle at 35% 30%, var(--terra-lit), var(--terra) 60%, var(--terra-dk));
   border: 2.5px solid var(--ink); box-shadow: 0 0 18px var(--lantern-a);
@@ -556,6 +575,7 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
   .kbd { min-width: 0; flex-wrap: wrap; width: 56px; }
 }
 @media (max-height: 560px) {
+  .hero-art > img:first-child { max-height: 26vh; }
   .side { width: clamp(200px, 26vw, 280px); }
   .objective p { font-size: 12.5px; }
   .dpad { --d: 48px; }

@@ -99,6 +99,8 @@
       b.disabled = locked;
       b.setAttribute('aria-label', 'Sector ' + s.id + ' ' + s.name + (locked ? ' (locked)' : ''));
       b.innerHTML =
+        '<span class="sector-art"><img src="assets/images/art/sector-' + s.id + '.png" alt="" onerror="this.parentNode.hidden=true">' +
+        (locked ? '<span class="sector-lock">' + icon('lock') + '</span>' : '') + '</span>' +
         '<span class="sector-num num">' + s.id + '</span>' +
         '<span class="sector-name">' + s.name + '</span>' +
         '<span class="sector-blurb">' + s.blurb + '</span>' +
