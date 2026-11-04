@@ -38,6 +38,8 @@
   --f-display: 'Baloo 2', 'Trebuchet MS', sans-serif;
   --f-body: 'Lexend', 'Segoe UI', sans-serif;
   --gap: clamp(8px, 1.2vw, 16px);
+  /* hand-painted paper (Freepik generation), cream fallback underneath */
+  --paper: url('../images/ui/paper.jpg') center / 360px repeat, linear-gradient(180deg, var(--cream-hi), var(--cream-lo));
 }
 
 * { box-sizing: border-box; }
@@ -68,15 +70,15 @@ img { -webkit-user-drag: none; }
   overflow: hidden;
   color: var(--ink);
   background:
-    radial-gradient(130% 70% at 18% -10%, rgba(255, 255, 255, 0.75), transparent 55%),
-    repeating-radial-gradient(circle at 37% 61%, rgba(150, 95, 45, 0.04) 0 1.5px, transparent 1.5px 4px),
-    repeating-linear-gradient(115deg, rgba(150, 95, 45, 0.03) 0 2px, transparent 2px 7px),
-    linear-gradient(180deg, var(--cream-hi), var(--cream-lo));
+    radial-gradient(130% 70% at 18% -10%, rgba(255, 255, 255, 0.7), transparent 55%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.35), rgba(232, 204, 160, 0.4)),
+    var(--paper);
   border: 3px solid var(--terra);
   border-radius: 22px 28px 22px 30px;
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -8px 18px rgba(160, 100, 50, 0.18),
+    inset 0 0 0 5px rgba(255, 250, 240, 0.7),
+    inset 0 0 0 7px rgba(196, 83, 47, 0.28),
+    inset 0 -10px 22px rgba(160, 100, 50, 0.2),
     0 5px 0 var(--terra-dk),
     0 18px 40px rgba(8, 2, 16, 0.55);
   padding: clamp(22px, 3vw, 34px) clamp(18px, 3vw, 34px) clamp(18px, 2.4vw, 28px);
@@ -119,8 +121,9 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
   font-family: var(--f-display); font-weight: 700; font-size: clamp(16px, 1.5vw, 19px); letter-spacing: 0.3px;
   color: var(--ink);
   background:
-    radial-gradient(120% 90% at 30% 0%, rgba(255, 255, 255, 0.9), transparent 60%),
-    linear-gradient(180deg, var(--cream-hi), var(--cream-lo));
+    radial-gradient(120% 90% at 30% 0%, rgba(255, 255, 255, 0.85), transparent 60%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.45), rgba(232, 204, 160, 0.45)),
+    var(--paper);
   border: 2.5px solid var(--ink);
   border-radius: 14px 16px 14px 18px;
   box-shadow: inset 0 -4px 0 rgba(160, 100, 50, 0.25), 0 4px 0 var(--ink), 0 8px 14px rgba(8, 2, 16, 0.3);
@@ -161,8 +164,15 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
   position: absolute; inset: 0; z-index: 30;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
-  background: radial-gradient(ellipse at 50% 45%, rgba(29, 16, 48, 0.15), rgba(29, 16, 48, 0.72));
+  /* the painted river town behind every menu screen, dimmed toward the edges so the plates read first */
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(29, 16, 48, 0.1), rgba(20, 8, 32, 0.78)),
+    linear-gradient(180deg, rgba(29, 16, 48, 0.25), rgba(29, 16, 48, 0.45)),
+    url('../images/art/backdrop.jpg') 50% 50% / cover no-repeat,
+    var(--dusk);
+  animation: backdrop-drift 60s ease-in-out infinite alternate;
 }
+@keyframes backdrop-drift { from { background-position: 0 0, 0 0, 35% 50%, 0 0; } to { background-position: 0 0, 0 0, 65% 50%, 0 0; } }
 .plate-hero, .plate-menu { text-align: center; max-width: 620px; width: 100%; }
 .hero-logo { width: clamp(90px, 14vw, 140px); height: auto; filter: drop-shadow(0 0 22px var(--lantern-a)); animation: bob 3.2s ease-in-out infinite; }
 .hero-logo.small { width: clamp(70px, 10vw, 100px); }
@@ -170,6 +180,9 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
 /* title illustration: full-bleed at the top of the boot plate, logo medallion overlapping its foot */
 .hero-art { position: relative; margin: calc(-1 * clamp(22px, 3vw, 34px)) calc(-1 * clamp(18px, 3vw, 34px)) 40px; border-bottom: 3px solid var(--terra); }
 .hero-art > img:first-child { display: block; width: 100%; height: auto; max-height: 34vh; object-fit: cover; }
+.hero-art-short > img:first-child { max-height: 22vh; }
+.hero-art::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 -26px 26px -16px rgba(29, 16, 48, 0.45); pointer-events: none; }
+.hero-art .hero-logo { z-index: 1; }
 .hero-art .hero-logo {
   position: absolute; left: calc(50% - 42px); bottom: -36px; width: 84px; height: 84px; padding: 6px;
   border-radius: 50%; border: 3px solid var(--terra);
@@ -194,36 +207,42 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
 .levels-head h2 { color: var(--cream); text-shadow: 0 3px 0 var(--terra-dk); flex: 1; justify-content: flex-start; }
 .levels-stars { display: inline-flex; align-items: center; gap: 6px; color: var(--cream); font-weight: 600; font-size: 18px; }
 .levels-stars img { width: 30px; height: 30px; }
-.levels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--gap); overflow: auto; padding: 6px 4px 14px; }
+.levels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); grid-auto-rows: max-content; gap: var(--gap); overflow: auto; padding: 6px 4px 14px; }
+.sector > * { flex-shrink: 0; }
 .sector {
   position: relative; text-align: left; cursor: pointer;
-  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto auto; gap: 4px 12px; align-items: center;
-  padding: 18px 16px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 16px 14px;
   background:
-    radial-gradient(120% 70% at 20% -10%, rgba(255, 255, 255, 0.8), transparent 55%),
-    linear-gradient(180deg, var(--cream-hi), var(--cream-lo));
+    radial-gradient(120% 70% at 20% -10%, rgba(255, 255, 255, 0.7), transparent 55%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.35), rgba(232, 204, 160, 0.4)),
+    var(--paper);
   border: 3px solid var(--terra); border-radius: 20px 24px 18px 26px;
   box-shadow: inset 0 2px 0 #fff, 0 5px 0 var(--terra-dk), 0 14px 26px rgba(8, 2, 16, 0.45);
   transition: transform 0.12s;
   min-height: 150px;
 }
-.sector:hover:not(:disabled) { transform: translateY(-3px); }
+.sector:hover:not(:disabled) { transform: translateY(-4px) rotate(-0.4deg); }
 .sector:active:not(:disabled) { transform: translateY(2px); }
+/* the sector painting fills the top of the card; the sector number sits on its lower edge like a wax seal */
 .sector-art {
-  grid-column: 1 / -1; position: relative; display: block; overflow: hidden;
-  margin: -18px -16px 6px; aspect-ratio: 2.3 / 1;
+  position: relative; display: block;
+  margin: 0 -16px 22px; aspect-ratio: 16 / 9;
   border-radius: 17px 21px 0 0; border-bottom: 3px solid var(--terra);
   background: var(--dusk-2);
 }
-.sector-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.sector:hover:not(:disabled) .sector-art img { transform: scale(1.05); }
-.sector-lock { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(29, 16, 48, 0.45); }
-.sector-lock img { width: 48px; height: 48px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); }
+.sector-art img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 17px 21px 0 0; transition: transform 0.4s, filter 0.4s; }
+.sector:hover:not(:disabled) .sector-art img { filter: brightness(1.08) saturate(1.1); }
+.sector-art::after { content: ''; position: absolute; inset: 0; border-radius: 17px 21px 0 0; box-shadow: inset 0 -30px 30px -18px rgba(29, 16, 48, 0.55); pointer-events: none; }
+.sector-lock { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; border-radius: 17px 21px 0 0; background: rgba(29, 16, 48, 0.32); }
+.sector.locked .sector-art img { filter: grayscale(0.55) brightness(0.85); }
+.sector-lock img { width: 52px; height: 52px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); }
 .sector-num {
-  grid-row: 2 / span 2; width: 54px; height: 54px; border-radius: 50%;
-  display: grid; place-items: center; font-weight: 700; font-size: 26px; color: var(--cream-hi);
+  position: absolute; z-index: 2; left: 12px; bottom: -24px;
+  width: 50px; height: 50px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700; font-size: 24px; color: var(--cream-hi);
   background: radial-gradient(circle at 35% 30%, var(--terra-lit), var(--terra) 60%, var(--terra-dk));
-  border: 2.5px solid var(--ink); box-shadow: 0 0 18px var(--lantern-a);
+  border: 3px solid var(--cream-hi); box-shadow: 0 0 0 2.5px var(--ink), 0 4px 0 2px var(--ink), 0 0 18px var(--lantern-a);
 }
 .sector.cleared .sector-num { background: radial-gradient(circle at 35% 30%, var(--lantern-lit), var(--lantern) 55%, var(--lantern-dk)); color: var(--ink); }
 .sector-name { font-family: var(--f-display); font-weight: 800; font-size: 22px; color: var(--terra-dk); line-height: 1; }
@@ -233,7 +252,7 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
 .sector-best { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-soft); }
 .sector-best img { width: 20px; height: 20px; }
 .sector-best b { color: var(--ink); }
-.sector.locked { filter: saturate(0.25) brightness(0.72); cursor: not-allowed; }
+.sector.locked { filter: saturate(0.6) brightness(0.86); cursor: not-allowed; }
 .sector.open { animation: glowpulse 2.4s ease-in-out infinite; }
 @keyframes glowpulse { 0%, 100% { box-shadow: inset 0 2px 0 #fff, 0 5px 0 var(--terra-dk), 0 14px 26px rgba(8, 2, 16, 0.45); } 50% { box-shadow: inset 0 2px 0 #fff, 0 5px 0 var(--terra-dk), 0 0 34px var(--lantern-a); } }
 
@@ -249,8 +268,9 @@ h3 { font-size: clamp(18px, 1.8vw, 22px); font-weight: 700; color: var(--violet-
   display: flex; align-items: center; gap: 8px;
   min-height: 46px; padding: 4px 14px;
   background:
-    radial-gradient(120% 90% at 25% 0%, rgba(255, 255, 255, 0.85), transparent 60%),
-    linear-gradient(180deg, var(--cream-hi), var(--cream-lo));
+    radial-gradient(120% 90% at 25% 0%, rgba(255, 255, 255, 0.8), transparent 60%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.4), rgba(232, 204, 160, 0.45)),
+    var(--paper);
   border: 2.5px solid var(--terra);
   border-radius: 14px 18px 14px 20px;
   box-shadow: inset 0 -3px 0 rgba(160, 100, 50, 0.2), 0 3px 0 var(--terra-dk), 0 8px 18px rgba(8, 2, 16, 0.45);
