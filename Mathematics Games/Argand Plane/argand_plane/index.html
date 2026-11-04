@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d1030">
+  <title>Mirror River City: Argand Plane</title>
+  <link rel="icon" href="assets/images/ui/icons/logo.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="world" aria-label="Argand plane city map"></canvas>
+  <div id="rim" class="rim" aria-hidden="true"></div>
+
+  <!-- ================= HUD ================= -->
+  <header id="hud" class="hud" hidden>
+    <button id="btn-pause" class="icon-btn" type="button" aria-label="Pause"><img src="assets/images/ui/icons/pause.png" alt=""></button>
+    <div class="chip chip-sector">
+      <span class="chip-k">Sector</span>
+      <span class="chip-v num" id="hud-level">1</span>
+    </div>
+    <div class="chip chip-time" id="hud-time-chip">
+      <img src="assets/images/ui/icons/clock.png" alt="">
+      <span class="chip-v num"><span id="hud-time">90</span><small>s</small></span>
+      <span class="time-bar"><i id="hud-time-bar"></i></span>
+    </div>
+    <div class="chip chip-score" id="hud-score-chip">
+      <span class="coin-glow"><img id="hud-coin" src="assets/images/ui/icons/bolt.png" alt=""></span>
+      <span class="chip-v num" id="hud-score">0</span>
+    </div>
+    <div class="chip chip-target">
+      <span class="chip-k" id="hud-target-k">The complex number to be plotted</span>
+      <span class="chip-v z" id="hud-target">z = 3 + 4i</span>
+    </div>
+  </header>
+
+  <aside id="side" class="side" hidden>
+    <ol class="tasks" id="tasks" aria-label="Tasks"></ol>
+    <section class="objective" id="objective">
+      <button class="obj-toggle" id="obj-toggle" type="button" aria-expanded="true">
+        <span>Instruction to the player</span><img src="assets/images/ui/icons/help.png" alt="">
+      </button>
+      <p id="obj-text"></p>
+      <p id="obj-assist" class="obj-assist" hidden><img src="assets/images/ui/icons/hint.png" alt="">Stuck? The house you need is now pulsing. No points lost.</p>
+    </section>
+  </aside>
+
+  <div id="pos-chip" class="pos-chip" hidden>
+    <img src="assets/images/ui/icons/car.png" alt=""><span>Car at</span><b class="num" id="pos">0</b>
+  </div>
+
+  <div id="controls" class="controls" hidden>
+    <div class="dpad" id="dpad">
+      <button class="d-btn d-up" data-dir="up" type="button" aria-label="Move up (+i)"><img src="assets/images/ui/icons/arrow-up.png" alt=""></button>
+      <button class="d-btn d-left" data-dir="left" type="button" aria-label="Move left"><img src="assets/images/ui/icons/arrow-left.png" alt=""></button>
+      <button class="d-btn d-right" data-dir="right" type="button" aria-label="Move right"><img src="assets/images/ui/icons/arrow-right.png" alt=""></button>
+      <button class="d-btn d-down" data-dir="down" type="button" aria-label="Move down (−i)"><img src="assets/images/ui/icons/arrow-down.png" alt=""></button>
+    </div>
+    <button class="check-btn" id="btn-check" type="button">
+      <img src="assets/images/ui/icons/enter.png" alt=""><span>Check<small>Enter</small></span>
+    </button>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="banner" class="banner" aria-live="polite"></div>
+  <div id="fly-layer" class="fly-layer" aria-hidden="true"></div>
+
+  <!-- ================= SCREENS ================= -->
+  <section id="scr-boot" class="screen screen-boot">
+    <div class="plate plate-hero">
+      <img class="hero-logo" src="assets/images/ui/icons/logo.png" alt="">
+      <p class="eyebrow">Argand Plane</p>
+      <h1>Mirror River City</h1>
+      <p class="lede">The city of complex numbers has lost power. Plot the failing stations, reboot them with the modulus, and steady the grid at their mirror images across the river.</p>
+      <button class="btn btn-primary btn-xl" id="btn-boot" type="button"><img src="assets/images/ui/icons/play.png" alt="">Tap to begin</button>
+    </div>
+  </section>
+
+  <section id="scr-menu" class="screen" hidden>
+    <div class="plate plate-menu">
+      <img class="hero-logo small" src="assets/images/ui/icons/logo.png" alt="">
+      <h1>Mirror River City</h1>
+      <p class="eyebrow">Argand Plane Simulation</p>
+      <div class="menu-stats">
+        <span><img src="assets/images/ui/icons/star.png" alt=""><b class="num" id="menu-stars">0</b><small>/ 15</small></span>
+        <span><img src="assets/images/ui/icons/bolt.png" alt=""><b class="num" id="menu-best">0</b><small>best total</small></span>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn btn-primary btn-xl" id="btn-play" type="button"><img src="assets/images/ui/icons/map.png" alt="">Play</button>
+        <button class="btn" id="btn-help" type="button"><img src="assets/images/ui/icons/help.png" alt="">How to Play</button>
+        <button class="btn" id="btn-settings" type="button"><img src="assets/images/ui/icons/settings.png" alt="">Settings</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="scr-levels" class="screen" hidden>
+    <div class="levels-wrap">
+      <div class="levels-head">
+        <button class="icon-btn" id="btn-levels-back" type="button" aria-label="Back"><img src="assets/images/ui/icons/back.png" alt=""></button>
+        <h2>Choose a sector</h2>
+        <span class="levels-stars"><img src="assets/images/ui/icons/star.png" alt=""><b class="num" id="levels-stars">0</b>/15</span>
+      </div>
+      <div class="levels-grid" id="levels-grid"></div>
+    </div>
+  </section>
+
+  <!-- ================= MODAL ================= -->
+  <div id="modal" class="modal" hidden>
+    <div class="plate modal-panel" id="modal-panel" role="dialog" aria-modal="true"></div>
+  </div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/world.js"></script>
+<script src="assets/js/fx.js"></script>
+<script src="assets/js/game.js"></script>
+</body>
+</html>
