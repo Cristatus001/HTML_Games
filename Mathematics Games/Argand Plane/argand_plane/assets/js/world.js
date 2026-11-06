@@ -16,7 +16,6 @@
     violet: '#8c6bd9', violetLit: '#c9b6ff',
     rose: '#ff4d5e'
   };
-  var MINUS = '−';
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function easeOutBack(t) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
@@ -294,13 +293,13 @@
       if (pinned) pill(ctx, AP.num(x), p.x, ly, { h: 16, pad: 8, font: '600 11px Lexend, sans-serif' });
       else tick(AP.num(x), p.x, ly, 'center');
     }
-    // imaginary-axis numbers ("3i"), pinned to the side if Lantern Avenue is off-screen
+    // imaginary-axis numbers (plain "3", like the real axis), pinned to the side if Lantern Avenue is off-screen
     var lx = clamp(o.x - 8, 34, W.w - 8), pinnedY = lx !== o.x - 8;
     for (var y = b.y0; y <= b.y1; y++) {
       if (y === 0 || y % step) continue;
       var q = W.toScreen(0, y);
       if (q.y < top + 4 || q.y > bottom - 4) continue;
-      var label = (y < 0 ? MINUS : '') + Math.abs(y) + 'i';
+      var label = AP.num(y);
       if (pinnedY) pill(ctx, label, lx, q.y, { align: 'right', h: 16, pad: 8, font: '600 11px Lexend, sans-serif' });
       else tick(label, lx, q.y, 'right');
     }
