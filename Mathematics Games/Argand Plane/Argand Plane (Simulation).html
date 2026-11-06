@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>City Rescue: Complex Numbers Edition</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff41;
+            --neon-yellow: #ffee00;
+            --bg-color: #050510;
+            --glass: rgba(20, 20, 40, 0.85);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            touch-action: none; /* Prevent scroll on mobile */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
+        }
+
+        /* UI Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.5s;
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-pink);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        h2 { color: var(--neon-green); margin-bottom: 20px; }
+        
+        p { max-width: 600px; line-height: 1.6; font-size: 1.1rem; color: #ddd; margin: 0 auto 20px; padding: 0 20px;}
+
+        .btn {
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 30px;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: pulse 2s infinite;
+            margin-top: 20px;
+        }
+
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 0, 255, 0.8); }
+        .btn:active { transform: scale(0.95); }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 0, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 255, 0); }
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 5;
+            font-family: monospace;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        .hud-panel {
+            background: var(--glass);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--neon-blue);
+        }
+
+        #modulus-modal {
+            background: var(--glass);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--neon-yellow);
+            box-shadow: 0 0 30px rgba(255, 238, 0, 0.2);
+            z-index: 20;
+        }
+
+        input[type="number"] {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 10px;
+            font-size: 1.5rem;
+            width: 150px;
+            text-align: center;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 6;
+            display: none; /* Shown via JS detection */
+        }
+        
+        .d-pad {
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px;
+            gap: 5px;
+        }
+
+        .d-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .d-btn:active { background: rgba(0, 243, 255, 0.5); }
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-down { grid-column: 2; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+
+        .hint-text {
+            color: var(--neon-yellow);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        #math-canvas-overlay {
+            margin: 10px auto;
+            background: #fff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+        <div class="hud-panel">LEVEL: <span id="level-disp">1</span></div>
+        <div class="hud-panel" style="color: var(--neon-yellow)">TIME: <span id="time-disp">90</span>s</div>
+        <div class="hud-panel">SCORE: <span id="score-disp">0</span></div>
+        <div class="hud-panel" style="color: var(--neon-pink)">TARGET: <span id="target-z-hud">z = ?</span></div>
+    </div>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="overlay">
+        <h1>CITY RESCUE</h1>
+        <h2>Argand Plane Edition</h2>
+        <p>The city of Complex Numbers is losing power. Power stations are failing at random coordinates <b>z = a + ib</b>.</p>
+        <p>You must drive to the failing station and press <b>ENTER</b> to calculate its <b>Modulus |z|</b> to reboot it, then stabilize the grid by visiting its <b>Conjugate Reflection <span style="text-decoration:overline">z</span></b>.</p>
+        <button class="btn" onclick="game.showInstructions()">INITIATE SEQUENCE</button>
+    </div>
+
+    <!-- Instructions Screen -->
+    <div id="instructions-screen" class="overlay hidden">
+        <h1 style="color: var(--neon-green)">MISSION BRIEFING</h1>
+        <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+            <p>1. <b>Drive</b> using Arrow Keys.</p>
+            <p>2. <b>Locate</b> the failing house.</p>
+            <p>3. <b>Press ENTER</b> on the house to start repairs.</p>
+            <p>4. <b>Calculate</b> the Modulus |z| = √(a² + b²).</p>
+            <p>5. <b>Reflect</b> to the conjugate <span style="text-decoration:overline">z</span> = a - ib and press ENTER to finish.</p>
+            <p style="text-align: center; color: var(--neon-pink); font-weight: bold;">Watch your fuel (Time)!</p>
+        </div>
+        <button class="btn" onclick="game.startLevel()">START ENGINE</button>
+    </div>
+
+    <!-- Modulus Input Modal -->
+    <div id="modulus-overlay" class="overlay hidden" style="background: rgba(0,0,0,0.6);">
+        <div id="modulus-modal">
+            <h2 style="margin:0;">SYSTEM REBOOT</h2>
+            <p>Calculate Modulus for <b>z = <span id="target-z-disp">3 + 4i</span></b></p>
+            
+            <!-- Mini canvas for visual hint -->
+            <canvas id="math-canvas-overlay" width="200" height="150"></canvas>
+            
+            <p>|z| = √(a² + b²)</p>
+            <input type="number" id="modulus-input" step="0.01" placeholder="?" onkeydown="if(event.key==='Enter') game.checkModulus()">
+            <br>
+            <button class="btn" style="font-size: 1rem; padding: 10px 20px;" onclick="game.checkModulus()">SUBMIT</button>
+            <div id="modulus-feedback" class="hint-text"></div>
+        </div>
+    </div>
+
+    <!-- Level Complete / Game Over -->
+    <div id="end-screen" class="overlay hidden">
+        <h1 id="end-title">LEVEL COMPLETE</h1>
+        <p id="end-message">Grid Stabilized.</p>
+        <div style="font-size: 2rem; margin: 20px; color: var(--neon-yellow)">Score: <span id="final-score">0</span></div>
+        <button class="btn" id="next-btn" onclick="game.nextLevel()">NEXT SECTOR</button>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="d-btn d-up" id="btn-up">▲</div>
+            <div class="d-btn d-left" id="btn-left">◀</div>
+            <div class="d-btn d-down" id="btn-down">▼</div>
+            <div class="d-btn d-right" id="btn-right">▶</div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * CITY RESCUE - NCERT MATH GAME
+ * Single File Implementation
+ */
+
+// --- AUDIO ENGINE (Web Audio API) ---
+const AudioEngine = {
+    ctx: null,
+    init: function() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    },
+    playTone: function(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+    engineSound: null,
+    engineGain: null,
+    startEngine: function() {
+        if (!this.ctx) return;
+        this.engineSound = this.ctx.createOscillator();
+        this.engineGain = this.ctx.createGain();
+        this.engineSound.type = 'sawtooth';
+        this.engineSound.frequency.value = 50;
+        this.engineGain.gain.value = 0;
+        this.engineSound.connect(this.engineGain);
+        this.engineGain.connect(this.ctx.destination);
+        this.engineSound.start();
+    },
+    revEngine: function(speed) {
+        if (this.engineSound && this.engineGain) {
+            const targetFreq = 50 + (speed * 20); // Pitch up with speed
+            const targetVol = Math.min(0.05, speed * 0.01);
+            this.engineSound.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.1);
+            this.engineGain.gain.setTargetAtTime(targetVol, this.ctx.currentTime, 0.1);
+        }
+    },
+    playCollect: () => AudioEngine.playTone(880, 'sine', 0.1, 0.2),
+    playSuccess: () => {
+        AudioEngine.playTone(523.25, 'triangle', 0.1);
+        setTimeout(() => AudioEngine.playTone(659.25, 'triangle', 0.1), 100);
+        setTimeout(() => AudioEngine.playTone(783.99, 'triangle', 0.2), 200);
+    },
+    playError: () => AudioEngine.playTone(150, 'square', 0.3, 0.2),
+    playWin: () => {
+        [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => AudioEngine.playTone(f, 'sine', 0.3, 0.2), i*100));
+    }
+};
+
+// --- GRAPHICS & PARTICLES ---
+class Particle {
+    constructor(x, y, color, speed, size, life) {
+        this.x = x; this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * speed;
+        this.vy = (Math.random() - 0.5) * speed;
+        this.life = life;
+        this.maxLife = life;
+        this.size = size;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = this.life / this.maxLife;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+// --- GAME LOGIC ---
+const game = {
+    canvas: document.getElementById('gameCanvas'),
+    ctx: document.getElementById('gameCanvas').getContext('2d'),
+    width: 0, height: 0,
+    
+    // State
+    state: 'SPLASH', // SPLASH, INSTRUCTIONS, PLAYING, MODULUS_INPUT, SHOW_CONJUGATE, END
+    level: 1,
+    maxLevel: 5,
+    questionBank: {
+        1: [[3,4], [4,3]],
+        2: [[6,8], [8,6]],
+        3: [[12,5], [5,12]],
+        4: [
+            [3,-4], [5,-12], [6,-8],
+            [-3,4], [-5,12], [-6,8],
+            [-4,3], [4,-3], [8,-6],
+            [-8,6], [-12,5], [12,-5]
+        ],
+        5: [
+            [8,15], [15,8],
+            [-8,15], [8,-15],
+            [-15,8], [15,-8],
+            [-8,-15], [-15,-8]
+        ]
+    },
+    score: 0,
+    timeLeft: 90,
+    lastTime: 0,
+    highScore: localStorage.getItem('cityRescueHigh') || 0,
+    
+    // World
+    scale: 40, // Pixels per unit
+    gridSize: 20, // -10 to 10
+    camera: { x: 0, y: 0 },
+    
+    // Entities
+    player: { x: 0, y: 0, rotation: 0 },
+    target: null, // {a: 3, b: 4, type: 'modulus' or 'conjugate'}
+    houses: [],
+    particles: [],
+    keys: {},
+    moveLock: false,
+    currentHouse: null, // Track which house we are on
+    errorMessage: "",
+    errorTimer: 0,
+    
+    // Init
+    init: function() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        // Input Listeners
+        window.addEventListener('keydown', e => {
+            this.keys[e.code] = true;
+
+            // UPDATED: Enter now triggers check regardless of state logic
+            if (e.code === 'Enter') {
+                this.handleEnterConfirm();
+            }
+        });
+        window.addEventListener('keyup', e => {
+            this.keys[e.code] = false;
+            this.moveLock = false;
+        });
+        
+        // Mobile Controls
+        const bindTouch = (id, code) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys[code] = true; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); this.keys[code] = false; });
+            el.addEventListener('mousedown', (e) => { e.preventDefault(); this.keys[code] = true; });
+            el.addEventListener('mouseup', (e) => { e.preventDefault(); this.keys[code] = false; });
+        };
+        bindTouch('btn-up', 'ArrowUp');
+        bindTouch('btn-down', 'ArrowDown');
+        bindTouch('btn-left', 'ArrowLeft');
+        bindTouch('btn-right', 'ArrowRight');
+
+        // Check mobile
+        if('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            document.getElementById('mobile-controls').style.display = 'block';
+        }
+
+        // Start Loop
+        requestAnimationFrame(t => this.loop(t));
+    },
+
+    resize: function() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+    },
+
+    showInstructions: function() {
+        AudioEngine.init();
+        document.getElementById('splash-screen').classList.add('hidden');
+        document.getElementById('instructions-screen').classList.remove('hidden');
+        this.state = 'INSTRUCTIONS';
+    },
+
+    startLevel: function() {
+        AudioEngine.startEngine();
+        document.getElementById('instructions-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+        
+        this.state = 'PLAYING';
+        this.target = null;
+        this.houses = [];
+        this.player.x = 0; 
+        this.player.y = 0;
+        this.timeLeft = 90;
+        this.particles = [];
+        
+        // Reset state
+        this.currentHouse = null;
+        this.moveLock = false;
+        
+        this.generateTarget();
+        this.generateHouses();
+        this.updateTargetDisplay();
+        this.updateHUD();
+    },
+
+    nextLevel: function() {
+        if (this.level >= this.maxLevel) {
+            this.showVictoryScreen();
+        } else {
+            this.level++;
+            this.startLevel();
+        }
+    },
+
+    generateHouses: function() {
+        this.houses = [];
+
+        // Number of houses increases with level
+        const count = 12 + this.level * 3;
+
+        for (let i = 0; i < count; i++) {
+            let x = Math.floor(Math.random() * 18) - 9;
+            let y = Math.floor(Math.random() * 18) - 9;
+            if (x === 0 && y === 0) continue;
+
+            // Step 1: Add status field (decoy)
+            this.houses.push({
+                x,
+                y,
+                type: 'decoy',
+                status: 'default'
+            });
+        }
+
+        // Insert correct Z house
+        // Step 1: Add status field (target)
+        this.houses.push({
+            x: this.target.a,
+            y: this.target.b,
+            type: 'target',
+            status: 'default'
+        });
+    },
+
+    generateTarget: function() {
+        const bank = this.questionBank[this.level];
+
+        // Safety check
+        if (!bank || bank.length === 0) {
+            console.error("No question bank found for level", this.level);
+            return;
+        }
+
+        // Pick random question from level-wise bank
+        const [a, b] = bank[Math.floor(Math.random() * bank.length)];
+
+        this.target = {
+            a: a,
+            b: b,
+            phase: 'FIND_Z',
+            solved: false,
+            modulusSolved: false,
+            discovered: false,
+            conjugateReached: false
+        };
+
+        // Visual effect
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(
+                new Particle(a, -b, 'red', 0.2, 0.2, 60)
+            );
+        }
+    },
+
+    updateTargetDisplay: function() {
+        const a = this.target.a;
+        const b = this.target.b;
+        const sign = b >= 0 ? '+' : '-';
+        document.getElementById('target-z-hud').innerText =
+            `z = ${a} ${sign} ${Math.abs(b)}i`;
+    },
+
+    // --- REPLACED: Enter Key Logic ---
+    handleEnterConfirm: function () {
+        if (!this.currentHouse) {
+            AudioEngine.playError();
+            return;
+        }
+
+        /* -------- FIND Z PHASE -------- */
+        if (this.target.phase === 'FIND_Z') {
+
+            if (this.currentHouse.type === 'target') {
+                // ✅ Correct
+                this.target.discovered = true;
+                this.currentHouse = null;
+                this.triggerModulusQuiz();
+            } else {
+                // ❌ Wrong
+                AudioEngine.playError();
+                this.errorMessage = "ERROR";
+                this.errorTimer = 1.2;
+            }
+        }
+
+        /* -------- FIND CONJUGATE PHASE -------- */
+        else if (this.target.phase === 'FIND_CONJUGATE') {
+
+            if (this.currentHouse.type === 'conjugate') {
+                // Step 3: Mark conjugate house after correct selection
+                this.currentHouse.status = 'conjugate'; // 🏘️
+                
+                // ✅ Correct
+                this.target.conjugateReached = true;
+                this.currentHouse = null;
+                this.state = 'SHOW_CONJUGATE';
+
+                setTimeout(() => {
+                    this.completeLevel();
+                }, 800);
+
+            } else {
+                // ❌ Wrong
+                AudioEngine.playError();
+                this.errorMessage = "ERROR";
+                this.errorTimer = 1.2;
+            }
+        }
+    },
+
+    // --- GAME LOOP ---
+    loop: function(timestamp) {
+        const dt = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+
+        if (this.state === 'PLAYING') {
+            this.updatePhysics(dt);
+            this.timeLeft -= dt;
+            
+            // Countdown error timer
+            if (this.errorTimer > 0) {
+                this.errorTimer -= dt;
+                if (this.errorTimer <= 0) {
+                    this.errorMessage = "";
+                }
+            }
+
+            if (this.timeLeft <= 0) this.gameOver();
+            document.getElementById('time-disp').innerText = Math.ceil(this.timeLeft);
+        }
+
+        this.render();
+        requestAnimationFrame(t => this.loop(t));
+    },
+
+    updatePhysics: function(dt) {
+        // Freeze controls during visual step
+        if (this.state === 'SHOW_CONJUGATE') return;
+
+        // --- GRID MOVEMENT (1 unit per key press + rotation) ---
+        if (!this.moveLock) {
+            let moved = false;
+
+            if (this.keys['ArrowUp'] || this.keys['KeyW']) {
+                this.player.y += 1;                  // +Imaginary
+                this.player.rotation = Math.PI / 2;  // Face UP
+                moved = true;
+            }
+            else if (this.keys['ArrowDown'] || this.keys['KeyS']) {
+                this.player.y -= 1;                  // −Imaginary
+                this.player.rotation = -Math.PI / 2; // Face DOWN
+                moved = true;
+            }
+            else if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
+                this.player.x -= 1;                  // −Real
+                this.player.rotation = Math.PI;      // Face LEFT
+                moved = true;
+            }
+            else if (this.keys['ArrowRight'] || this.keys['KeyD']) {
+                this.player.x += 1;                  // +Real
+                this.player.rotation = 0;            // Face RIGHT
+                moved = true;
+            }
+
+            if (moved) {
+                this.moveLock = true;
+                AudioEngine.revEngine(1);
+            }
+        }
+
+        // --- MODIFIED: Neutral Collision Logic ---
+        this.currentHouse = null;
+
+        this.houses.forEach(h => {
+            const dist = Math.hypot(this.player.x - h.x, this.player.y - h.y);
+            if (dist < 0.8) {
+                this.player.x = h.x;
+                this.player.y = h.y;
+                this.currentHouse = h;   // store house
+            }
+        });
+
+        // Update Particles
+        this.particles.forEach((p, i) => {
+            p.update();
+            if (p.life <= 0) this.particles.splice(i, 1);
+        });
+    },
+
+    triggerModulusQuiz: function() {
+        this.state = 'MODULUS_INPUT';
+        AudioEngine.playCollect();
+        
+        // Show Overlay
+        const overlay = document.getElementById('modulus-overlay');
+        overlay.classList.remove('hidden');
+        
+        // Set Text
+        const bSign = this.target.b >= 0 ? '+' : '-';
+        const txt = `${this.target.a} ${bSign} ${Math.abs(this.target.b)}i`;
+        document.getElementById('target-z-disp').innerText = txt;
+        document.getElementById('modulus-input').value = '';
+        document.getElementById('modulus-feedback').innerText = '';
+        document.getElementById('modulus-input').focus();
+
+        // Draw Mini Math Canvas
+        this.drawMathHint();
+    },
+
+    drawMathHint: function() {
+        const mCan = document.getElementById('math-canvas-overlay');
+        const mCtx = mCan.getContext('2d');
+        const w = mCan.width, h = mCan.height;
+        
+        mCtx.clearRect(0,0,w,h);
+        mCtx.fillStyle = '#f8f9fa';
+        mCtx.fillRect(0,0,w,h);
+        
+        // Center
+        const cx = 30, cy = h - 30;
+        const scale = 120 / Math.max(Math.abs(this.target.a), Math.abs(this.target.b), 1) * 0.8;
+        
+        // Draw Axes
+        mCtx.beginPath(); mCtx.strokeStyle = '#aaa';
+        mCtx.moveTo(cx, cy); mCtx.lineTo(w, cy); // Re
+        mCtx.moveTo(cx, cy); mCtx.lineTo(cx, 0); // Im
+        mCtx.stroke();
+        
+        // Draw Triangle
+        const tx = cx + Math.abs(this.target.a) * scale;
+        const ty = cy - Math.abs(this.target.b) * scale;
+        
+        mCtx.beginPath(); mCtx.strokeStyle = 'blue'; mCtx.lineWidth = 2;
+        mCtx.moveTo(cx, cy);
+        mCtx.lineTo(tx, cy); // a leg
+        mCtx.lineTo(tx, ty); // b leg
+        mCtx.lineTo(cx, cy); // hypot
+        mCtx.stroke();
+        
+        // Labels
+        mCtx.fillStyle = 'black'; mCtx.font = '14px Arial';
+        mCtx.fillText(`a=${Math.abs(this.target.a)}`, cx + (tx-cx)/2, cy + 15);
+        mCtx.fillText(`b=${Math.abs(this.target.b)}`, tx + 5, cy - (cy-ty)/2);
+        mCtx.fillStyle = 'red';
+        mCtx.fillText('|z|', cx + (tx-cx)/2 - 10, cy - (cy-ty)/2 - 10);
+    },
+
+    checkModulus: function() {
+        const input = parseFloat(document.getElementById('modulus-input').value);
+        const correct = Math.hypot(this.target.a, this.target.b);
+        
+        // Tolerance 0.05
+        if (Math.abs(input - correct) < 0.05) {
+            AudioEngine.playSuccess();
+            document.getElementById('modulus-overlay').classList.add('hidden');
+            this.state = 'PLAYING';
+            this.target.phase = 'FIND_CONJUGATE';
+            
+            this.target.modulusSolved = true;
+            
+            // Step 2: Update house status after correct modulus
+            this.houses.forEach(h => {
+                if (h.type === 'target') {
+                    h.status = 'solved'; // 🏠
+                }
+            });
+
+            // Remove any existing conjugate houses (safety)
+            this.houses = this.houses.filter(h => h.type !== 'conjugate');
+
+            // Insert conjugate house at correct reflected position
+            this.houses.push({
+                x: this.target.a,
+                y: -this.target.b,
+                type: 'conjugate',
+                status: 'default' // Ensure status exists
+            });
+            
+            // Add score
+            this.score += 100;
+            this.updateHUD();
+
+            // Spawn particles at Z
+            for(let i=0; i<30; i++) this.particles.push(new Particle(this.target.a, this.target.b, 'gold', 0.5, 0.3, 50));
+
+        } else {
+            AudioEngine.playError();
+            
+            // Clear any old hint text
+            document.getElementById('modulus-feedback').innerText = "ERROR";
+        }
+    },
+
+    completeLevel: function() {
+        AudioEngine.playWin();
+        this.state = 'END';
+        
+        const timeBonus = Math.floor(this.timeLeft * 10);
+        this.score += 500 + timeBonus;
+        
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('cityRescueHigh', this.highScore);
+        }
+
+        document.getElementById('end-title').innerText = "GRID STABILIZED";
+        document.getElementById('end-message').innerText = `Conjugate z̅ = ${this.target.a} ${this.target.b > 0 ? '-' : '+'} ${Math.abs(this.target.b)}i Secured.`;
+        document.getElementById('final-score').innerText = this.score;
+        
+        // --- CHANGED: Updated button text based on max level ---
+        document.getElementById('next-btn').innerText = 
+            (this.level >= this.maxLevel) ? "VIEW RESULT" : "NEXT SECTOR";
+            
+        document.getElementById('next-btn').onclick = () => game.nextLevel();
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+    },
+
+    // --- ADDED: Victory Screen Function ---
+    showVictoryScreen: function () {
+        AudioEngine.playWin();
+        this.state = 'END';
+
+        document.getElementById('end-title').innerText = "🎉 MISSION ACCOMPLISHED 🎉";
+        document.getElementById('end-message').innerHTML =
+            "You have saved the <b>City of Complex Numbers</b>.<br><br>" +
+            "Objective Completed!";
+        
+        document.getElementById('final-score').innerText = this.score;
+
+        const btn = document.getElementById('next-btn');
+        btn.innerText = "PLAY AGAIN";
+        btn.onclick = () => {
+            this.level = 1;
+            this.score = 0;
+            this.startLevel();
+        };
+
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('hud').classList.add('hidden');
+    },
+
+    gameOver: function() {
+        AudioEngine.playError();
+        this.state = 'END';
+        document.getElementById('end-title').innerText = "MISSION FAILED";
+        document.getElementById('end-message').innerText = "The Complex Grid collapsed due to power failure.";
+        document.getElementById('final-score').innerText = this.score;
+        document.getElementById('next-btn').innerText = "RETRY SECTOR";
+        document.getElementById('next-btn').onclick = () => game.startLevel();
+        document.getElementById('end-screen').classList.remove('hidden');
+    },
+
+    updateHUD: function() {
+        document.getElementById('score-disp').innerText = this.score;
+        document.getElementById('level-disp').innerText = this.level;
+    },
+
+    // --- RENDERER ---
+    render: function() {
+        const ctx = this.ctx;
+        const W = this.width;
+        const H = this.height;
+        
+        // Background - City Gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, '#020205');
+        grad.addColorStop(1, '#1a0b2e');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,W,H);
+
+        // Camera Logic (Follow Player)
+        const cx = W/2 - this.player.x * this.scale;
+        const cy = H/2 - (-this.player.y) * this.scale; // Invert Y for render
+
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // --- CORRECT WORLD BOUNDS (Y FIXED) ---
+        const unit = this.scale;
+
+        // Screen → world conversion
+        const left   = Math.floor((-cx) / unit) - 1;
+        const right  = Math.floor((W - cx) / unit) + 1;
+
+        // IMPORTANT: notice the sign flip for Y
+        const top    = Math.floor((H - cy) / unit) + 1;
+        const bottom = Math.floor((-cy) / unit) - 1;
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+
+        // Vertical lines
+        for (let x = left; x <= right; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * unit, bottom * unit);
+            ctx.lineTo(x * unit, top * unit);
+            ctx.stroke();
+        }
+
+        // Horizontal lines
+        for (let y = bottom; y <= top; y++) {
+            ctx.beginPath();
+            ctx.moveTo(left * unit, y * unit);
+            ctx.lineTo(right * unit, y * unit);
+            ctx.stroke();
+        }
+
+        // --- AXES (ALWAYS INFINITE) ---
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'white';
+
+        // Real axis
+        ctx.beginPath();
+        ctx.moveTo(left * unit, 0);
+        ctx.lineTo(right * unit, 0);
+        ctx.stroke();
+
+        // Imaginary axis
+        ctx.beginPath();
+        ctx.moveTo(0, bottom * unit);
+        ctx.lineTo(0, top * unit);
+        ctx.stroke();
+
+        // --- REAL AXIS NUMBERS (INFINITE) ---
+        ctx.fillStyle = '#aaa';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let x = left; x <= right; x++) {
+            if (x === 0) continue; // avoid duplicate zero
+            ctx.fillText(
+                x,
+                x * unit,
+                4
+            );
+        }
+
+        // --- IMAGINARY AXIS NUMBERS (FINAL & CORRECT) ---
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#aaa';
+        ctx.font = '12px monospace';
+
+        for (let y = bottom; y <= top; y++) {
+            if (y === 0) continue;
+            ctx.fillText(
+                -y,        // ✅ FIX: correct mathematical sign
+                -6,
+                y * unit   // ✅ correct position
+            );
+        }
+
+        // --- ORIGIN LABEL ---
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText('0', -4, 4);
+
+        // 2. Draw All Houses
+        this.houses.forEach(h => {
+            let color = '#444';
+            let pulse = 1;
+            let showLabel = false;
+
+            // Target turns red ONLY after discovery
+            // Guard clause for this.target added to prevent null error
+            if (h.type === 'target' && this.target && this.target.discovered) {
+                color = 'red';
+                pulse = 1 + Math.sin(Date.now()/200) * 0.2;
+                showLabel = true;
+            }
+
+            // Conjugate always highlighted when active
+            if (h.type === 'conjugate') {
+                // Guard clause for this.target added to prevent null error
+                if (this.target && this.target.conjugateReached) {
+                    color = 'cyan';
+                    pulse = 1 + Math.sin(Date.now()/200) * 0.2;
+                    showLabel = true;
+                } else {
+                    color = '#444';   // force neutral
+                    showLabel = false;
+                }
+            }
+
+            // Step 5: Pass status while drawing houses
+            this.drawHouse(h.x, h.y, color, pulse, showLabel, h.status);
+        });
+
+        // Line from origin to z after modulus
+        if (this.target && this.target.modulusSolved) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 2;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(
+                this.target.a * this.scale,
+                -this.target.b * this.scale
+            );
+            ctx.stroke();
+        }
+
+        // Dotted line between z and conjugate AFTER reaching conjugate
+        // Guard clause for this.target added to prevent null error
+        if (this.target && this.target.conjugateReached) {
+            ctx.beginPath();
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'cyan';
+            ctx.lineWidth = 2;
+
+            // z = (a, b)
+            ctx.moveTo(
+                this.target.a * this.scale,
+                -this.target.b * this.scale
+            );
+
+            // z̄ = (a, -b) => Canvas Y is -(-b) = b
+            ctx.lineTo(
+                this.target.a * this.scale,
+                -(-this.target.b) * this.scale
+            );
+
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // 3. Draw Player Car
+        ctx.save();
+        ctx.translate(this.player.x * this.scale, -this.player.y * this.scale); // -y for render
+        ctx.rotate(-this.player.rotation); // Rotate to face velocity
+        
+        // Car Body
+        ctx.fillStyle = '#ff0055';
+        ctx.shadowColor = '#ff0055';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.roundRect(-12, -6, 24, 12, 3);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Headlights
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(10, -4); ctx.lineTo(60, -15); ctx.lineTo(60, 2); ctx.fill(); // Left
+        ctx.moveTo(10, 4); ctx.lineTo(60, 15); ctx.lineTo(60, -2); ctx.fill(); // Right
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
+
+        // 4. Particles
+        this.particles.forEach(p => {
+            // Remap particle space (math coords) to screen space
+            const px = p.x * this.scale;
+            const py = -p.y * this.scale;
+            
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(px, py, p.size * this.scale * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore(); // End Camera
+
+        // 5. Draw Error Message (HUD Level)
+        if (this.errorMessage) {
+            ctx.save();
+            ctx.fillStyle = "rgba(255, 0, 0, 0.9)";
+            ctx.font = "bold 48px monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(
+                this.errorMessage,
+                this.width / 2,
+                this.height / 2
+            );
+            ctx.restore();
+        }
+    },
+
+    // Step 4: Draw emoji instead of pentagon (MOST IMPORTANT)
+    drawHouse: function(x, y, color, scale, showLabel, status = 'default') {
+        const ctx = this.ctx;
+        const px = x * this.scale;
+        const py = -y * this.scale;
+
+        // 🔁 ICON STATES
+        if (status === 'solved') {
+            ctx.font = '32px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏠', px, py);
+            return;
+        }
+
+        if (status === 'conjugate') {
+            ctx.font = '32px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏘️', px, py);
+            return;
+        }
+
+        // 🔺 DEFAULT HOUSE (Pentagon)
+        const size = 10 * scale;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(px - size, py + size);
+        ctx.lineTo(px + size, py + size);
+        ctx.lineTo(px + size, py - size/2);
+        ctx.lineTo(px, py - size * 1.5);
+        ctx.lineTo(px - size, py - size/2);
+        ctx.closePath();
+        ctx.fill();
+    }
+};
+
+window.onload = () => game.init();
+
+</script>
+</body>
+</html>
